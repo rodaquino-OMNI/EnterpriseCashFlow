@@ -13,6 +13,7 @@
  * @property {string} apiKeyHelpUrl - URL to help users get an API key for this provider
  * @property {object} defaultRequestConfig - Default configuration for API requests
  * @property {(config: AiProviderConfig, prompt: string, apiKey: string, options: AiRequestOptions) => Promise<string>} callFunction - Function to call this specific API
+ * @property {number} recommendedInputChars - Recommended maximum number of input characters for this provider
  */
 
 /**
@@ -61,6 +62,14 @@ async function callGemini(config, prompt, apiKey, options) {
     result.candidates[0].content.parts.length > 0 &&
     typeof result.candidates[0].content.parts[0].text === 'string') {
     return result.candidates[0].content.parts[0].text;
+  } else if (result.promptFeedback && result.promptFeedback.blockReason) {
+    // Handle content filtering block
+    let message = `Geração Gemini bloqueada: ${result.promptFeedback.blockReason}.`;
+    if (result.promptFeedback.safetyRatings) {
+      message += ` Classificações de segurança: ${JSON.stringify(result.promptFeedback.safetyRatings.map(r => `${r.category}: ${r.probability}`))}`;
+    }
+    console.warn("Gemini content blocked:", result.promptFeedback);
+    throw new Error(message);
   } else if (result.candidates && result.candidates.length > 0 && result.candidates[0].finishReason) {
     const reason = result.candidates[0].finishReason;
     const safetyRatings = result.candidates[0].safetyRatings;
@@ -183,13 +192,14 @@ export const AI_PROVIDERS = {
     icon: '🧠',
     apiKeyHelpUrl: 'https://ai.google.dev/tutorials/setup',
     defaultRequestConfig: {
-      model: 'gemini-1.5-pro',
+      model: 'gemini-1.5-flash-latest', // Updated to use Flash model with larger context
       temperature: 0.2,
       topK: 40,
       topP: 0.95,
       maxOutputTokens: 8000,
     },
-    callFunction: callGemini
+    callFunction: callGemini,
+    recommendedInputChars: 750000, // Approximately 187k tokens, well within Flash's 1M token context window
   },
   openai: {
     name: 'OpenAI',
@@ -205,7 +215,8 @@ export const AI_PROVIDERS = {
       frequency_penalty: 0,
       presence_penalty: 0
     },
-    callFunction: callOpenAI
+    callFunction: callOpenAI,
+    recommendedInputChars: 100000, // About 25k tokens for gpt-4-turbo's 128k context
   },
   claude: {
     name: 'Anthropic Claude',
@@ -219,7 +230,8 @@ export const AI_PROVIDERS = {
       max_tokens: 4000,
       top_p: 1
     },
-    callFunction: callClaude
+    callFunction: callClaude,
+    recommendedInputChars: 150000, // About 37.5k tokens for Claude-3's 200k context
   },
   ollama: {
     name: 'Ollama (Local)',
@@ -232,7 +244,8 @@ export const AI_PROVIDERS = {
       temperature: 0.2,
       max_tokens: 2000,
     },
-    callFunction: callOllama
+    callFunction: callOllama,
+    recommendedInputChars: 3000, // Very conservative for local models with typically 4k context
   }
 };
 

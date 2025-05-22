@@ -1,13 +1,14 @@
 // src/hooks/useAiDataExtraction.js
 import { useState, useCallback } from 'react';
 import { getFieldKeys, fieldDefinitions } from '../utils/fieldDefinitions';
+import { AI_PROVIDERS, DEFAULT_AI_PROVIDER } from '../utils/aiProviders';
 
 /**
  * Custom hook for extracting financial data from text using AI
  * 
  * @param {Object} aiService - The AI service to use for extraction
  * @returns {{
- *   extractFinancialData: (text: string, periodType: string, numberOfPeriods: number, apiKey: string) => Promise<{data: any[]}>;
+ *   extractFinancialData: (text: string, periodType: string, numberOfPeriods: number, apiKey: string, providerKey: string) => Promise<{data: any[]}>;
  *   isExtracting: boolean;
  *   extractionError: Error | null;
  *   resetError: () => void;
@@ -16,7 +17,7 @@ import { getFieldKeys, fieldDefinitions } from '../utils/fieldDefinitions';
 export function useAiDataExtraction(aiService) {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState(null);
-
+  
   // Reset any errors
   const resetError = useCallback(() => {
     setExtractionError(null);
@@ -29,20 +30,21 @@ export function useAiDataExtraction(aiService) {
    * @param {string} periodType - The type of period (anos, trimestres, etc.)
    * @param {number} numberOfPeriods - The number of periods to extract
    * @param {string} apiKey - The API key to use for the AI service
+   * @param {string} providerKey - The key of the AI provider to use
    * @returns {Promise<{data: any[]}>} The extracted financial data
    */
-  const extractFinancialData = useCallback(async (text, periodType, numberOfPeriods, apiKey) => {
+  const extractFinancialData = useCallback(async (text, periodType, numberOfPeriods, apiKey, providerKey = DEFAULT_AI_PROVIDER) => {
     if (!text) {
       throw new Error('Text is required for extraction');
     }
-
+    
     if (!aiService || !aiService.callAi) {
       throw new Error('AI service is required for extraction');
     }
-
+    
     setIsExtracting(true);
     setExtractionError(null);
-
+    
     try {
       // Get all field keys and their definitions
       const fieldKeys = getFieldKeys();
@@ -59,6 +61,20 @@ export function useAiDataExtraction(aiService) {
         };
       });
 
+      // Get the provider config
+      const providerConfig = AI_PROVIDERS[providerKey] || AI_PROVIDERS[DEFAULT_AI_PROVIDER];
+      
+      // Determine maximum input size based on provider
+      const maxInputChars = providerConfig.recommendedInputChars || 15000;
+      
+      // Truncate text if necessary, with a warning if it's too long
+      const truncatedText = text.length > maxInputChars 
+        ? text.substring(0, maxInputChars) + `\n\n... [Texto truncado para caber dentro dos limites de tokens do ${providerConfig.name}. ${text.length - maxInputChars} caracteres omitidos]`
+        : text;
+      
+      // Include text length info for debugging
+      console.log(`Using ${providerConfig.name}: Text length ${text.length} chars, truncated to ${Math.min(text.length, maxInputChars)} chars`);
+      
       // Build the prompt for the AI
       const prompt = `
 Você é um assistente especializado em extrair dados financeiros de documentos. 
@@ -66,8 +82,7 @@ Analise cuidadosamente o seguinte texto extraído de um documento financeiro e e
 
 O texto a seguir foi extraído de um PDF:
 \`\`\`
-${text.substring(0, 15000)} // Limiting text size to avoid token limits
-${text.length > 15000 ? '... [texto truncado para caber dentro dos limites de tokens]' : ''}
+${truncatedText}
 \`\`\`
 
 Eu preciso que você extraia dados para os seguintes campos financeiros:
@@ -99,12 +114,15 @@ Considerações importantes:
 6. Certifique-se de que o JSON seja válido e bem formatado
 `;
 
-      // Call the AI service
+      // Call the AI service with a lower temperature for more consistent results
       const responseText = await aiService.callAi(prompt, {
         temperature: 0.1, // Lower temperature for more deterministic results
-        maxTokens: 2048  // Ensure we have enough tokens for the full response
+        maxTokens: providerConfig.defaultRequestConfig.maxOutputTokens || 
+                  providerConfig.defaultRequestConfig.max_tokens || 
+                  4000,
+        model: providerConfig.defaultRequestConfig.model, // Use the provider's default model
       }, apiKey);
-
+      
       // Parse the JSON from the response
       // First, we need to extract the JSON part from the response
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
@@ -150,6 +168,13 @@ Considerações importantes:
     } catch (err) {
       console.error('Error extracting financial data:', err);
       setExtractionError(err);
+      
+      // Provide more helpful error messages for common issues
+      if (err.message.includes('context length') || err.message.includes('token limit') || 
+          err.message.includes('maximum context') || err.message.includes('too long')) {
+        throw new Error(`Falha ao processar o texto: O PDF é muito longo para o modelo de IA do ${AI_PROVIDERS[providerKey]?.name || 'provedor selecionado'}. Tente escolher outro provedor de IA com contexto maior ou reduza o tamanho do PDF.`);
+      }
+      
       throw new Error(`Falha ao extrair dados do texto: ${err.message}`);
     } finally {
       setIsExtracting(false);

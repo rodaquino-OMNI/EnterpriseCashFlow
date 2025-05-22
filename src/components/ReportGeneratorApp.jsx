@@ -251,7 +251,8 @@ export default function ReportGeneratorApp() {
         pdfResult.text,
         periodType,
         numberOfPeriods,
-        currentApiKey
+        currentApiKey,
+        selectedAiProvider // Pass the selected provider key to use its specific token limits
       );
 
       setExtractionProgress({ step: 'Dados extraídos. Calculando métricas...', progress: 70 });

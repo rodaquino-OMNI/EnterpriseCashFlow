@@ -1,5 +1,6 @@
 // src/components/InputPanel/PdfUploader.jsx
 import React, { useRef, useState } from 'react';
+import { AI_PROVIDERS } from '../../utils/aiProviders';
 
 /**
  * Component for uploading PDF files and extracting financial data with AI
@@ -28,14 +29,38 @@ export default function PdfUploader({
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [estimatedTokens, setEstimatedTokens] = useState(0);
+  
+  // Estimate tokens from the file size (very rough approximation)
+  const estimateTokens = (fileSizeInBytes) => {
+    // Roughly estimate: PDF text is ~50-75% of file size, and ~4 characters per token
+    const estimatedCharacters = fileSizeInBytes * 0.6; // 60% of file size as characters
+    const estimatedTokenCount = Math.round(estimatedCharacters / 4);
+    return estimatedTokenCount;
+  };
+  
+  // Get the recommended provider based on estimated token count
+  const getRecommendedProvider = (tokenCount) => {
+    if (tokenCount < 3000) {
+      return 'any'; // Any provider can handle small files
+    } else if (tokenCount < 25000) {
+      return 'openai_claude_gemini'; // Most cloud providers can handle this
+    } else if (tokenCount < 100000) {
+      return 'claude_gemini'; // Only Claude and Gemini can handle this
+    } else {
+      return 'gemini'; // Only Gemini 1.5 Flash can handle very large contexts
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
       setSelectedFile(file);
+      const estimatedTokens = estimateTokens(file.size);
+      setEstimatedTokens(estimatedTokens);
     }
   };
-
+  
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -46,7 +71,7 @@ export default function PdfUploader({
       setDragActive(false);
     }
   };
-
+  
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -56,20 +81,62 @@ export default function PdfUploader({
       const file = e.dataTransfer.files[0];
       if (file.type === 'application/pdf') {
         setSelectedFile(file);
+        const estimatedTokens = estimateTokens(file.size);
+        setEstimatedTokens(estimatedTokens);
       }
     }
   };
-
+  
   const handleUpload = async () => {
     if (selectedFile) {
       await onPdfUpload(selectedFile);
     }
   };
-
+  
   const handleButtonClick = () => {
     fileInputRef.current.click();
   };
-
+  
+  // Get the token capacity information
+  const getProviderBadge = () => {
+    if (!selectedFile) return null;
+    
+    const recommended = getRecommendedProvider(estimatedTokens);
+    const currentProviderKey = Object.keys(AI_PROVIDERS).find(key => 
+      AI_PROVIDERS[key].name === aiProviderConfig?.name
+    ) || '';
+    
+    // Check if the current provider is suitable
+    const isCurrentProviderOk = (
+      (recommended === 'any') ||
+      (recommended === 'openai_claude_gemini' && ['openai', 'claude', 'gemini'].includes(currentProviderKey)) ||
+      (recommended === 'claude_gemini' && ['claude', 'gemini'].includes(currentProviderKey)) ||
+      (recommended === 'gemini' && currentProviderKey === 'gemini')
+    );
+    
+    return (
+      <div className={`mt-3 p-3 rounded-md ${isCurrentProviderOk ? 'bg-green-50' : 'bg-amber-50'}`}>
+        <div className="flex items-center">
+          <span className={`mr-2 text-lg ${isCurrentProviderOk ? 'text-green-500' : 'text-amber-500'}`}>
+            {isCurrentProviderOk ? '✓' : '⚠️'}
+          </span>
+          <div>
+            <p className={`text-sm font-medium ${isCurrentProviderOk ? 'text-green-700' : 'text-amber-700'}`}>
+              {isCurrentProviderOk 
+                ? 'O provedor atual é adequado para este documento' 
+                : 'Este documento pode ser grande demais para o provedor atual'}
+            </p>
+            <p className="text-xs text-slate-600">
+              Tamanho estimado: ~{Math.round(estimatedTokens / 1000)}k tokens
+              {!isCurrentProviderOk && recommended === 'gemini' && 
+                " - Recomendamos usar o Gemini para documentos grandes"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
   return (
     <section className="mb-10">
       <div className="p-6 bg-white rounded-xl shadow-lg border border-slate-200">
@@ -98,7 +165,6 @@ export default function PdfUploader({
                 <option value="meses">Meses</option>
               </select>
             </div>
-
             <div>
               <label htmlFor="numberOfPeriods" className="block text-sm font-medium text-slate-700 mb-1">
                 Número de Períodos (máx. 5):
@@ -115,18 +181,19 @@ export default function PdfUploader({
               />
             </div>
           </div>
-
           <div className="bg-slate-50 p-4 rounded-md border border-slate-200">
-            <h3 className="font-medium text-slate-700 mb-2">Instruções:</h3>
-            <ol className="list-decimal ml-4 text-sm text-slate-600 space-y-1">
-              <li>Upload de demonstrações financeiras no formato PDF.</li>
-              <li>Confirme que o PDF contém dados de balanço, DRE e/ou fluxo de caixa.</li>
-              <li>Defina o tipo e número de períodos que deseja extrair.</li>
-              <li>Dados são extraídos com IA e podem exigir correções manuais.</li>
-            </ol>
+            <h3 className="font-medium text-slate-700 mb-2">Capacidade de Processamento por Provedor:</h3>
+            <ul className="text-xs text-slate-600 space-y-1 mb-3">
+              <li><span className="font-semibold">Gemini 1.5 Flash</span>: Documentos grandes (até 750k caracteres)</li>
+              <li><span className="font-semibold">Claude 3</span>: Documentos médios-grandes (até 150k caracteres)</li>
+              <li><span className="font-semibold">GPT-4</span>: Documentos médios (até 100k caracteres)</li>
+              <li><span className="font-semibold">Ollama Local</span>: Apenas documentos curtos</li>
+            </ul>
+            <p className="text-xs text-slate-500 italic">
+              Documentos maiores serão truncados automaticamente para caber no limite do provedor selecionado.
+            </p>
           </div>
         </div>
-
         <div 
           className={`border-2 border-dashed rounded-lg p-8 transition-colors ${
             dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:border-blue-400'
@@ -157,10 +224,14 @@ export default function PdfUploader({
               <p className="text-sm text-slate-500 mb-4">
                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • PDF
               </p>
+              
+              {/* Display token limit information */}
+              {getProviderBadge()}
+              
               <button
                 onClick={handleUpload}
                 disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-slate-400"
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-slate-400"
               >
                 {isLoading ? 'Processando...' : 'Iniciar Extração'}
               </button>
@@ -184,7 +255,6 @@ export default function PdfUploader({
             </div>
           )}
         </div>
-
         {extractionProgress && (
           <div className="mt-6">
             <div className="flex justify-between mb-1">
