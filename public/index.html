@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" /> <!-- For Chrome, Edge, and other supporting browsers -->
+    <!-- Firefox uses theme color from manifest.json -->
+    <meta name="msapplication-navbutton-color" content="#000000" /> <!-- For Microsoft applications -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" /> <!-- For iOS/Opera -->
+    <meta
+      name="description"
+      content="Enterprise Cash Flow - Ferramenta avançada para análise financeira"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>Enterprise Cash Flow - Análise Financeira</title>
+    
+    <!-- ExcelJS - Necessária para leitura/escrita de arquivos Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    
+    <!-- html2pdf - Necessária para geração de PDFs -->
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    
+    <!-- PDF.js - Necessária para extração de texto de PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      // Configure PDF.js worker path globally
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
+    
+    <!-- Recharts - Necessária para visualização de gráficos -->
+    <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+  </head>
+  <body>
+    <noscript>Você precisa habilitar JavaScript para executar esta aplicação.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

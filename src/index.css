@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* --- Report Section Styles --- */
+.ai-section {
+  margin-bottom: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  background-color: #f8fafc;
+}
+
+.ai-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.page-break-after {
+  page-break-after: always;
+}
+
+/* PDF Export Styles */
+@media print {
+  .printing *:not(.page-break-after) {
+    page-break-inside: avoid;
+  }
+  
+  .printing table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+  }
+  
+  .printing th, 
+  .printing td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: right;
+  }
+  
+  .printing th:first-child,
+  .printing td:first-child {
+    text-align: left;
+  }
+  
+  .printing th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  .printing .page-break-after {
+    page-break-after: always;
+  }
+}
