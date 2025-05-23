@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="https://your-logo-url.com/enterprise_cashflow_logo.png" alt="Enterprise CashFlow Logo" width="150"/> 
-  
+
   # 🚀 Enterprise CashFlow Analytics Platform 🚀
   
   **Transforme seus dados financeiros em insights acionáveis com análises de ponta e Inteligência Artificial! ✨**
