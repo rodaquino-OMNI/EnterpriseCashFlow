@@ -11,6 +11,21 @@ export const formatCurrency = (value, withSymbol = true) => {
   });
 };
 
+export const formatCurrencyWithSign = (value, withSymbol = true) => {
+  if (value === null || typeof value === 'undefined' || isNaN(Number(value))) {
+    return 'N/A';
+  }
+  const val = Number(value);
+  const symbol = withSymbol ? 'R$ ' : '';
+  if (val < 0) {
+    return `-${symbol}${Math.abs(val).toLocaleString('pt-BR', {  minimumFractionDigits: 2,  maximumFractionDigits: 2  })}`;
+  }
+  return symbol + val.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
 export const formatPercentage = (value, multiplyBy100 = false) => {
   if (value === null || typeof value === 'undefined' || isNaN(Number(value))) {
     return 'N/A';
@@ -26,10 +41,12 @@ export const formatDays = (value) => {
   if (value === null || typeof value === 'undefined' || isNaN(Number(value))) {
     return 'N/A';
   }
-  const val = Math.round(Number(value)); // Typically days are whole numbers or rounded
-  return val.toLocaleString('pt-BR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+  const val = Number(value);
+  // Use 1 decimal place for days, or 0 if it's a whole number after rounding to 1 decimal
+  const rounded = Math.round(val * 10) / 10;
+  return rounded.toLocaleString('pt-BR', {
+    minimumFractionDigits: rounded % 1 === 0 ? 0 : 1,
+    maximumFractionDigits: 1
   }) + ' dias';
 };
 
@@ -50,16 +67,29 @@ export const getMovementIndicator = (value) => {
 export const formatMovement = (value, movementType = 'value', isPercentContext = false) => {
   if (value === null || typeof value === 'undefined' || isNaN(Number(value))) return 'N/A';
 
+  const numValue = Number(value);
+
   if (movementType === 'percentage_points' || isPercentContext) {
-    // If value is already a difference of percentages (e.g., 5% - 3% = 2%), format as p.p.
-    return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' p.p.';
+    return numValue.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }) + ' p.p.';
   }
+
   if (movementType === 'days') {
-    return formatDays(value).replace(' dias', ''); // Just the number for "X dias" context
+    const rounded = Math.round(numValue * 10) / 10;
+    const formatted = rounded.toLocaleString('pt-BR', {
+      minimumFractionDigits: rounded % 1 === 0 ? 0 : 1,
+      maximumFractionDigits: 1
+    });
+    return `${formatted}`; // Just the number, "dias" will be in the label context
   }
+
   if (movementType === 'percentage_change') {
-    return formatPercentage(value); // This is a % change, e.g., revenue grew by X%
+    // This is for displaying a % change, e.g. Revenue grew by X%
+    return formatPercentage(numValue);
   }
-  // Default to currency (absolute value change)
-  return formatCurrency(value, false);
+
+  // Default: currency (absolute value change, always 2 decimal places)
+  return formatCurrency(numValue, false);
 };

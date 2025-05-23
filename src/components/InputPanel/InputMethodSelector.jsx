@@ -9,7 +9,7 @@ import React from 'react';
  * onCompanyNameChange: (name: string) => void;
  * reportTitle: string;
  * onReportTitleChange: (title: string) => void;
- * supportsPdf?: boolean;
+ * includesPdfOption?: boolean;
  * }} props
  */
 export default function InputMethodSelector({
@@ -19,7 +19,7 @@ export default function InputMethodSelector({
   onCompanyNameChange,
   reportTitle,
   onReportTitleChange,
-  supportsPdf = true
+  includesPdfOption = true
 }) {
   return (
     <section className="mb-8 p-6 bg-white rounded-xl shadow-lg border border-slate-200">
@@ -36,7 +36,7 @@ export default function InputMethodSelector({
           >
             <option value="manual">Entrada Manual de Dados</option>
             <option value="excel">Upload de Arquivo Excel</option>
-            {supportsPdf && (
+            {includesPdfOption && (
               <option value="pdf">Extrair de PDF com IA</option>
             )}
           </select>

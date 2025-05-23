@@ -26,7 +26,7 @@ export const PERIOD_TYPES = {
 export const MAX_PERIODS = 6;
 export const MIN_PERIODS_MANUAL = 3; // For manual input mode
 export const DEFAULT_PERIODS_MANUAL = 3;
-export const DEFAULT_PERIODS_EXCEL = 2;
+export const DEFAULT_PERIODS_EXCEL = 6; // Updated to 6 periods for more comprehensive analysis
 
 export const GENAI_API_KEY_PLACEHOLDER = "YOUR_API_KEY_HERE"; // Placeholder
 export const DEFAULT_AI_PROVIDER = 'gemini'; // Default AI provider to use

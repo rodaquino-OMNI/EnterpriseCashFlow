@@ -1,183 +1,140 @@
 // src/hooks/useAiDataExtraction.js
 import { useState, useCallback } from 'react';
+import { ANALYSIS_TYPES } from '../utils/aiAnalysisTypes';
 import { getFieldKeys, fieldDefinitions } from '../utils/fieldDefinitions';
-import { AI_PROVIDERS, DEFAULT_AI_PROVIDER } from '../utils/aiProviders';
 
 /**
- * Custom hook for extracting financial data from text using AI
- * 
- * @param {Object} aiService - The AI service to use for extraction
+ * Hook for extracting structured financial data from PDF text using AI
+ * @param {Object} aiService - The AI service with callAiAnalysis method
  * @returns {{
- *   extractFinancialData: (text: string, periodType: string, numberOfPeriods: number, apiKey: string, providerKey: string) => Promise<{data: any[]}>;
+ *   extractFinancialData: (pdfText: string, periodType: string, numberOfPeriods: number, apiKey: string, providerKey: string) => Promise<{data: Array<Object>, detectedPeriods: number}>;
  *   isExtracting: boolean;
  *   extractionError: Error | null;
- *   resetError: () => void;
- * }} Financial data extraction functions and state
+ *   setExtractionError: React.Dispatch<React.SetStateAction<Error | null>>;
+ * }}
  */
 export function useAiDataExtraction(aiService) {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState(null);
-  
-  // Reset any errors
-  const resetError = useCallback(() => {
-    setExtractionError(null);
-  }, []);
 
   /**
-   * Extract financial data from text using AI
-   * 
-   * @param {string} text - The text to extract data from
-   * @param {string} periodType - The type of period (anos, trimestres, etc.)
-   * @param {number} numberOfPeriods - The number of periods to extract
-   * @param {string} apiKey - The API key to use for the AI service
-   * @param {string} providerKey - The key of the AI provider to use
-   * @returns {Promise<{data: any[]}>} The extracted financial data
+   * Extract financial data from PDF text
+   * @param {string} pdfText - The extracted text from a PDF file
+   * @param {string} periodType - The type of periods (meses, anos, etc.)
+   * @param {number} numberOfPeriods - The number of periods to extract data for
+   * @param {string} apiKey - The API key for the AI service
+   * @param {string} providerKey - The provider key (gemini, openai, etc.)
+   * @returns {Promise<{data: Array<Object>, detectedPeriods: number}>}
    */
-  const extractFinancialData = useCallback(async (text, periodType, numberOfPeriods, apiKey, providerKey = DEFAULT_AI_PROVIDER) => {
-    if (!text) {
-      throw new Error('Text is required for extraction');
+  const extractFinancialData = useCallback(async (
+    pdfText,
+    periodType, 
+    numberOfPeriods, 
+    apiKey,
+    providerKey
+  ) => {
+    if (!pdfText || pdfText.trim().length < 100) {
+      const error = new Error('Texto do PDF muito curto ou vazio para extração.');
+      setExtractionError(error);
+      throw error;
     }
-    
-    if (!aiService || !aiService.callAi) {
-      throw new Error('AI service is required for extraction');
-    }
-    
+
     setIsExtracting(true);
     setExtractionError(null);
-    
+
     try {
-      // Get all field keys and their definitions
-      const fieldKeys = getFieldKeys();
-      
-      // Create a simplified JSON schema for each field to guide the AI
-      const fieldsSchema = fieldKeys.map(key => {
-        const field = fieldDefinitions[key];
-        return {
-          key,
-          label: field.label,
-          description: field.note || '',
-          firstPeriodOnly: field.firstPeriodOnly || false,
-          type: 'number'
-        };
-      });
+      // Prepare financial data bundle for AI analysis
+      const financialDataBundle = {
+        pdfText: pdfText.slice(0, 50000), // Limit text size to avoid token limits
+        companyInfo: {
+          name: "Empresa em Análise", // Generic name
+          reportTitle: "Extração de Dados Financeiros",
+          periodType: periodType,
+          numberOfPeriods: numberOfPeriods
+        }
+      };
 
-      // Get the provider config
-      const providerConfig = AI_PROVIDERS[providerKey] || AI_PROVIDERS[DEFAULT_AI_PROVIDER];
-      
-      // Determine maximum input size based on provider
-      const maxInputChars = providerConfig.recommendedInputChars || 15000;
-      
-      // Truncate text if necessary, with a warning if it's too long
-      const truncatedText = text.length > maxInputChars 
-        ? text.substring(0, maxInputChars) + `\n\n... [Texto truncado para caber dentro dos limites de tokens do ${providerConfig.name}. ${text.length - maxInputChars} caracteres omitidos]`
-        : text;
-      
-      // Include text length info for debugging
-      console.log(`Using ${providerConfig.name}: Text length ${text.length} chars, truncated to ${Math.min(text.length, maxInputChars)} chars`);
-      
-      // Build the prompt for the AI
-      const prompt = `
-Você é um assistente especializado em extrair dados financeiros de documentos. 
-Analise cuidadosamente o seguinte texto extraído de um documento financeiro e extraia os valores para ${numberOfPeriods} ${periodType}.
+      // Call AI to extract financial data
+      const extractionResult = await aiService.callAiAnalysis(
+        ANALYSIS_TYPES.FINANCIAL_DATA_EXTRACTION,
+        financialDataBundle,
+        {
+          temperature: 0.1, // Lower temperature for more deterministic extraction
+          maxTokens: 4000 // Allow enough tokens for structured data
+        },
+        apiKey
+      );
 
-O texto a seguir foi extraído de um PDF:
-\`\`\`
-${truncatedText}
-\`\`\`
+      // Process and validate the extracted data
+      let extractedData = [];
+      let detectedPeriods = numberOfPeriods;
 
-Eu preciso que você extraia dados para os seguintes campos financeiros:
-${JSON.stringify(fieldsSchema, null, 2)}
-
-Por favor, retorne os dados no seguinte formato JSON (estritamente):
-\`\`\`json
-[
-  {
-    // Dados do período 1
-    "revenue": [valor numérico],
-    "cogs": [valor numérico],
-    ...
-  },
-  {
-    // Dados do período 2 - se disponível
-    ...
-  },
-  // Mais períodos, se disponíveis, até ${numberOfPeriods} períodos no total
-]
-\`\`\`
-
-Considerações importantes:
-1. Retorne APENAS o JSON, sem explicações ou outros textos
-2. Use valores nulos (null) quando não conseguir encontrar o dado
-3. Remova quaisquer formatações de moeda e use apenas valores numéricos
-4. Para campos marcados como "firstPeriodOnly: true", inclua o valor apenas para o primeiro período
-5. Se não conseguir identificar nenhum dado, retorne uma matriz vazia []
-6. Certifique-se de que o JSON seja válido e bem formatado
-`;
-
-      // Call the AI service with a lower temperature for more consistent results
-      const responseText = await aiService.callAi(prompt, {
-        temperature: 0.1, // Lower temperature for more deterministic results
-        maxTokens: providerConfig.defaultRequestConfig.maxOutputTokens || 
-                  providerConfig.defaultRequestConfig.max_tokens || 
-                  4000,
-        model: providerConfig.defaultRequestConfig.model, // Use the provider's default model
-      }, apiKey);
-      
-      // Parse the JSON from the response
-      // First, we need to extract the JSON part from the response
-      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-      
-      if (!jsonMatch) {
-        throw new Error('A IA não conseguiu extrair dados financeiros do PDF em formato JSON válido.');
+      // Handle different response formats - the AI might return JSON directly or as a string
+      if (typeof extractionResult === 'string') {
+        try {
+          // Try to parse JSON from the response text
+          const jsonMatch = extractionResult.match(/\[[\s\S]*\]/); // Match array in JSON
+          if (jsonMatch) {
+            extractedData = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error('Formato de resposta da IA não contém JSON válido.');
+          }
+        } catch (jsonError) {
+          console.error('Erro ao interpretar JSON da resposta da IA:', jsonError);
+          throw new Error(`Erro ao interpretar dados extraídos: ${jsonError.message}`);
+        }
+      } else if (Array.isArray(extractionResult)) {
+        extractedData = extractionResult;
+      } else if (extractionResult.extractedData && Array.isArray(extractionResult.extractedData)) {
+        extractedData = extractionResult.extractedData;
+      } else {
+        throw new Error('Formato de resposta da IA não suportado para extração de dados.');
       }
-      
-      const jsonStr = jsonMatch[0];
-      const extractedData = JSON.parse(jsonStr);
-      
-      // Validate the extracted data
-      if (!Array.isArray(extractedData) || extractedData.length === 0) {
+
+      // Validate and process the extracted data
+      if (extractedData.length === 0) {
         throw new Error('A IA não conseguiu extrair dados financeiros do PDF.');
       }
-      
-      // Ensure we have the right number of periods
-      const periodsToUse = Math.min(numberOfPeriods, extractedData.length);
-      const trimmedData = extractedData.slice(0, periodsToUse);
-      
-      // If we don't have enough periods, pad with empty objects
-      while (trimmedData.length < numberOfPeriods) {
-        trimmedData.push({});
-      }
-      
-      // Convert string values to numbers where appropriate
-      const cleanedData = trimmedData.map(period => {
-        const cleanPeriod = {};
-        
-        Object.entries(period).forEach(([key, value]) => {
-          if (typeof value === 'string' && !isNaN(value.replace(/[,.]/g, ''))) {
-            // Convert string numbers to actual numbers
-            cleanPeriod[key] = Number(value.replace(/,/g, ''));
-          } else {
-            cleanPeriod[key] = value;
+
+      detectedPeriods = Math.min(extractedData.length, numberOfPeriods);
+
+      // Transform extracted data into the expected format for our app
+      const fieldKeys = getFieldKeys();
+      const processedData = extractedData.slice(0, detectedPeriods).map((period) => {
+        const dataObj = {};
+        const periodData = period.data || period; // Handle both formats
+
+        // Process each field, attempting to convert to numbers where appropriate
+        fieldKeys.forEach(key => {
+          const fieldDef = fieldDefinitions[key];
+          let value = periodData[key];
+          
+          // Try to convert string values to numbers if they should be numbers
+          if (value !== null && value !== undefined && typeof value === 'string') {
+            // Remove currency symbols, commas and convert to number
+            const cleanValue = value.replace(/[^-\d.,]/g, '').replace(/,/g, '.');
+            const numValue = parseFloat(cleanValue);
+            if (!isNaN(numValue)) {
+              value = numValue;
+            }
           }
+          
+          dataObj[key] = value;
         });
-        
-        return cleanPeriod;
+
+        return dataObj;
       });
-      
-      return { data: cleanedData };
-    } catch (err) {
-      console.error('Error extracting financial data:', err);
-      setExtractionError(err);
-      
-      // Provide more helpful error messages for common issues
-      if (err.message.includes('context length') || err.message.includes('token limit') || 
-          err.message.includes('maximum context') || err.message.includes('too long')) {
-        throw new Error(`Falha ao processar o texto: O PDF é muito longo para o modelo de IA do ${AI_PROVIDERS[providerKey]?.name || 'provedor selecionado'}. Tente escolher outro provedor de IA com contexto maior ou reduza o tamanho do PDF.`);
-      }
-      
-      throw new Error(`Falha ao extrair dados do texto: ${err.message}`);
-    } finally {
+
       setIsExtracting(false);
+      return {
+        data: processedData,
+        detectedPeriods: detectedPeriods
+      };
+    } catch (err) {
+      console.error('Erro na extração de dados via IA:', err);
+      setExtractionError(err);
+      setIsExtracting(false);
+      throw err;
     }
   }, [aiService]);
 
@@ -185,6 +142,6 @@ Considerações importantes:
     extractFinancialData,
     isExtracting,
     extractionError,
-    resetError
+    setExtractionError
   };
 }

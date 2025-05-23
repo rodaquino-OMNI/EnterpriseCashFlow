@@ -2,83 +2,74 @@
 import { useState, useCallback } from 'react';
 
 /**
- * Custom hook for parsing PDF files and extracting their text content
- * 
+ * Hook for extracting text content from PDF files
  * @returns {{
- *   extractTextFromPdf: (file: File) => Promise<{text: string, pages: number, fileName: string}>;
+ *   extractTextFromPdf: (file: File) => Promise<{text: string, pageCount: number}>;
  *   isParsing: boolean;
  *   parsingError: Error | null;
- *   resetError: () => void;
- * }} PDF parsing functions and state
+ *   setParsingError: React.Dispatch<React.SetStateAction<Error | null>>;
+ * }}
  */
 export function usePdfParser() {
   const [isParsing, setIsParsing] = useState(false);
   const [parsingError, setParsingError] = useState(null);
 
-  // Reset any errors
-  const resetError = useCallback(() => {
-    setParsingError(null);
-  }, []);
-
   /**
    * Extract text from a PDF file
-   * Uses PDF.js library loaded dynamically via CDN to avoid bundling the library
-   * 
-   * @param {File} file - The PDF file to parse
-   * @returns {Promise<{text: string, pages: number, fileName: string}>} The extracted text and metadata
+   * @param {File} file - The PDF file to extract text from
+   * @returns {Promise<{text: string, pageCount: number}>} - The extracted text and page count
    */
   const extractTextFromPdf = useCallback(async (file) => {
     if (!file || file.type !== 'application/pdf') {
-      throw new Error('Invalid file. Please upload a PDF file.');
+      const error = new Error('Arquivo inválido. Por favor, forneça um PDF válido.');
+      setParsingError(error);
+      throw error;
     }
 
     setIsParsing(true);
     setParsingError(null);
 
     try {
+      // Check if the PDF.js library is available (should be loaded via CDN)
       if (!window.pdfjsLib) {
-        throw new Error('PDF.js library is not loaded. Please make sure the CDN script is included in the HTML page.');
+        throw new Error('Biblioteca PDF.js não disponível. Verifique a conexão de internet.');
       }
 
-      // Ensure worker source is set
-      if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        console.warn("PDF.js workerSrc not configured. Using default Cloudflare CDN.");
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${window.pdfjsLib.version}/pdf.worker.min.js`;
-      }
+      // Read the file as ArrayBuffer
+      const arrayBuffer = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Erro ao ler o arquivo PDF.'));
+        reader.readAsArrayBuffer(file);
+      });
 
-      // Read the file as an ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
-      
-      // Load the PDF document
+      // Load the PDF document using PDF.js
       const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
+      const pdfDocument = await loadingTask.promise;
+      const numPages = pdfDocument.numPages;
       
+      // Extract text from each page
       let fullText = '';
       
-      // Process each page
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum);
         const textContent = await page.getTextContent();
         
-        // Process text items and concatenate them with better formatting
+        // Join text items into a single string
         const pageText = textContent.items
-          .map(item => item.str + (item.hasEOL ? '\n' : ' '))
-          .join('');
-
-        fullText += `\n--- Página ${pageNum} ---\n${pageText}\n`;
+          .map(item => item.str)
+          .join(' ');
+        
+        fullText += pageText + '\n\n';
       }
       
-      return {
-        text: fullText.trim(),
-        pages: pdf.numPages,
-        fileName: file.name
-      };
-    } catch (err) {
-      console.error('Error extracting PDF text:', err);
-      setParsingError(err);
-      throw new Error(`Failed to extract text from PDF: ${err.message}`);
-    } finally {
       setIsParsing(false);
+      return { text: fullText.trim(), pageCount: numPages };
+    } catch (err) {
+      console.error('Erro ao analisar PDF:', err);
+      setParsingError(err);
+      setIsParsing(false);
+      throw err;
     }
   }, []);
 
@@ -86,6 +77,6 @@ export function usePdfParser() {
     extractTextFromPdf,
     isParsing,
     parsingError,
-    resetError
+    setParsingError
   };
 }

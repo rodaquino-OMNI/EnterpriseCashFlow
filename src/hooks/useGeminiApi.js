@@ -7,24 +7,26 @@ export function useGeminiApi() {
   const [error, setError] = useState(null);
 
   // Allow API Key to be passed or use a placeholder/env variable
-  const callApi = useCallback(async (prompt, apiKey = GENAI_API_KEY_PLACEHOLDER) => {
+  const callApi = useCallback(async (prompt, apiKey = GENAI_API_KEY_PLACEHOLDER, options = {}) => {
     if (!apiKey || apiKey === GENAI_API_KEY_PLACEHOLDER) {
       const err = new Error('API key para Gemini não configurada.');
       console.error(err.message);
       setError(err);
-      // You might want to return a specific message or throw,
-      // instead of letting the fetch fail later.
-      // For now, we'll display this error to the user.
-      // Returning a string here that indicates the error.
       return "Erro: API Key não configurada. Verifique as configurações da aplicação.";
     }
 
     setIsLoading(true);
     setError(null);
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
+    const model = options.model || 'gemini-2.0-flash'; // Default to latest model
+    const temperature = options.temperature || 0.4; // Default temperature
+    const maxOutputTokens = options.maxTokens || 2000; // Default token limit
+    
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    
     try {
+      console.log(`Calling Gemini API with model: ${model}, temperature: ${temperature}, maxOutputTokens: ${maxOutputTokens}`);
+      
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,17 +34,35 @@ export function useGeminiApi() {
           contents: [{
             role: "user",
             parts: [{ text: prompt }]
-          }]
+          }],
+          generationConfig: {
+            temperature: temperature,
+            maxOutputTokens: maxOutputTokens,
+            topP: 0.95,
+            topK: 40
+          }
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: { message: response.statusText } })); // Try to parse JSON, fallback to statusText
-        const errorMessage = errorData.error?.message || `Erro HTTP ${response.status}`;
-        throw new Error(`API Gemini (${response.status}): ${errorMessage}`);
+        let errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
+        
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = `Erro Gemini API: ${errorData.error.message || errorData.error.code || response.statusText}`;
+          }
+        } catch (parseError) {
+          console.warn('Could not parse error response:', parseError);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
+      
+      // Log the structure of the response for debugging
+      console.debug('Gemini API response structure:', JSON.stringify(result).substring(0, 200) + '...');
 
       if (result.candidates && result.candidates.length > 0 &&
           result.candidates[0].content && result.candidates[0].content.parts &&
@@ -56,9 +76,11 @@ export function useGeminiApi() {
         const reason = result.candidates[0].finishReason;
         const safetyRatings = result.candidates[0].safetyRatings;
         let message = `Geração de conteúdo pela IA finalizada com motivo: ${reason}.`;
+        
         if (safetyRatings) {
-          message += `Classificações de segurança: ${JSON.stringify(safetyRatings)}`;
+          message += ` Classificações de segurança: ${JSON.stringify(safetyRatings)}`;
         }
+        
         console.warn(message);
         throw new Error(message);
       }
@@ -70,10 +92,10 @@ export function useGeminiApi() {
       console.error('Erro na chamada da API Gemini:', err);
       setError(err);
       setIsLoading(false);
-      // Return the error message to be displayed, or rethrow if the component handles it
       return `Erro ao comunicar com a IA: ${err.message}`;
+    } finally {
+      setIsLoading(false);
     }
-
   }, []);
 
   const resetError = useCallback(() => {

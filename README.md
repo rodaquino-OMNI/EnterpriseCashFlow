@@ -1,13 +1,15 @@
+<div align="center">
+  <img src="https://your-logo-url.com/enterprise_cashflow_logo.png" alt="Enterprise CashFlow Logo" width="150"/> 
   
-  # 🚀 Enterprise CashFlow Analytics Platform 🚀
+# 🚀 Enterprise CashFlow Analytics Platform 🚀
   
   **Transforme seus dados financeiros em insights acionáveis com análises de ponta e Inteligência Artificial multimodal! ✨**
   
   *Uma plataforma completa de relatórios financeiros que combina contabilidade tradicional com análises avançadas por múltiplos provedores de IA e extração inteligente de dados de PDF.*
   
-  [🎯 Funcionalidades](#-principais-funcionalidades) • 
-  [🚀 Início Rápido](#-início-rápido) • 
-  [🏗️ Arquitetura](#-arquitetura-da-solução) • 
+  [🎯 Funcionalidades](#-principais-funcionalidades) •
+  [🚀 Início Rápido](#-início-rápido) •
+  [🏗️ Arquitetura](#-visão-geral-da-arquitetura) •
   [🤝 Contribuir](#-contribuindo)
   
   ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -164,7 +166,7 @@ graph LR
 
 ## 🚀 Início Rápido
 
-### ⚡ **Setup em 5 Minutos**
+### ⚡ Pronto para transformar sua análise financeira? Configure em 5 minutos
 
 ```bash
 # 1. Clone o repositório
@@ -178,11 +180,41 @@ npm install
 npm run dev
 ```
 
-🎉 **Abra http://localhost:5173 e comece a analisar!**
+🎉 **Abra seu navegador em <http://localhost:5173>** (ou a porta indicada) e comece!
 
-### 🎯 **Primeiro Relatório em 3 Passos**
+### 🎯 Seu Primeiro Relatório em 3 Passos Simples
 
-#### **1. Configure seu Provedor de IA** (Recomendado)
+1. **Escolha o Método de Entrada:** Manual, Excel, ou Upload de PDF
+2. **(Opcional) Configure o Provedor de IA:** Vá para "Configuração de IA", selecione seu serviço preferido e adicione sua chave API (se necessário)
+3. **Gere o Relatório:** Insira/carregue seus dados e obtenha análises financeiras profissionais instantaneamente!
+
+---
+
+## 📋 Pré-requisitos
+
+### Sistema Necessário
+
+- **Node.js:** Versão 18+ recomendada
+- **Navegador Moderno:** Com suporte a ES2020+ (Chrome, Firefox, Edge, Safari recentes)
+- **Chaves API (Opcional):** Para funcionalidade completa de IA com provedores que exigem autenticação
+
+### ✨ Provedores de IA Suportados
+
+| Provedor | Status | Ideal Para |
+|----------|--------|------------|
+| 🔮 **Google Gemini** | ✅ Padrão | Análise geral, raciocínio, resumo |
+| 💬 **OpenAI (GPT-4+)** | ✅ Suportado | Insights de negócios detalhados, narrativas |
+| 🧠 **Anthropic Claude** | ✅ Suportado | Análise de variações, cenários complexos |
+| 🏠 **Ollama (Local)** | ✅ Suportado | Privacidade, processamento offline |
+
+---
+
+## 🔧 Instalação e Configuração Detalhada
+
+### 1. **Configuração de Ambiente**
+
+Crie seu arquivo de configuração de ambiente local:
+
 ```bash
 # Acesse "Configuração de IA" no painel
 # Escolha: Gemini | OpenAI | Claude | Ollama
@@ -214,51 +246,25 @@ npm run dev
 
 ### 🔑 **APIs de IA** (Opcional mas Recomendado)
 
-<details>
-<summary>🔮 <strong>Google Gemini</strong> (Padrão)</summary>
+#### 🔮 **Google Gemini**
 
-**Obtenha sua chave:**
-1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Faça login com sua conta Google
-3. Crie uma nova API Key
-4. Copie e cole na configuração da aplicação
+- Obtenha sua chave API em: [Google AI Studio](https://aistudio.google.com/app/apikey)
+- Insira a chave nas "Configurações de IA" da aplicação
+- No ambiente Canvas, se `GENAI_API_KEY` estiver vazio, a chave da plataforma é usada automaticamente
 
-**Vantagens:**
-- Excelente para análises gerais
-- Boa relação custo-benefício
-- Processamento rápido
-</details>
+#### 💬 **OpenAI (GPT-4, etc.)**
 
-<details>
-<summary>💬 <strong>OpenAI GPT</strong> (Premium)</summary>
+- Obtenha sua chave API em: [OpenAI API Keys](https://platform.openai.com/api-keys)
+- Modelo recomendado: `gpt-4-turbo-preview` ou `gpt-4o`
+- Insira a chave nas "Configurações de IA" da aplicação
 
-**Obtenha sua chave:**
-1. Acesse [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Crie uma conta e adicione créditos
-3. Gere uma nova API Key
-4. Configure na aplicação
+#### 🧠 **Anthropic Claude**
 
-**Modelos recomendados:**
-- `gpt-4-turbo-preview` (balanceado)
-- `gpt-4o` (mais recente)
-</details>
+- Obtenha sua chave API em: [Anthropic Console](https://console.anthropic.com/)
+- Modelo recomendado: `claude-3-sonnet-20240229` ou `claude-3-opus-20240229`
+- Insira a chave nas "Configurações de IA" da aplicação
 
-<details>
-<summary>🧠 <strong>Anthropic Claude</strong> (Especialista)</summary>
-
-**Obtenha sua chave:**
-1. Acesse [Anthropic Console](https://console.anthropic.com/)
-2. Crie uma conta e configure billing
-3. Gere uma API Key
-4. Configure na aplicação
-
-**Modelos recomendados:**
-- `claude-3-sonnet-20240229` (balanceado)
-- `claude-3-opus-20240229` (premium)
-</details>
-
-<details>
-<summary>🏠 <strong>Ollama</strong> (Local/Privado)</summary>
+#### 🏠 **Ollama (Processamento Local)**
 
 **Instalação:**
 ```bash
@@ -314,9 +320,7 @@ Adicione ao seu `public/index.html`:
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enterprise CashFlow Platform</title>
+### 3. **Dependências CDN**
   
   <!-- ExcelJS para processamento de planilhas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>

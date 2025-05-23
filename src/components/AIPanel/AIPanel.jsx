@@ -103,15 +103,13 @@ export default function AIPanel({
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AiSummarySection 
-              summary={aiSummary} 
+              content={aiSummary} 
               isLoading={isGenerating} 
-              financialData={financialData} 
             />
             
             <AiVarianceSection 
-              varianceAnalysis={aiVarianceAnalysis} 
+              analysisText={aiVarianceAnalysis} 
               isLoading={isGenerating} 
-              financialData={financialData} 
             />
           </div>
         </div>
