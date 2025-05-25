@@ -1,7 +1,7 @@
 // src/hooks/useExcelParser.js
 import { useState, useCallback } from 'react';
-import { GREY_FILLS, HEADER_PATTERNS } from '../utils/constants';
-import { fieldDefinitions } from '../utils/fieldDefinitions'; // Using the same fieldDefinitions
+import { GREY_FILLS, HEADER_PATTERNS, MAX_PERIODS, DEFAULT_PERIODS_EXCEL } from '../utils/constants';
+import { fieldDefinitions, getFieldKeys } from '../utils/fieldDefinitions';
 
 export function useExcelParser(ExcelJSLibrary) {
   const [parsingError, setParsingError] = useState(null);
@@ -41,96 +41,147 @@ export function useExcelParser(ExcelJSLibrary) {
     
     let detectedPeriods = 0;
     
-    // Expanded patterns for period headers detection
-    const periodPatterns = [
-      'período ', 'periodo ', 'per ', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6'
-    ];
+    // IMPROVEMENT: Stricter primary detection for "Período X" patterns
+    // First method: Look for explicit period headers with strict pattern matching
+    const strictPeriodPattern = /^per[íi]odo\s*\d+$/i;  // Matches "Período X" or "Periodo X" exactly
     
-    // First method: Look for explicit period headers with expanded patterns
-    headerRowValues.forEach((cellValue, index) => {
+    for (let i = 3; i < headerRowValues.length; i++) {  // Start from column C (index 3)
+      const cellValue = headerRowValues[i];
+      
       if (typeof cellValue === 'string') {
         const lowerValue = cellValue.toLowerCase();
-        if (periodPatterns.some(pattern => lowerValue.includes(pattern)) ||
-            /^per[íi]odo\s*\d+$/i.test(lowerValue)) {
+        
+        // Strict primary detection: Check for exact "Período X" pattern
+        if (strictPeriodPattern.test(lowerValue)) {
           detectedPeriods++;
-          console.log(`Found period header at column ${index}: "${cellValue}"`);
+          console.log(`Found period header at column ${i}: "${cellValue}" (strict match)`);
         }
       }
-    });
-    
-    // Second method: Count consecutive numeric columns after key and description
-    if (detectedPeriods === 0 && Array.isArray(headerRowValues) && headerRowValues.length >= 3) {
-      // Look for data-containing columns between the ID/description columns and any notes column
-      // This assumes structure: [Key, Description, Period1, Period2, ..., Notes]
+    }
+
+    // Secondary detection: Check for loose period patterns if strict pattern didn't find any
+    if (detectedPeriods === 0) {
+      // Expanded patterns for period headers detection - looser matching
+      const periodPatterns = [
+        'período ', 'periodo ', 'per ', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6'
+      ];
       
-      // Find the starting column (after key/description)
-      let startCol = 2; // Default to column 3 (index 2)
-      
-      // Find the ending column (before notes or end)
-      let endCol = headerRowValues.length - 1;
-      
-      // Adjust if Notes column is detected
-      for (let i = endCol; i > startCol; i--) {
-        if (headerRowValues[i] && typeof headerRowValues[i] === 'string' && 
-            (headerRowValues[i].toLowerCase().includes('nota') || 
-             headerRowValues[i].toLowerCase().includes('instrução'))) {
-          endCol = i - 1;
-          break;
+      for (let i = 3; i < headerRowValues.length; i++) {
+        const cellValue = headerRowValues[i];
+        
+        if (typeof cellValue === 'string') {
+          const lowerValue = cellValue.toLowerCase();
+          if (periodPatterns.some(pattern => lowerValue.includes(pattern))) {
+            detectedPeriods++;
+            console.log(`Found period header at column ${i}: "${cellValue}" (pattern match)`);
+          }
         }
       }
-      
-      // Count potential period columns
-      detectedPeriods = endCol - startCol + 1;
-      console.log(`Inferred period count from columns: ${detectedPeriods} (columns ${startCol+1}-${endCol+1})`);
     }
     
-    // Third method: Check data rows with non-null values to infer period count
-    if (detectedPeriods <= 1) {
-      try {
-        // Check a couple of data rows
-        const dataRows = [2, 3, 4, 5].map(rowNum => worksheet.getRow(rowNum));
-        
-        // Find max number of consecutive non-empty cells that could be period data
-        let maxConsecutiveDataCells = 0;
-        
-        dataRows.forEach(row => {
-          // Start from column 3 (index 2)
-          let consecutiveCount = 0;
-          let startIdx = 2;
+    // IMPROVEMENT: Better fallback logic for when no period headers are found
+    if (detectedPeriods === 0) {
+      // Try to find "Descrição" and "Nota" columns to determine period columns in between
+      const descIndex = headerRowValues.findIndex(
+        h => typeof h === 'string' && h.toLowerCase().includes('descrição')
+      );
+      
+      const noteIndex = headerRowValues.findIndex(
+        h => typeof h === 'string' && 
+        (h.toLowerCase().includes('nota') || h.toLowerCase().includes('instruções'))
+      );
+      
+      console.log(`Fallback detection: Description column at ${descIndex}, Notes column at ${noteIndex}`);
+      
+      if (descIndex !== -1) {
+        if (noteIndex !== -1 && noteIndex > descIndex + 1) {
+          // Count columns between "Descrição" and "Nota"
+          detectedPeriods = noteIndex - (descIndex + 1);
+          console.log(`Detected ${detectedPeriods} periods between Description and Notes columns`);
+        } else {
+          // Count non-empty cells after "Descrição" if no "Nota" column found
+          let potentialCols = 0;
+          for (let i = descIndex + 2; i < headerRowValues.length; i++) {
+            if (headerRowValues[i] !== null && typeof headerRowValues[i] !== 'undefined') {
+              potentialCols++;
+            } else {
+              break; // Stop at first empty header
+            }
+          }
+          detectedPeriods = potentialCols;
+          console.log(`Detected ${detectedPeriods} periods after Description column (no Notes column found)`);
+        }
+      }
+      
+      // Additional fallback - analyze data rows to check for numeric content in potential period columns
+      if (detectedPeriods === 0 || detectedPeriods > MAX_PERIODS) {
+        try {
+          // Check a few data rows (rows 2-5) for numeric content
+          const potentialPeriodCounts = [];
           
-          for (let i = startIdx; i < row.values.length; i++) {
-            const cell = row.getCell(i + 1); // ExcelJS is 1-indexed for cells
+          for (let rowNum = 2; rowNum <= 5 && rowNum <= worksheet.rowCount; rowNum++) {
+            const rowValues = worksheet.getRow(rowNum).values || [];
+            let numericCellCount = 0;
             
-            // Check if cell has a value and is not a header/label
-            if (cell.value !== null && cell.value !== undefined && cell.value !== '') {
-              consecutiveCount++;
-            } else if (consecutiveCount > 0) {
-              // Found empty cell after data cells - might be end of periods
-              break;
+            // Start from column C (index 3) - typical position for first period
+            for (let colIdx = 3; colIdx < rowValues.length && colIdx < 10; colIdx++) {
+              const cellValue = rowValues[colIdx];
+              // Check if it's a number or can be converted to a number
+              if (typeof cellValue === 'number' || 
+                 (typeof cellValue === 'string' && !isNaN(parseFloat(cellValue)))) {
+                numericCellCount++;
+              } else if (cellValue === null || cellValue === undefined) {
+                // Skip empty cells, they could just be missing data
+                continue;
+              } else {
+                // If we hit a non-numeric, non-empty cell, break - might be notes or other content
+                break;
+              }
+            }
+            
+            if (numericCellCount > 0) {
+              potentialPeriodCounts.push(numericCellCount);
             }
           }
           
-          maxConsecutiveDataCells = Math.max(maxConsecutiveDataCells, consecutiveCount);
-        });
-        
-        // If we found more periods this way, use that number
-        if (maxConsecutiveDataCells > detectedPeriods) {
-          detectedPeriods = maxConsecutiveDataCells;
-          console.log(`Detected ${detectedPeriods} periods from data cell analysis`);
+          // If we found any potential period counts from data analysis
+          if (potentialPeriodCounts.length > 0) {
+            // Use the most common count or the max if there's a tie
+            const countOccurrences = {};
+            potentialPeriodCounts.forEach(count => {
+              countOccurrences[count] = (countOccurrences[count] || 0) + 1;
+            });
+            
+            let mostCommonCount = 0;
+            let highestOccurrence = 0;
+            
+            Object.entries(countOccurrences).forEach(([count, occurrences]) => {
+              if (occurrences > highestOccurrence || 
+                 (occurrences === highestOccurrence && parseInt(count) > mostCommonCount)) {
+                mostCommonCount = parseInt(count);
+                highestOccurrence = occurrences;
+              }
+            });
+            
+            if (mostCommonCount > 0 && mostCommonCount <= MAX_PERIODS) {
+              detectedPeriods = mostCommonCount;
+              console.log(`Detected ${detectedPeriods} periods from numeric data analysis in rows`);
+            }
+          }
+        } catch (err) {
+          console.warn("Error during data row analysis for period detection:", err);
         }
-      } catch (err) {
-        console.warn("Error analyzing data rows for period detection", err);
       }
     }
     
-    // If all detection methods failed, default to 2
-    if (detectedPeriods <= 1) {
-      console.log("Could not confidently detect periods, defaulting to 2");
-      return 2;
+    // IMPROVEMENT: If all detection methods failed, log a warning and use DEFAULT_PERIODS_EXCEL
+    if (detectedPeriods === 0 || detectedPeriods > MAX_PERIODS) {
+      console.warn(`Could not reliably detect periods in Excel file, defaulting to ${DEFAULT_PERIODS_EXCEL} periods`);
+      return DEFAULT_PERIODS_EXCEL;
     }
     
-    // Cap at 6 periods maximum
-    const finalPeriodCount = Math.min(Math.max(detectedPeriods, 1), 6);
+    // Ensure detected periods is at least 1 and at most MAX_PERIODS
+    const finalPeriodCount = Math.max(1, Math.min(detectedPeriods, MAX_PERIODS));
     console.log(`Final detected period count: ${finalPeriodCount}`);
     return finalPeriodCount;
   }, []);
@@ -155,7 +206,6 @@ export function useExcelParser(ExcelJSLibrary) {
       setIsParsing(false);
       throw err;
     }
-
     try {
       console.log(`Processing Excel file: ${file.name} (${Math.round(file.size / 1024)} KB)`);
       
@@ -173,16 +223,14 @@ export function useExcelParser(ExcelJSLibrary) {
       console.log(`Will extract data for ${detectedNumPeriods} periods`);
       
       const extractedDataForPeriods = Array(detectedNumPeriods).fill(null).map(() => ({}));
-      const allFieldKeys = Object.keys(fieldDefinitions);
+      const allFieldKeys = getFieldKeys();
       let foundAnyData = false;
-
       // Before processing, log the first few rows to help with debugging
       console.log("First 3 rows of the selected worksheet:");
       for (let i = 1; i <= 3 && i <= ws.rowCount; i++) {
         const rowValues = ws.getRow(i).values;
         console.log(`Row ${i}:`, rowValues);
       }
-
       ws.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return; // Skip header row
         
@@ -231,12 +279,10 @@ export function useExcelParser(ExcelJSLibrary) {
           }
         }
       });
-
       if (!foundAnyData) {
         console.warn("Nenhum dado numérico encontrado nas células de entrada esperadas do Excel.");
         // Optionally throw an error or return empty if this is critical
       }
-
       // Ensure all defined fields are present in each period object, even if null
       const finalData = extractedDataForPeriods.map(period => {
         const completePeriod = {};
@@ -245,7 +291,6 @@ export function useExcelParser(ExcelJSLibrary) {
         });
         return completePeriod;
       });
-
       console.log(`Extracted data for ${finalData.length} periods successfully`);
       
       setIsParsing(false);

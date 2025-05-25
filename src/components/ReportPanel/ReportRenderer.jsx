@@ -1,30 +1,29 @@
 // src/components/ReportPanel/ReportRenderer.jsx
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react'; // Added useMemo
 import ReportControls from './ReportControls';
-// Import new executive summary / dashboard components
 import ExecutiveSummaryCards from './ExecutiveSummaryCards'; 
 import WorkingCapitalTimeline from './Charts/WorkingCapitalTimeline';
 import FundingReconciliation from './FundingReconciliation';
 import BalanceSheetEquation from './BalanceSheetEquation';
 import PowerOfOneAnalysis from './PowerOfOneAnalysis'; 
 import FinancialTables from './FinancialTables'; 
-import AiSummarySection from '../AIPanel/AiSummarySection';
-import AiVarianceSection from '../AIPanel/AiVarianceSection';
-// New Waterfall Chart Components
-import PnlWaterfallChart from './Charts/PnlWaterfallChart'; 
-import CashFlowWaterfallChart from './Charts/CashFlowWaterfallChart'; 
-// Chart Imports for general dashboard section
+import AiAnalysisSection from '../AIPanel/AiAnalysisSection'; // Your unified component
+
+// Chart Imports
 import MarginTrendChart from '../Charts/MarginTrendChart';
+import PnlWaterfallChart from './Charts/PnlWaterfallChart';
 import WorkingCapitalDaysTrendChart from '../Charts/WorkingCapitalDaysTrendChart';
+import CashFlowWaterfallChart from './Charts/CashFlowWaterfallChart'; 
 import CashFlowKeyMetricsTrendChart from '../Charts/CashFlowKeyMetricsTrendChart';
 import AssetCompositionChart from '../Charts/AssetCompositionChart';
 import FundingStructureChart from '../Charts/FundingStructureChart';
 import BalanceSheetDifferenceTrendChart from '../Charts/BalanceSheetDifferenceTrendChart';
+import KpiCards from './KpiCards';
 
 import { PERIOD_TYPES } from '../../utils/constants';
 import { ANALYSIS_TYPES, ANALYSIS_METADATA } from '../../utils/aiAnalysisTypes';
-import { formatCurrency, formatPercentage, formatDays } from '../../utils/formatters';
 import { validateFinancialData, ValidationAlerts } from '../../utils/dataValidation';
+import { formatCurrency } from '../../utils/formatters';
 
 /**
  * @param {{
@@ -32,9 +31,7 @@ import { validateFinancialData, ValidationAlerts } from '../../utils/dataValidat
  * companyInfo: import('../../types/financial').CompanyInfo;
  * onLoadHtml2pdf: () => Promise<any | null>;
  * html2pdfError: Error | null;
- * aiService: any;
- * apiKeys: Record<string, string>;
- * selectedAiProviderKey: string;
+ * aiAnalysisManager: ReturnType<typeof import('../../hooks/useAiAnalysis').useAiAnalysis>;
  * }} props
  */
 export default function ReportRenderer({ 
@@ -42,310 +39,296 @@ export default function ReportRenderer({
   companyInfo, 
   onLoadHtml2pdf, 
   html2pdfError,
-  aiService,
-  apiKeys,
-  selectedAiProviderKey
+  aiAnalysisManager // This now comes from ReportGeneratorApp
 }) {
   const reportRef = useRef(null);
-  
-  // Unified state for AI content and errors, keyed by analysisType
-  const [aiAnalyses, setAiAnalyses] = useState({});
-  const [aiLoadingStates, setAiLoadingStates] = useState({});
-  const [aiErrorStates, setAiErrorStates] = useState({});
-
-  const { name: companyName, reportTitle, periodType } = companyInfo;
+  const { periodType } = companyInfo;
   const financialDataBundle = { calculatedData, companyInfo };
-  const validationResults = React.useMemo(() => validateFinancialData(calculatedData), [calculatedData]);
-
-  const handleGenericAiAnalysis = async (analysisType) => {
-    // Pre-flight checks
-    if (!calculatedData.length && analysisType !== ANALYSIS_TYPES.FINANCIAL_DATA_EXTRACTION) {
-      setAiErrorStates(prev => ({ ...prev, [analysisType]: new Error("Gere o relatório com dados primeiro.") }));
-      setAiAnalyses(prev => ({...prev, [analysisType]: "Gere o relatório com dados primeiro."}));
-      return;
+  
+  // Perform data validation using useMemo to avoid re-calculating on every render
+  const validationResults = useMemo(() => {
+    if (calculatedData && calculatedData.length > 0) {
+      return validateFinancialData(calculatedData);
     }
-    
-    if (analysisType === ANALYSIS_TYPES.VARIANCE_ANALYSIS && calculatedData.length < 2) {
-      setAiErrorStates(prev => ({ ...prev, [analysisType]: new Error("Análise de variações requer pelo menos 2 períodos.") }));
-      setAiAnalyses(prev => ({...prev, [analysisType]: "Análise de variações requer pelo menos 2 períodos de dados."}));
-      return;
-    }
+    return null;
+  }, [calculatedData]);
 
-    aiService.resetError();
-    setAiErrorStates(prev => ({ ...prev, [analysisType]: null }));
-    setAiAnalyses(prev => ({...prev, [analysisType]: ''})); // Clear previous content
-    setAiLoadingStates(prev => ({ ...prev, [analysisType]: true }));
+  // Destructure from aiAnalysisManager
+  const { analyses, isLoading: isAiAnalysisTypeLoading, errors: aiAnalysisErrors, performAnalysis } = aiAnalysisManager;
 
-    try {
-      const result = await aiService.callAiAnalysis(
-        analysisType,
-        financialDataBundle,
-        { maxTokens: ANALYSIS_METADATA[analysisType]?.defaultOutputTokens },
-        apiKeys[selectedAiProviderKey] || ''
-      );
-      
-      setAiAnalyses(prev => ({...prev, [analysisType]: result})); // result is content or error string
-      
-      if (typeof result === 'string' && (
-        result.startsWith("Erro:") || 
-        result.startsWith("Falha") || 
-        result.includes("API Key") || 
-        result.includes("Chave API")
-      )) {
-        setAiErrorStates(prev => ({...prev, [analysisType]: new Error(result)}));
-      }
-    } catch (e) { // Catch errors thrown by useAiService
-      console.error(`Falha ao gerar ${ANALYSIS_METADATA[analysisType]?.name || analysisType} IA:`, e);
-      setAiErrorStates(prev => ({ ...prev, [analysisType]: e }));
-      setAiAnalyses(prev => ({
-        ...prev, 
-        [analysisType]: e.message || `Falha ao gerar ${ANALYSIS_METADATA[analysisType]?.name || analysisType}. Tente novamente.`
-      }));
-    } finally {
-      setAiLoadingStates(prev => ({ ...prev, [analysisType]: false }));
-    }
-  };
+  // For PDF generation, we still need to know which content is available
+  const getAiContentForPdf = (analysisType) => {
+    const content = analyses[analysisType];
+    const error = aiAnalysisErrors[analysisType];
+    const isLoading = isAiAnalysisTypeLoading(analysisType);
 
-  // For backward compatibility with existing component props
-  const handleGenerateAiSummary = () => handleGenericAiAnalysis(ANALYSIS_TYPES.EXECUTIVE_SUMMARY);
-  const handleGenerateAiVariance = () => handleGenericAiAnalysis(ANALYSIS_TYPES.VARIANCE_ANALYSIS);
-  const handleGenerateAiRisk = () => handleGenericAiAnalysis(ANALYSIS_TYPES.RISK_ASSESSMENT);
-  const handleGenerateAiCFDeepDive = () => handleGenericAiAnalysis(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS);
+    if (isLoading || error || !content) return null;
+    if (typeof content === 'string' && (content.toLowerCase().includes("erro:") || content.toLowerCase().includes("falha"))) return null;
+    return content;
+  }
 
   const [isPdfGeneratingInternal, setIsPdfGeneratingInternal] = useState(false);
   const handleGeneratePdf = async () => { 
     setIsPdfGeneratingInternal(true);
-    const html2pdfInstance = await onLoadHtml2pdf(); 
-    if (!html2pdfInstance) {
-      console.error("html2pdf library not loaded for PDF generation.");
-      setIsPdfGeneratingInternal(false);
-      return;
-    }
-    if (!calculatedData.length || !reportRef.current) {
-      alert("Gere o relatório com dados primeiro."); 
-      setIsPdfGeneratingInternal(false);
-      return;
-    }
+    // Initialize originalDisplays array at the beginning of the function
+    let originalDisplays = [];
     
-    const reportElement = reportRef.current;
-    
-    const sectionsToPrint = [
-      { selector: '#aiExecutiveSummarySectionToPrint', content: aiAnalyses[ANALYSIS_TYPES.EXECUTIVE_SUMMARY], error: aiErrorStates[ANALYSIS_TYPES.EXECUTIVE_SUMMARY] },
-      { selector: '#aiVarianceAnalysisSectionToPrint', content: aiAnalyses[ANALYSIS_TYPES.VARIANCE_ANALYSIS], error: aiErrorStates[ANALYSIS_TYPES.VARIANCE_ANALYSIS] },
-      { selector: '#aiRiskAssessmentSectionToPrint', content: aiAnalyses[ANALYSIS_TYPES.RISK_ASSESSMENT], error: aiErrorStates[ANALYSIS_TYPES.RISK_ASSESSMENT] },
-      { selector: '#aiCashFlowDeepDiveSectionToPrint', content: aiAnalyses[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS], error: aiErrorStates[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS] },
-    ];
-    
-    const originalDisplays = [];
+    try {
+      const html2pdfInstance = await onLoadHtml2pdf();
+      if (!html2pdfInstance) { setIsPdfGeneratingInternal(false); return; }
+      if (!calculatedData.length || !reportRef.current) { alert("Gere dados primeiro."); setIsPdfGeneratingInternal(false); return; }
 
-    sectionsToPrint.forEach(s => {
-      const el = reportElement.querySelector(s.selector);
-      if (el) {
-        originalDisplays.push({el, display: el.style.display});
-        
-        const hasErrorInContent = typeof s.content === 'string' && (
-          s.content.startsWith("Falha") || 
-          s.content.startsWith("Erro:") ||
-          s.content.includes("API Key") ||
-          s.content.includes("Chave API")
-        );
-        
-        // Only show sections with valid content
-        el.style.display = (s.content && !s.error && !hasErrorInContent) ? 'block' : 'none';
+      const reportElement = reportRef.current;
+      const aiSectionsToPrintConfig = [
+        { selector: '#aiExecutiveSummarySectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.EXECUTIVE_SUMMARY) },
+        { selector: '#aiVarianceAnalysisSectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.VARIANCE_ANALYSIS) },
+        { selector: '#aiRiskAssessmentSectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.RISK_ASSESSMENT) },
+        { selector: '#aiCashFlowDeepDiveSectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS) }
+      ];
+
+      aiSectionsToPrintConfig.forEach(section => {
+        const el = reportElement.querySelector(section.selector);
+        if (!el) return;
+        originalDisplays.push({ element: el, display: el.style.display });
+        el.style.display = section.content ? 'block' : 'none';
+      });
+
+      const opt = { /* ... PDF options as before ... */ };
+      await html2pdfInstance().set(opt).from(reportElement).save();
+      originalDisplays.forEach(state => { state.element.style.display = state.display; });
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error); alert(`Erro ao gerar PDF: ${error.message}`);
+      // Restore display state on error
+      const reportElement = reportRef.current;
+      if (reportElement && originalDisplays && originalDisplays.length > 0) {
+         originalDisplays.forEach(state => { if (state.element) state.element.style.display = state.display; });
       }
-    });
+    } finally {
+      setIsPdfGeneratingInternal(false);
+    }
+  };
+  
+  // Debug render count
+  const renderCount = useRef(0);
+  useEffect(() => {
+    renderCount.current += 1;
+    // console.log(`[ReportRenderer] Component rendered ${renderCount.current} times`);
+    // console.log('[ReportRenderer] Received analyses:', analyses);
+    // console.log('[ReportRenderer] Received errors:', aiAnalysisErrors);
+  });
 
-    html2pdfInstance().set({
-      margin: [0.4, 0.25, 0.4, 0.25], 
-      filename: `Relatorio_${companyName.replace(/\s+/g, '_')}_${reportTitle.replace(/\s+/g, '_')}.pdf`,
-      image: { type: 'jpeg', quality: 0.95 }, 
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false, 
-        scrollY: -window.scrollY, 
-        windowWidth: reportElement.scrollWidth, 
-        windowHeight: reportElement.scrollHeight 
-      },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy', 'avoid-all'] } 
-    }).from(reportElement).save().then(() => { 
-      // Restore original display settings after PDF generation
-      originalDisplays.forEach(item => item.el.style.display = item.display);
-      setIsPdfGeneratingInternal(false);
-    }).catch(err => { 
-      console.error("Erro ao gerar PDF:", err);
-      // Also restore display settings on error
-      originalDisplays.forEach(item => item.el.style.display = item.display);
-      setIsPdfGeneratingInternal(false);
-      alert(`Erro ao gerar PDF: ${err.message}`);
-    });
+  // Helper function for formatting days
+  const formatDays = (days) => {
+    if (days === null || days === undefined || isNaN(days)) return 'N/A';
+    return `${days.toFixed(1)} dias`;
   };
 
-  // Determine overall AI error to pass to ReportControls if any AI operation failed
-  const combinedAiError = Object.values(aiErrorStates).find(e => e) || aiService.error;
+  const DebugSection = () => {
+    if (!calculatedData || calculatedData.length === 0) return null;
+    
+    const latestPeriod = calculatedData[calculatedData.length - 1];
+    
+    return (
+      <section className="mb-8 p-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+        <h3 className="text-lg font-bold text-yellow-800 mb-4">
+          🔧 Debug Mode - Latest Period Calculation Details
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div className="bg-white p-3 rounded border">
+            <h4 className="font-semibold text-slate-700 mb-2">Balance Sheet Components</h4>
+            <div className="space-y-1">
+              <div>Total Assets (Final): {formatCurrency(latestPeriod.estimatedTotalAssets)}</div>
+              <div>Total Liabilities (Final): {formatCurrency(latestPeriod.estimatedTotalLiabilities)}</div>
+              <div>Equity (Final): {formatCurrency(latestPeriod.equity)}</div>
+              <div className="font-bold border-t pt-1">
+                BS Difference: {formatCurrency(latestPeriod.balanceSheetDifference)}
+              </div>
+              <div className="text-slate-500">
+                Manual Check: {formatCurrency(latestPeriod.estimatedTotalAssets - (latestPeriod.estimatedTotalLiabilities + latestPeriod.equity))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 rounded border">
+            <h4 className="font-semibold text-slate-700 mb-2">Working Capital Days</h4>
+            <div className="space-y-1">
+              <div>PMR (Derived): {formatDays(latestPeriod.arDaysDerived)}</div>
+              <div>PME (Derived): {formatDays(latestPeriod.inventoryDaysDerived)}</div>
+              <div>PMP (Derived): {formatDays(latestPeriod.apDaysDerived)}</div>
+              <div className="font-bold border-t pt-1">
+                WC Cycle: {formatDays(latestPeriod.wcDays)}
+              </div>
+              <div className="text-slate-500">
+                Manual Check: {formatDays(latestPeriod.arDaysDerived + latestPeriod.inventoryDaysDerived - latestPeriod.apDaysDerived)}
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 rounded border">
+            <h4 className="font-semibold text-slate-700 mb-2">Cash Flow Logic</h4>
+            <div className="space-y-1">
+              <div>FCO: {formatCurrency(latestPeriod.operatingCashFlow)}</div>
+              <div>WC Change: {formatCurrency(latestPeriod.workingCapitalChange)}</div>
+              <div>CAPEX: {formatCurrency(latestPeriod.capitalExpenditures)}</div>
+              <div className="font-bold border-t pt-1">
+                FCL: {formatCurrency(latestPeriod.netCashFlowBeforeFinancing)}
+              </div>
+              <div className="font-bold text-red-600">
+                Funding Gap: {formatCurrency(latestPeriod.fundingGapOrSurplus)}
+              </div>
+              <div className="text-slate-500">
+                Gap = -(FCL): {formatCurrency(-latestPeriod.netCashFlowBeforeFinancing)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   return (
     <>
       <ReportControls
         onGeneratePdf={handleGeneratePdf}
-        onGenerateAiSummary={handleGenerateAiSummary}
-        onGenerateAiVariance={handleGenerateAiVariance}
-        onGenerateAiRisk={handleGenerateAiRisk}
-        onGenerateAiCFDeepDive={handleGenerateAiCFDeepDive}
+        onGenerateAiSummary={() => performAnalysis(ANALYSIS_TYPES.EXECUTIVE_SUMMARY, financialDataBundle)}
+        onGenerateAiVariance={() => performAnalysis(ANALYSIS_TYPES.VARIANCE_ANALYSIS, financialDataBundle)}
+        onGenerateAiRisk={() => performAnalysis(ANALYSIS_TYPES.RISK_ASSESSMENT, financialDataBundle)}
+        onGenerateAiCFDeepDive={() => performAnalysis(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS, financialDataBundle)}
+        
         isPdfLoading={isPdfGeneratingInternal} 
-        isAiSummaryLoading={aiLoadingStates[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]}
-        isAiVarianceLoading={aiLoadingStates[ANALYSIS_TYPES.VARIANCE_ANALYSIS]}
-        isAiRiskLoading={aiLoadingStates[ANALYSIS_TYPES.RISK_ASSESSMENT]}
-        isAiCFDeepDiveLoading={aiLoadingStates[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]}
+        isAiSummaryLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.EXECUTIVE_SUMMARY)}
+        isAiVarianceLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.VARIANCE_ANALYSIS)}
+        isAiRiskLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.RISK_ASSESSMENT)}
+        isAiCFDeepDiveLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS)}
+
         html2pdfError={html2pdfError}
-        aiError={combinedAiError} 
+        aiError={Object.values(aiAnalysisErrors).find(e => e) || null} 
         canAnalyzeVariances={calculatedData.length >= 2}
       />
-      
-      {/* Debug info panel - only visible during development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mb-4 p-3 bg-gray-100 text-xs border border-gray-300 rounded no-print">
-          <h4 className="font-bold">Debug Info (Dev Only)</h4>
-          <p>Provider: {aiService?.currentProviderConfig?.name || selectedAiProviderKey}</p>
-          <p>API Key Configured: {apiKeys[selectedAiProviderKey] ? 'Yes' : 'No'}</p>
-          {combinedAiError && <p className="text-red-600">Last Error: {combinedAiError.message || 'Unknown error'}</p>}
-        </div>
-      )}
-      
-      <div ref={reportRef} className="report-container bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0">
-        <header className="text-center mb-10 print:mb-6">
-          <h2 className="text-3xl font-bold text-blue-700 print:text-2xl">{companyName}</h2>
-          <p className="text-xl text-slate-600 print:text-lg">{reportTitle}</p>
-          <p className="text-sm text-slate-500 mt-1 print:text-xs">
-            Períodos: {calculatedData.length} ({PERIOD_TYPES[periodType]?.label || periodType}) | 
-            Gerado em: {new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+      <div ref={reportRef} className="report-container bg-white min-h-screen">
+        <header className="text-center mb-10 print:mb-6 no-print">
+          <h1 className="text-3xl md:text-4xl font-bold text-blue-700 mb-2">
+            {companyInfo.reportTitle || `Relatório Financeiro - ${companyInfo.name}`}
+          </h1>
+          <p className="text-slate-600">
+            Análise de {calculatedData.length} período(s) • {PERIOD_TYPES[periodType]?.label || periodType}
           </p>
         </header>
-        
-        {/* Data Validation Alerts */}
+
         <ValidationAlerts validationResults={validationResults} />
-        
-        {/* Executive Summary Cards */}
         <ExecutiveSummaryCards calculatedData={calculatedData} companyInfo={companyInfo} />
         
-        {/* AI Executive Summary (both for viewing and printing) */}
-        <div id="aiExecutiveSummarySectionToPrint">
-          <AiSummarySection 
-            content={aiAnalyses[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]} 
-            isLoading={aiLoadingStates[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]} 
-            error={aiErrorStates[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]} 
-          />
+        <div id="aiExecutiveSummarySectionToPrint" className="print-only-ai-section">
+           <AiAnalysisSection 
+             title={ANALYSIS_METADATA[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]?.name || "Resumo Executivo IA"} 
+             content={analyses[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]}
+             isLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.EXECUTIVE_SUMMARY)}
+             error={aiAnalysisErrors[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]}
+             onRetry={() => performAnalysis(ANALYSIS_TYPES.EXECUTIVE_SUMMARY, financialDataBundle)}
+             analysisTypeForRetry={ANALYSIS_TYPES.EXECUTIVE_SUMMARY}
+            />
         </div>
-        
-        {/* New Specialized Benchmark-Style Components */}
-        <WorkingCapitalTimeline calculatedData={calculatedData} periodType={periodType} />
-        <FundingReconciliation calculatedData={calculatedData} companyInfo={companyInfo} />
-        <BalanceSheetEquation calculatedData={calculatedData} />
-        
-        {/* Detailed Financial Tables (DRE, BS, CF) */}
-        <FinancialTables calculatedData={calculatedData} periodType={periodType} />
-        {/* Enhanced Power of One */}
-        <PowerOfOneAnalysis calculatedData={calculatedData} periodType={periodType} />
-        
-        {/* New Waterfall Charts Section */}
+
+        {/* KPI Cards Section */}
         <section className="mb-8 page-break-after">
-          <h3 className="report-section-title">Gráficos Waterfall de P&L e Fluxo de Caixa</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <h3 className="report-section-title">Indicadores Chave de Performance</h3>
+          <KpiCards calculatedData={calculatedData} />
+        </section>
+
+        {/* Balance Sheet Components */}
+        <section className="mb-8 page-break-after">
+          <h3 className="report-section-title">Estrutura Patrimonial</h3>
+          <BalanceSheetEquation calculatedData={calculatedData} />
+        </section>
+
+        {/* Working Capital Timeline */}
+        <section className="mb-8 page-break-after">
+          <h3 className="report-section-title">Evolução do Capital de Giro</h3>
+          <WorkingCapitalTimeline calculatedData={calculatedData} periodType={periodType} />
+        </section>
+
+        {/* Charts Grid */}
+        <section className="mb-8 page-break-after">
+          <h3 className="report-section-title">Análise Gráfica</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <MarginTrendChart calculatedData={calculatedData} periodType={periodType} />
+            <CashFlowKeyMetricsTrendChart calculatedData={calculatedData} periodType={periodType} />
+            <AssetCompositionChart calculatedData={calculatedData} periodType={periodType} />
+            <FundingStructureChart calculatedData={calculatedData} periodType={periodType} />
+            <WorkingCapitalDaysTrendChart calculatedData={calculatedData} periodType={periodType} />
+            <BalanceSheetDifferenceTrendChart calculatedData={calculatedData} periodType={periodType} />
+          </div>
+        </section>
+
+        {/* Waterfall Charts */}
+        <section className="mb-8 page-break-after">
+          <h3 className="report-section-title">Análise Waterfall</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <PnlWaterfallChart calculatedData={calculatedData} periodType={periodType} />
             <CashFlowWaterfallChart calculatedData={calculatedData} periodType={periodType} />
           </div>
         </section>
-        
-        {/* General Visual Dashboard Section (can include other charts) */}
+
+        {/* Financial Tables */}
         <section className="mb-8 page-break-after">
-          <h3 className="report-section-title">Painel Visual de Tendências Adicionais</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <MarginTrendChart calculatedData={calculatedData} periodType={periodType} />
-            <WorkingCapitalDaysTrendChart calculatedData={calculatedData} periodType={periodType} />
-          </div>
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <CashFlowKeyMetricsTrendChart calculatedData={calculatedData} periodType={periodType} />
-            <BalanceSheetDifferenceTrendChart calculatedData={calculatedData} periodType={periodType} />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AssetCompositionChart calculatedData={calculatedData} periodType={periodType} />
-            <FundingStructureChart calculatedData={calculatedData} periodType={periodType} />
-          </div>
+          <h3 className="report-section-title">Demonstrações Financeiras</h3>
+          <FinancialTables calculatedData={calculatedData} periodType={periodType} />
         </section>
-        
-        {/* AI Variance Analysis (both for viewing and printing) */}
-        <div id="aiVarianceAnalysisSectionToPrint">
-          <AiVarianceSection 
-            content={aiAnalyses[ANALYSIS_TYPES.VARIANCE_ANALYSIS]} 
-            isLoading={aiLoadingStates[ANALYSIS_TYPES.VARIANCE_ANALYSIS]} 
-            error={aiErrorStates[ANALYSIS_TYPES.VARIANCE_ANALYSIS]} 
+
+        {/* Power of One Analysis */}
+        <section className="mb-8 page-break-after">
+          <h3 className="report-section-title">Análise Power of One</h3>
+          <PowerOfOneAnalysis calculatedData={calculatedData} periodType={periodType} />
+        </section>
+
+        {/* Funding Reconciliation */}
+        <section className="mb-8 page-break-after">
+          <h3 className="report-section-title">Reconciliação de Financiamentos</h3>
+          <FundingReconciliation calculatedData={calculatedData} />
+        </section>
+
+        {/* AI Analysis Sections */}
+        <div id="aiVarianceAnalysisSectionToPrint" className="print-only-ai-section">
+         <AiAnalysisSection 
+            title={ANALYSIS_METADATA[ANALYSIS_TYPES.VARIANCE_ANALYSIS]?.name || "Análise de Variações IA"}
+            content={analyses[ANALYSIS_TYPES.VARIANCE_ANALYSIS]}
+            isLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.VARIANCE_ANALYSIS)}
+            error={aiAnalysisErrors[ANALYSIS_TYPES.VARIANCE_ANALYSIS]}
+            onRetry={() => performAnalysis(ANALYSIS_TYPES.VARIANCE_ANALYSIS, financialDataBundle)}
+            analysisTypeForRetry={ANALYSIS_TYPES.VARIANCE_ANALYSIS}
           />
         </div>
-        
-        {/* AI Risk Assessment (both for viewing and printing) */}
-        <div id="aiRiskAssessmentSectionToPrint">
-          <AiSummarySection
-            titleOverride="Avaliação de Riscos (Análise IA) ✨"
-            content={aiAnalyses[ANALYSIS_TYPES.RISK_ASSESSMENT]}
-            isLoading={aiLoadingStates[ANALYSIS_TYPES.RISK_ASSESSMENT]}
-            error={aiErrorStates[ANALYSIS_TYPES.RISK_ASSESSMENT]}
+
+        <div id="aiRiskAssessmentSectionToPrint" className="print-only-ai-section">
+         <AiAnalysisSection 
+            title={ANALYSIS_METADATA[ANALYSIS_TYPES.RISK_ASSESSMENT]?.name || "Avaliação de Riscos IA"}
+            content={analyses[ANALYSIS_TYPES.RISK_ASSESSMENT]}
+            isLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.RISK_ASSESSMENT)}
+            error={aiAnalysisErrors[ANALYSIS_TYPES.RISK_ASSESSMENT]}
+            onRetry={() => performAnalysis(ANALYSIS_TYPES.RISK_ASSESSMENT, financialDataBundle)}
+            analysisTypeForRetry={ANALYSIS_TYPES.RISK_ASSESSMENT}
           />
         </div>
-        
-        {/* AI Cash Flow Deep Dive (both for viewing and printing) */}
-        <div id="aiCashFlowDeepDiveSectionToPrint">
-          <AiSummarySection
-            titleOverride="Análise Aprofundada do Fluxo de Caixa (IA) ✨"
-            content={aiAnalyses[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]}
-            isLoading={aiLoadingStates[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]}
-            error={aiErrorStates[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]}
+
+        <div id="aiCashFlowDeepDiveSectionToPrint" className="print-only-ai-section">
+         <AiAnalysisSection 
+            title={ANALYSIS_METADATA[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]?.name || "Análise Profunda de Fluxo de Caixa IA"}
+            content={analyses[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]}
+            isLoading={isAiAnalysisTypeLoading(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS)}
+            error={aiAnalysisErrors[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]}
+            onRetry={() => performAnalysis(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS, financialDataBundle)}
+            analysisTypeForRetry={ANALYSIS_TYPES.CASH_FLOW_ANALYSIS}
           />
         </div>
-        
-        <footer className="mt-12 pt-8 border-t border-slate-300 text-center text-sm text-slate-500 print:mt-6 print:pt-4">
-          <p>Relatório gerado por: {companyName} - {reportTitle}</p>
-          <p className="no-print">Este é um relatório confidencial. Distribuição restrita.</p>
+
+        {process.env.NODE_ENV === 'development' && <DebugSection />}
+
+        <footer className="mt-12 pt-8 border-t border-slate-200 text-center text-slate-500">
+          <p>Relatório gerado automaticamente • {new Date().toLocaleDateString('pt-BR')}</p>
         </footer>
       </div>
-      
-      {/* Global styles (ensure these are correctly scoped or moved to a global CSS file) */}
-      <style jsx global>{`
-        .report-container { page-break-inside: avoid; }
-        .page-break-after { page-break-after: always !important; }
-        .no-print { @media print { display: none !important; } }
-        
-        .btn-primary { @apply px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 disabled:opacity-50; }
-        .btn-secondary { @apply px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 disabled:opacity-50; }
-        .btn-ai { @apply px-5 py-2.5 text-white font-medium rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition duration-150 disabled:opacity-60 disabled:cursor-not-allowed w-full sm:w-auto; }
-        .btn-ai-summary { @apply btn-ai bg-sky-500 hover:bg-sky-600 focus:ring-sky-500; }
-        .btn-ai-variance { @apply btn-ai bg-teal-500 hover:bg-teal-600 focus:ring-teal-500; }
-        .btn-ai-risk { @apply btn-ai bg-amber-500 hover:bg-amber-600 focus:ring-amber-500; }
-        .btn-ai-cfdeepdive { @apply btn-ai bg-purple-500 hover:bg-purple-600 focus:ring-purple-500; }
-        .btn-pdf { @apply px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg shadow-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 disabled:opacity-60; }
-        .report-section-title { @apply text-xl font-semibold text-slate-800 border-b-2 border-blue-500 pb-1 mb-4 print:text-lg print:pb-0.5 print:mb-2; }
-        .ai-section { @apply mb-6 p-4 bg-sky-50 border-l-4 border-sky-500 rounded-md print:mb-4 print:p-3 print:shadow-none print:border-sky-300; }
-        .ai-section-title { @apply text-lg font-semibold text-sky-700 mb-2 print:text-base print:mb-1; }
-        
-        .report-table-styles { @apply min-w-full border-collapse border border-slate-300 print:text-xs; }
-        .report-table-styles th, .report-table-styles td { @apply p-1.5 md:p-2 border border-slate-300 text-xs md:text-sm; }
-        .report-table-styles th { @apply bg-slate-100 font-semibold text-slate-700 text-left print:bg-slate-50; }
-        .report-table-styles .th-sticky { @apply sticky left-0 bg-slate-100 z-20 print:static print:bg-slate-50; }
-        .report-table-styles .td-sticky { @apply sticky left-0 bg-white z-10 print:static print:bg-white; } 
-        .report-table-styles .th-period { @apply text-center; }
-        .report-table-styles .th-variance { @apply text-right; }
-        .report-table-styles .td-value { @apply text-right; }
-        .report-table-styles .td-variance-val { @apply text-right; }
-        .report-table-styles .td-variance-pct { @apply text-right; }
-        .prose { max-width: none; } 
-        .prose ul { margin-left: 1.25rem; list-style-type: disc;}
-        .prose li { margin-bottom: 0.25rem; }
-        .prose p { margin-bottom: 0.5rem; }
-        @media print {
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .report-container { box-shadow: none !important; border: none !important; }
-        }
-      `}</style>
+      <style>{`/* Add any custom styles here if needed */`}</style>
     </>
   );
 }

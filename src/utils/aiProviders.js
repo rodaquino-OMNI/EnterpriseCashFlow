@@ -279,13 +279,18 @@ export const AI_PROVIDERS = {
     name: 'Google Gemini',
     apiKeyPlaceholder: 'AIzaSyA1234...', 
     apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+    // Add alternative proxy URLs
+    alternativeUrls: [
+      'https://corsproxy.io/?https://generativelanguage.googleapis.com/v1beta/models',
+      'https://api.allorigins.win/raw?url=https://generativelanguage.googleapis.com/v1beta/models'
+    ],
     icon: '🧠',
     apiKeyHelpUrl: 'https://ai.google.dev/tutorials/setup',
     requiresKey: true,
     maxTokens: 8000,
-    defaultModel: 'gemini-1.0-pro', // Fallback to stable model for older installations
+    defaultModel: 'gemini-1.5-pro-latest', // Updated to latest available model
     defaultRequestConfig: {
-      model: 'gemini-1.0-pro', // Using a more stable model that's widely available
+      model: 'gemini-1.5-pro-latest', // Updated to latest available model
       temperature: 0.4,
       topK: 40,
       topP: 0.95,

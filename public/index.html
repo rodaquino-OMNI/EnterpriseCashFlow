@@ -7,7 +7,8 @@
     <meta name="theme-color" content="#000000" /> <!-- For Chrome, Edge, and other supporting browsers -->
     <!-- Note: Firefox uses theme_color property from manifest.json instead -->
     <meta name="msapplication-navbutton-color" content="#000000" /> <!-- For Microsoft applications -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" /> <!-- Updated from apple-mobile-web-app-capable -->
+    <meta name="apple-mobile-web-app-capable" content="yes" /> <!-- Keep for iOS compatibility -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black" /> <!-- For iOS -->
     <meta
       name="description"
@@ -32,11 +33,7 @@
       }
     </script>
     
-    <!-- Recharts - Necessária para visualização de gráficos -->
-    <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <!-- Removing external React and Recharts scripts to avoid conflicts with locally installed packages -->
   </head>
   <body>
     <noscript>Você precisa habilitar JavaScript para executar esta aplicação.</noscript>

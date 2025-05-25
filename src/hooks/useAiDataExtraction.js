@@ -33,8 +33,8 @@ export function useAiDataExtraction(aiService) {
     apiKey,
     providerKey
   ) => {
-    if (!pdfText || pdfText.trim().length < 100) {
-      const error = new Error('Texto do PDF muito curto ou vazio para extração.');
+    if (!pdfText || typeof pdfText !== 'string' || pdfText.trim().length < 100) {
+      const error = new Error('Texto do PDF muito curto, vazio ou inválido para extração.');
       setExtractionError(error);
       throw error;
     }

@@ -1,5 +1,5 @@
 // src/utils/calculations.js
-import { PERIOD_TYPES } from './constants';
+import { PERIOD_TYPES } from './constants.js';
 
 /**
  * Processes financial data for multiple periods.
@@ -32,128 +32,150 @@ export function processFinancialData(periodsInputDataRaw, periodTypeLabel) {
     const cogs = revenue * (1 - grossMarginPercentageInput);
     const grossProfit = revenue - cogs;
     const ebitda = grossProfit - operatingExpenses;
-    const ebit = ebitda - depreciationAndAmortisation; // Operating Profit
+    const ebit = ebitda - depreciationAndAmortisation;
     const pbt = ebit + netInterestExpenseIncome + extraordinaryItems;
     const incomeTax = pbt > 0 ? pbt * incomeTaxRatePercentageInput : 0;
     const netProfit = pbt - incomeTax;
     const retainedProfit = netProfit - dividendsPaid;
 
-    // --- Balance Sheet & WC Inputs (Average Values as Primary) ---
+    // --- Balance Sheet & WC Inputs ---
     const accountsReceivableValueAvg = periodInput.accountsReceivableValueAvg === null || typeof periodInput.accountsReceivableValueAvg === 'undefined' ? 0 : Number(periodInput.accountsReceivableValueAvg);
-    const inventoryValueAvg = periodInput.inventoryValueAvg === null || typeof periodInput.inventoryValueAvg === 'undefined' ? 0 : Number(periodInput.inventoryValueAvg); // Input
+    const inventoryValueAvg = periodInput.inventoryValueAvg === null || typeof periodInput.inventoryValueAvg === 'undefined' ? 0 : Number(periodInput.inventoryValueAvg);
     const accountsPayableValueAvg = periodInput.accountsPayableValueAvg === null || typeof periodInput.accountsPayableValueAvg === 'undefined' ? 0 : Number(periodInput.accountsPayableValueAvg);
+    const netFixedAssets = periodInput.netFixedAssets === null || typeof periodInput.netFixedAssets === 'undefined' ? 0 : Number(periodInput.netFixedAssets);
+    const totalBankLoans = periodInput.totalBankLoans === null || typeof periodInput.totalBankLoans === 'undefined' ? 0 : Number(periodInput.totalBankLoans);
 
-    const netFixedAssets = periodInput.netFixedAssets === null || typeof periodInput.netFixedAssets === 'undefined' ? 0 : Number(periodInput.netFixedAssets); // Ending balance
-    const totalBankLoans = periodInput.totalBankLoans === null || typeof periodInput.totalBankLoans === 'undefined' ? 0 : Number(periodInput.totalBankLoans); // Ending balance
-
-    // --- Derive Days from Average Values ---
+    // --- Derive Days & Inventory Value (for BS) ---
     const arDaysDerived = revenue > 0 ? (accountsReceivableValueAvg / revenue) * daysInPeriod : 0;
-    const inventoryDaysDerived = cogs > 0 ? (inventoryValueAvg / cogs) * daysInPeriod : 0; // DERIVED
+    const inventoryDaysDerived = cogs > 0 ? (inventoryValueAvg / cogs) * daysInPeriod : 0;
     const apDaysDerived = cogs > 0 ? (accountsPayableValueAvg / cogs) * daysInPeriod : 0;
-
-    // --- Working Capital Calculation (using average input values) ---
-    const workingCapitalValue = accountsReceivableValueAvg + inventoryValueAvg - accountsPayableValueAvg;
-    const wcDays = arDaysDerived + inventoryDaysDerived - apDaysDerived; // All days are now derived
+    
+    // The inventoryValue for BS and WC calculations IS the inventoryValueAvg input.
+    const inventoryValueForBalanceSheetAndWC = inventoryValueAvg;
+    
+    const workingCapitalValue = accountsReceivableValueAvg + inventoryValueForBalanceSheetAndWC - accountsPayableValueAvg;
+    const wcDays = arDaysDerived + inventoryDaysDerived - apDaysDerived;
 
     // --- Cash Flow Analysis ---
-    const openingCashForPeriod = periodIndex === 0
-      ? (periodInput.openingCash === null || typeof periodInput.openingCash === 'undefined' ? 0 : Number(periodInput.openingCash))
-      : (previousPeriodCalculated?.closingCash || 0);
+    const openingCashForPeriod = periodIndex === 0 ? 
+      (periodInput.openingCash === null || typeof periodInput.openingCash === 'undefined' ? 0 : Number(periodInput.openingCash)) : 
+      (previousPeriodCalculated?.closingCash || 0);
 
     const operatingCashFlow = netProfit + depreciationAndAmortisation;
-
     const prevWcValue = previousPeriodCalculated?.workingCapitalValue;
-    const workingCapitalChange = (prevWcValue !== null && typeof prevWcValue !== 'undefined')
-      ? workingCapitalValue - prevWcValue
-      : workingCapitalValue;
-
+    const workingCapitalChange = (prevWcValue !== null && typeof prevWcValue !== 'undefined') ? 
+      workingCapitalValue - prevWcValue : workingCapitalValue;
     const cashFromOpsAfterWC = operatingCashFlow - workingCapitalChange;
     const netCashFlowBeforeFinancing = cashFromOpsAfterWC - capitalExpenditures;
-
     const prevTotalBankLoans = previousPeriodCalculated?.totalBankLoans;
-    const changeInDebt = (prevTotalBankLoans !== null && typeof prevTotalBankLoans !== 'undefined')
-      ? totalBankLoans - prevTotalBankLoans
-      : totalBankLoans;
-
+    const changeInDebt = (prevTotalBankLoans !== null && typeof prevTotalBankLoans !== 'undefined') ? 
+      totalBankLoans - prevTotalBankLoans : totalBankLoans;
     const cashFlowFromFinancing = changeInDebt - dividendsPaid;
     const netChangeInCash = netCashFlowBeforeFinancing + cashFlowFromFinancing;
-    const closingCash = openingCashForPeriod + netChangeInCash; // DERIVED CLOSING CASH
+    const closingCash = openingCashForPeriod + netChangeInCash;
 
-    // --- Balance Sheet Reconstruction (using derived closingCash and average WC values for snapshot) ---
-    const estimatedCurrentAssets = closingCash + accountsReceivableValueAvg + inventoryValueAvg;
-    const estimatedTotalAssets = estimatedCurrentAssets + netFixedAssets;
+    // --- Balance Sheet FINAL Reconstruction & Difference (using definitive values) ---
+    const finalEstimatedCurrentAssets = closingCash + accountsReceivableValueAvg + inventoryValueForBalanceSheetAndWC;
+    const finalEstimatedTotalAssets = finalEstimatedCurrentAssets + netFixedAssets;
 
-    let currentPeriodEquity;
+    let finalEquity;
     if (periodIndex === 0) {
-      currentPeriodEquity = (periodInput.initialEquity === null || typeof periodInput.initialEquity === 'undefined' ? 0 : Number(periodInput.initialEquity)) + retainedProfit;
+      finalEquity = (periodInput.initialEquity === null || typeof periodInput.initialEquity === 'undefined' ? 0 : Number(periodInput.initialEquity)) + retainedProfit;
     } else {
-      currentPeriodEquity = (previousPeriodCalculated?.equity || 0) + retainedProfit;
+      finalEquity = (previousPeriodCalculated?.equity || 0) + retainedProfit;
     }
 
-    const estimatedCurrentLiabilities = accountsPayableValueAvg; // Simplified (primarily Trade Payables)
-    const estimatedNonCurrentLiabilities = totalBankLoans; // Simplified (assumes all loans are non-current for this part)
-    const estimatedTotalLiabilities = estimatedCurrentLiabilities + estimatedNonCurrentLiabilities;
+    // Liabilities remain simplified for this model based on inputs
+    const finalEstimatedCurrentLiabilities = accountsPayableValueAvg;
+    const finalEstimatedNonCurrentLiabilities = totalBankLoans;
+    const finalEstimatedTotalLiabilities = finalEstimatedCurrentLiabilities + finalEstimatedNonCurrentLiabilities;
 
-    const balanceSheetDifference = estimatedTotalAssets - (estimatedTotalLiabilities + currentPeriodEquity);
+    // CRITICAL: Calculate balanceSheetDifference using these final derived/input BS figures for THIS period
+    const finalBalanceSheetDifference = finalEstimatedTotalAssets - (finalEstimatedTotalLiabilities + finalEquity);
 
-    // --- Enhanced Working Capital Analysis ---
+    // --- Other Analyses ---
     const arPer100Revenue = revenue ? (accountsReceivableValueAvg / revenue) * 100 : 0;
-    const inventoryPer100Revenue = revenue ? (inventoryValueAvg / revenue) * 100 : 0;
-    const apPer100Revenue = cogs ? (accountsPayableValueAvg / cogs) * 100 : 0; // AP per 100 correctly uses COGS as denominator
+    const inventoryPer100Revenue = revenue ? (inventoryValueForBalanceSheetAndWC / revenue) * 100 : 0;
+    const apPer100Revenue = cogs ? (accountsPayableValueAvg / cogs) * 100 : 0;
     const wcPer100Revenue = revenue ? (workingCapitalValue / revenue) * 100 : 0;
-
     const fundingGapOrSurplus = -(netCashFlowBeforeFinancing);
 
     const currentPeriodResult = {
-      // Original Inputs (useful for display & AI context)
+      // Original Inputs
       ...periodInput,
 
       // P&L Calculated
-      revenue, cogs, grossProfit, gmPct: grossMarginPercentageInput * 100,
-      operatingExpenses, ebitda, depreciationAndAmortisation, ebit, opProfitPct: revenue ? (ebit / revenue) * 100 : 0,
-      netInterestExpenseIncome, extraordinaryItems, pbt, incomeTaxRatePercentageActual: incomeTaxRatePercentageInput,
-      incomeTax, netProfit, netProfitPct: revenue ? (netProfit / revenue) * 100 : 0,
-      dividendsPaid, retainedProfit, capitalExpenditures,
+      revenue,
+      cogs,
+      grossProfit,
+      gmPct: grossMarginPercentageInput * 100,
+      operatingExpenses,
+      ebitda,
+      depreciationAndAmortisation,
+      ebit,
+      opProfitPct: revenue ? (ebit / revenue) * 100 : 0,
+      netInterestExpenseIncome,
+      extraordinaryItems,
+      pbt,
+      incomeTaxRatePercentageActual: incomeTaxRatePercentageInput,
+      incomeTax,
+      netProfit,
+      netProfitPct: revenue ? (netProfit / revenue) * 100 : 0,
+      dividendsPaid,
+      retainedProfit,
+      capitalExpenditures,
 
       // Balance Sheet & WC Calculated/Derived
       openingCash: openingCashForPeriod,
-      closingCash, // Derived
-
+      closingCash,
+      
       accountsReceivableValueAvg, // Input
-      arDaysDerived,              // Derived
+      arDaysDerived, // Derived
+      
+      inventoryValueAvg, // Input
+      inventoryDaysDerived, // Derived
+      inventoryValue: inventoryValueForBalanceSheetAndWC, // This is inventoryValueAvg
+      
+      accountsPayableValueAvg, // Input
+      apDaysDerived, // Derived
+      
+      wcDays, // Derived using all derived days
 
-      inventoryValueAvg,          // Input
-      inventoryDaysDerived,       // Derived
-      inventoryValue: inventoryValueAvg, // For BS display consistency & WC value calculation
+      // Use FINAL BS figures
+      estimatedCurrentAssets: finalEstimatedCurrentAssets,
+      netFixedAssets,
+      estimatedTotalAssets: finalEstimatedTotalAssets,
+      totalBankLoans,
+      estimatedCurrentLiabilities: finalEstimatedCurrentLiabilities,
+      estimatedNonCurrentLiabilities: finalEstimatedNonCurrentLiabilities,
+      estimatedTotalLiabilities: finalEstimatedTotalLiabilities,
+      equity: finalEquity,
+      balanceSheetDifference: finalBalanceSheetDifference, // Use the consistently calculated difference
 
-      accountsPayableValueAvg,    // Input
-      apDaysDerived,              // Derived
+      workingCapitalValue,
+      workingCapitalChange,
+      arPer100Revenue,
+      inventoryPer100Revenue,
+      apPer100Revenue,
+      wcPer100Revenue,
 
-      wcDays,                     // Derived using all derived days
-
-      estimatedCurrentAssets, netFixedAssets, estimatedTotalAssets,
-      totalBankLoans, // Input (ending balance)
-      estimatedCurrentLiabilities,
-      estimatedNonCurrentLiabilities,
-      estimatedTotalLiabilities,
-      equity: currentPeriodEquity,
-      balanceSheetDifference,
-
-      // Working Capital Analysis
-      workingCapitalValue, workingCapitalChange,
-      arPer100Revenue, inventoryPer100Revenue, apPer100Revenue, wcPer100Revenue,
-
-      // Cash Flow Analysis
-      operatingCashFlow, cashFromOpsAfterWC, netCashFlowBeforeFinancing,
-      changeInDebt, cashFlowFromFinancing, netChangeInCash, fundingGapOrSurplus,
+      operatingCashFlow,
+      cashFromOpsAfterWC,
+      netCashFlowBeforeFinancing,
+      changeInDebt,
+      cashFlowFromFinancing,
+      netChangeInCash,
+      fundingGapOrSurplus,
 
       // Standardized day outputs for KPIs (all derived now)
       arDays: arDaysDerived,
-      invDays: inventoryDaysDerived, // Corrected to use derived
+      invDays: inventoryDaysDerived,
       apDays: apDaysDerived,
     };
+
     previousPeriodCalculated = currentPeriodResult;
     return currentPeriodResult;
   });
+
   return calculatedDataAllPeriods;
 }

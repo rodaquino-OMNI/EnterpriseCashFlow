@@ -5,9 +5,11 @@ export const formatCurrency = (value, withSymbol = true) => {
   }
   const val = Number(value);
   const symbol = withSymbol ? 'R$ ' : '';
+  // Ensure exactly 2 decimal places and grouping
   return symbol + val.toLocaleString('pt-BR', { 
     minimumFractionDigits: 2, 
-    maximumFractionDigits: 2 
+    maximumFractionDigits: 2,
+    useGrouping: true 
   });
 };
 
@@ -17,13 +19,15 @@ export const formatCurrencyWithSign = (value, withSymbol = true) => {
   }
   const val = Number(value);
   const symbol = withSymbol ? 'R$ ' : '';
-  if (val < 0) {
-    return `-${symbol}${Math.abs(val).toLocaleString('pt-BR', {  minimumFractionDigits: 2,  maximumFractionDigits: 2  })}`;
-  }
-  return symbol + val.toLocaleString('pt-BR', {
+  const options = {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+    maximumFractionDigits: 2,
+    useGrouping: true
+  };
+  if (val < 0) {
+    return `-${symbol}${Math.abs(val).toLocaleString('pt-BR', options)}`;
+  }
+  return symbol + val.toLocaleString('pt-BR', options);
 };
 
 export const formatPercentage = (value, multiplyBy100 = false) => {
@@ -31,6 +35,7 @@ export const formatPercentage = (value, multiplyBy100 = false) => {
     return 'N/A';
   }
   const valToFormat = multiplyBy100 ? Number(value) * 100 : Number(value);
+  // Ensure exactly 2 decimal places
   return valToFormat.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -52,9 +57,9 @@ export const formatDays = (value) => {
 
 export const getMovementClass = (value) => {
   if (value === null || typeof value === 'undefined' || isNaN(Number(value)) || Number(value) === 0) {
-    return 'text-slate-500';
+    return 'text-slate-500 print:text-gray-600';
   }
-  return Number(value) > 0 ? 'text-green-600' : 'text-red-600';
+  return Number(value) > 0 ? 'text-green-600 print:text-green-700' : 'text-red-600 print:text-red-700';
 };
 
 export const getMovementIndicator = (value) => {
@@ -86,10 +91,8 @@ export const formatMovement = (value, movementType = 'value', isPercentContext =
   }
 
   if (movementType === 'percentage_change') {
-    // This is for displaying a % change, e.g. Revenue grew by X%
     return formatPercentage(numValue);
   }
 
-  // Default: currency (absolute value change, always 2 decimal places)
-  return formatCurrency(numValue, false);
+  return formatCurrency(numValue, false); // Default: currency, always 2 decimal places
 };

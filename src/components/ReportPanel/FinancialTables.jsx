@@ -49,7 +49,7 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       'openingCash': 'Saldo Inicial de Caixa',
       'closingCash': 'Saldo Final de Caixa',
       'accountsReceivableValueAvg': 'Contas a Receber',
-      'inventoryValueAvg': 'Estoque',
+      'inventoryValueAvg': 'Estoque (Valor Médio - Input)',
       'accountsPayableValueAvg': 'Contas a Pagar',
       'workingCapitalValue': 'Capital de Giro',
       'workingCapitalChange': 'Variação do Capital de Giro',
@@ -64,9 +64,9 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       'dividendsPaid': 'Dividendos Pagos',
       'cashFlowFromFinancing': 'Fluxo de Financiamentos',
       'netChangeInCash': 'Variação Líquida de Caixa',
-      'fundingGapOrSurplus': 'Gap de Financiamento',
+      'fundingGapOrSurplus': 'Necessidade (+)/Excedente (-) de Financiamento',
       'arDaysDerived': 'PMR (dias)',
-      'inventoryDaysDerived': 'PME (dias)',
+      'inventoryDaysDerived': '→ PME Calculado (Dias)',
       'apDaysDerived': 'PMP (dias)',
       'wcDays': 'Ciclo de Caixa (dias)'
     };

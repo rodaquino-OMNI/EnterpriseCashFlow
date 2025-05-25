@@ -66,9 +66,13 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
     options = {},
     currentApiKey = '' // API key for the selected provider
   ) => {
+    // Generate a unique ID for this call to trace through logs
+    const callId = `AI-${Date.now()}`;
+    console.log(`[${callId}] Starting analysis: ${analysisType} with provider: ${selectedProviderKey}`);
+    
     if (!currentProviderConfig) {
       const err = new Error(`Provedor AI não configurado ou inválido: ${selectedProviderKey}`);
-      console.error("[AI Service Error]", err.message);
+      console.error(`[${callId}] Provider configuration error:`, err.message);
       setError(err); // Set Error object
       throw err; // Re-throw for the caller to also handle if needed
     }
@@ -76,14 +80,14 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
     // Check if this provider requires an API key
     if (currentProviderConfig.requiresKey && (!currentApiKey || currentApiKey.trim() === '')) {
       const errMessage = `Chave API necessária para ${currentProviderConfig.name} mas não fornecida. Por favor, configure-a na seção "Configuração de IA".`;
-      console.warn("[AI Service Warning]", errMessage);
+      console.warn(`[${callId}] API key error:`, errMessage);
       setError(new Error(errMessage));
       throw new Error(errMessage); // Throw for consistency
     }
     
     setIsLoading(true);
     setError(null);
-    console.log(`[AI Service] Iniciando análise: ${analysisType} com ${currentProviderConfig.name}`);
+    console.log(`[${callId}] Iniciando análise: ${analysisType} com ${currentProviderConfig.name}`);
     
     try {
       const standardizedPrompt = createFinancialAnalysisPrompt(
@@ -95,12 +99,25 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
       
       const enhancedOptions = enhanceOptionsForProvider(options, currentProviderConfig, analysisType);
       
+      // Additional debug information
+      console.log(`[${callId}] Provider config:`, currentProviderConfig?.name);
+      console.log(`[${callId}] Has API key:`, !!(currentApiKey && currentApiKey.trim()));
+      console.log(`[${callId}] Prompt length:`, standardizedPrompt.length);
+      
       // This call might return a string (success) or throw an error / return an error string.
       const rawResponseOrErrorString = await currentProviderConfig.callFunction(
         currentProviderConfig,
         standardizedPrompt,
         currentApiKey,
         enhancedOptions
+      );
+      
+      // Log info about the response
+      console.log(`[${callId}] Raw response type:`, typeof rawResponseOrErrorString);
+      console.log(`[${callId}] Raw response preview:`, 
+        typeof rawResponseOrErrorString === 'string' 
+          ? rawResponseOrErrorString.substring(0, 200) + '...'
+          : rawResponseOrErrorString
       );
       
       // Check if callFunction returned an error string (our convention)
@@ -123,11 +140,11 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
         responseLength: rawResponseOrErrorString.length,
       }]);
       
-      console.log(`[AI Service] Análise ${analysisType} concluída com sucesso com ${currentProviderConfig.name}.`);
+      console.log(`[${callId}] Analysis successful. Content length: ${finalStandardizedResponse.content.length}`);
       return finalStandardizedResponse.content;
       
     } catch (err) { // This catches errors thrown by callFunction or subsequent processing
-      console.error(`[AI Service] ERRO FINAL durante análise ${analysisType} com ${currentProviderConfig.name}:`, err);
+      console.error(`[${callId}] ERROR during analysis ${analysisType} with ${currentProviderConfig.name}:`, err);
       setError(err); // Set the Error object
       throw err; // Re-throw the error object
     } finally {

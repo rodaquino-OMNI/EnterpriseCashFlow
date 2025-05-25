@@ -1,222 +1,529 @@
 // src/utils/dataValidation.js
-import React from 'react';
-import { formatCurrency, formatDays, formatPercentage } from './formatters';
+import React, { useState } from 'react';
+import { formatCurrency, formatPercentage, formatDays } from './formatters';
 
 /**
- * @typedef {'PME_BAIXO' | 'PMP_ALTO' | 'CICLO_NEGATIVO_ALTO' | 'MARGEM_VOLATILIDADE' | 'BALANCO_INCONSISTENTE' | 'CARGA_TRIBUTARIA_ALTA'} ValidationIssueType
+ * Consolidates similar alerts across multiple periods
+ * @param {Array} alerts - Array of individual period alerts
+ * @returns {Array} Consolidated alerts
  */
-
-/**
- * @typedef {Object} ValidationEntry
- * @property {ValidationIssueType} type
- * @property {string} message
- * @property {number | null | undefined} value
- * @property {string} field Key of the field in calculatedData
- */
-
-/**
- * @typedef {Object} ValidationResults
- * @property {ValidationEntry[]} warnings
- * @property {ValidationEntry[]} criticalIssues
- * @property {ValidationEntry[]} recommendations // Or insights
- */
-
-/**
- * Validates financial data and identifies suspicious values or inconsistencies.
- * @param {import('../types/financial').CalculatedPeriodData[]} calculatedData
- * @returns {ValidationResults}
- */
-export function validateFinancialData(calculatedData) {
-  /** @type {ValidationResults} */
-  const validationResults = {
-    warnings: [],
-    criticalIssues: [],
-    recommendations: [] // Using recommendations for neutral/positive insights from validation
-  };
-
-  if (!calculatedData || calculatedData.length === 0) {
-    return validationResults;
-  }
-
-  const latestPeriod = calculatedData[calculatedData.length - 1];
-  const previousPeriod = calculatedData.length > 1 ? calculatedData[calculatedData.length - 2] : null;
-
-  // 1. Validação de Prazos de Capital de Giro (Latest Period)
-  if (latestPeriod.inventoryDaysDerived < 5 && latestPeriod.inventoryDaysDerived !== 0) { // Allow 0 for service co.
-    validationResults.warnings.push({
-      type: 'PME_BAIXO',
-      message: `PME (Estoque) muito baixo (${formatDays(latestPeriod.inventoryDaysDerived)}). Se não for empresa de serviços, verificar inputs de Custo ou Estoque Médio.`,
-      value: latestPeriod.inventoryDaysDerived,
-      field: 'inventoryDaysDerived'
-    });
-  }
-
-  if (latestPeriod.apDaysDerived > 180) { // Example threshold
-    validationResults.warnings.push({
-      type: 'PMP_ALTO',
-      message: `PMP (Fornecedores) muito alto (${formatDays(latestPeriod.apDaysDerived)}). Pode indicar forte poder de negociação ou risco de sustentabilidade com fornecedores.`,
-      value: latestPeriod.apDaysDerived,
-      field: 'apDaysDerived'
-    });
-  }
-
-  if (latestPeriod.wcDays < -30) { // Example threshold for very negative cycle
-    validationResults.recommendations.push({ // This is often good, so a recommendation/insight
-      type: 'CICLO_NEGATIVO_ALTO',
-      message: `Ciclo de caixa significativamente negativo (${formatDays(latestPeriod.wcDays)}). Excelente para o fluxo de caixa, indica forte financiamento por fornecedores. Avaliar sustentabilidade e relacionamento.`,
-      value: latestPeriod.wcDays,
-      field: 'wcDays'
-    });
-  } else if (latestPeriod.wcDays > 120) { // Example threshold for very positive cycle
-    validationResults.warnings.push({
-      type: 'CICLO_POSITIVO_ALTO',
-      message: `Ciclo de caixa muito alto (${formatDays(latestPeriod.wcDays)}). Indica grande necessidade de capital de giro. Analisar otimização de PMR e PME.`,
-      value: latestPeriod.wcDays,
-      field: 'wcDays'
-    });
-  }
-
-  // 2. Validação de Margens (Volatility vs Previous Period)
-  if (previousPeriod) {
-    const gmPctChange = latestPeriod.gmPct - previousPeriod.gmPct;
-    if (Math.abs(gmPctChange) > 15) { // Change of 15 p.p.
-      validationResults.criticalIssues.push({
-        type: 'MARGEM_VOLATILIDADE',
-        message: `Variação abrupta na Margem Bruta: ${gmPctChange > 0 ? '+' : ''}${formatPercentage(gmPctChange).replace('%','p.p.')}. Investigar alterações drásticas em custos ou preços.`,
-        value: gmPctChange,
-        field: 'gmPct'
+function consolidateAlerts(alerts) {
+  const consolidated = new Map();
+  
+  alerts.forEach(alert => {
+    const key = `${alert.category}_${alert.type}`;
+    
+    if (consolidated.has(key)) {
+      const existing = consolidated.get(key);
+      existing.affectedPeriods.push(alert.periodLabel);
+      existing.details.push({
+        period: alert.periodLabel,
+        message: alert.message,
+        values: alert.values || {}
+      });
+    } else {
+      consolidated.set(key, {
+        ...alert,
+        affectedPeriods: [alert.periodLabel],
+        details: [{
+          period: alert.periodLabel,
+          message: alert.message,
+          values: alert.values || {}
+        }],
+        isConsolidated: true
       });
     }
-    const netProfitPctChange = latestPeriod.netProfitPct - previousPeriod.netProfitPct;
-    if (Math.abs(netProfitPctChange) > 10) { // Change of 10 p.p.
-      validationResults.warnings.push({
-        type: 'MARGEM_VOLATILIDADE',
-        message: `Variação expressiva na Margem Líquida: ${netProfitPctChange > 0 ? '+' : ''}${formatPercentage(netProfitPctChange).replace('%','p.p.')}. Analisar causas.`,
-        value: netProfitPctChange,
-        field: 'netProfitPct'
-      });
+  });
+  
+  // Convert back to array and update messages for consolidated alerts
+  return Array.from(consolidated.values()).map(alert => {
+    if (alert.details.length > 1) {
+      alert.message = `${alert.category} em ${alert.details.length} períodos: ${alert.affectedPeriods.join(', ')}`;
+      alert.consolidatedMessage = alert.message;
     }
-  }
-
-  // 3. Validação de Balanço (Latest Period)
-  if (latestPeriod.estimatedTotalAssets > 0) { // Only if assets are not zero
-    const balanceErrorPercentage = Math.abs(latestPeriod.balanceSheetDifference / latestPeriod.estimatedTotalAssets) * 100;
-    if (balanceErrorPercentage > 5) { // More than 5% of assets
-      validationResults.criticalIssues.push({
-        type: 'BALANCO_INCONSISTENTE',
-        message: `Diferença de balanço significativa: ${formatCurrency(latestPeriod.balanceSheetDifference)} (${formatPercentage(balanceErrorPercentage)} dos ativos). Revisar URGENTEMENTE os dados de entrada para garantir consistência.`,
-        value: latestPeriod.balanceSheetDifference,
-        field: 'balanceSheetDifference'
-      });
-    } else if (balanceErrorPercentage > 1) { // Between 1% and 5%
-      validationResults.warnings.push({
-        type: 'BALANCO_INCONSISTENTE',
-        message: `Diferença de balanço notável: ${formatCurrency(latestPeriod.balanceSheetDifference)} (${formatPercentage(balanceErrorPercentage)} dos ativos). Recomenda-se revisão dos inputs.`,
-        value: latestPeriod.balanceSheetDifference,
-        field: 'balanceSheetDifference'
-      });
-    }
-  }
-
-  // 4. Validação de Carga Tributária (Tax on PBT) - Latest Period
-  if (latestPeriod.pbt > 0 && latestPeriod.incomeTax > 0) {
-    const effectiveTaxRateOnPBT = (latestPeriod.incomeTax / latestPeriod.pbt) * 100;
-    if (effectiveTaxRateOnPBT > 45) { // Example: if tax rate on PBT seems too high
-      validationResults.warnings.push({
-        type: 'CARGA_TRIBUTARIA_ALTA',
-        message: `Alíquota de IR efetiva sobre o Lucro Antes do IR (PBT) parece alta: ${formatPercentage(effectiveTaxRateOnPBT)}. Verificar inputs de Imposto ou Tax Rate.`,
-        value: effectiveTaxRateOnPBT,
-        field: 'incomeTax' // or incomeTaxRatePercentage
-      });
-    }
-  }
-
-  // 5. Cash Flow Sanity - FCO vs Net Profit
-  if (Math.abs(latestPeriod.operatingCashFlow - (latestPeriod.netProfit + latestPeriod.depreciationAndAmortisation)) > Math.abs(latestPeriod.netProfit * 0.2) && latestPeriod.netProfit !== 0) { // If FCO differs from NP+DA by more than 20% of NP
-    validationResults.warnings.push({
-      type: 'FCO_VS_NETPROFIT_DIVERGENCE',
-      message: `Fluxo de Caixa Operacional (FCO: ${formatCurrency(latestPeriod.operatingCashFlow)}) diverge significativamente de (Lucro Líquido + D&A: ${formatCurrency(latestPeriod.netProfit + latestPeriod.depreciationAndAmortisation)}). Isso pode ser devido a grandes variações no Capital de Giro. Analisar em detalhe.`,
-      value: latestPeriod.operatingCashFlow - (latestPeriod.netProfit + latestPeriod.depreciationAndAmortisation),
-      field: 'operatingCashFlow'
-    });
-  }
-
-  return validationResults;
+    return alert;
+  });
 }
 
 /**
- * Component to display validation alerts.
- * @param {{ validationResults: ValidationResults | null }} props
+ * Enhanced validation with focus on latest period and trends
+ * @param {import('../types/financial').CalculatedPeriodData[]} calculatedData
+ * @returns {object} Enhanced validation results
+ */
+export function validateFinancialData(calculatedData) {
+  if (!calculatedData || calculatedData.length === 0) {
+    return { 
+      isValid: true, 
+      critical: [], 
+      warnings: [], 
+      infos: [], 
+      trends: [],
+      latest: null,
+      summary: { total: 0, critical: 0, warnings: 0 }
+    };
+  }
+  
+  const latestPeriod = calculatedData[calculatedData.length - 1];
+  const latestIndex = calculatedData.length - 1;
+  
+  const results = {
+    isValid: true,
+    critical: [],      // High-severity issues (latest period focus)
+    warnings: [],      // Medium-severity issues (consolidated)
+    infos: [],         // Low-severity/positive info (latest period only)
+    trends: [],        // Multi-period trend analysis
+    latest: latestIndex + 1,
+    summary: { total: 0, critical: 0, warnings: 0 }
+  };
+  
+  // === LATEST PERIOD CRITICAL CHECKS ===
+  
+  // 1. Balance Sheet Consistency (Latest Period)
+  const latestBSValidation = validateBalanceSheetConsistency(latestPeriod);
+  if (latestBSValidation && latestBSValidation.type === 'error') {
+    results.critical.push({
+      ...latestBSValidation,
+      periodLabel: `Período ${latestIndex + 1} (Atual)`,
+      priority: 1
+    });
+    results.isValid = false;
+  }
+  
+  // 2. Liquidity Crisis (Latest Period)
+  const liquidityCheck = validateLiquidityCrisis(latestPeriod, latestIndex + 1);
+  if (liquidityCheck) {
+    results.critical.push(liquidityCheck);
+    results.isValid = false;
+  }
+  
+  // === CONSOLIDATED WARNINGS (Multi-period patterns) ===
+  
+  // Balance Sheet Differences (All periods with issues)
+  const bsIssues = [];
+  calculatedData.forEach((period, index) => {
+    const bsValidation = validateBalanceSheetConsistency(period);
+    if (bsValidation && bsValidation.type === 'warning') {
+      bsIssues.push({
+        ...bsValidation,
+        periodLabel: `Período ${index + 1}`,
+        values: {
+          difference: period.balanceSheetDifference,
+          assets: period.estimatedTotalAssets,
+          liabilitiesPlusEquity: period.estimatedTotalLiabilities + period.equity
+        }
+      });
+    }
+  });
+  
+  if (bsIssues.length > 0) {
+    const consolidated = consolidateBalanceSheetIssues(bsIssues);
+    results.warnings.push(consolidated);
+  }
+  
+  // Inventory Issues (Consolidated)
+  const inventoryIssues = [];
+  calculatedData.forEach((period, index) => {
+    const invValidation = validateInventoryLevels(period);
+    if (invValidation && invValidation.type === 'warning') {
+      inventoryIssues.push({
+        ...invValidation,
+        periodLabel: `Período ${index + 1}`,
+        values: { days: period.inventoryDaysDerived, value: period.inventoryValueAvg }
+      });
+    }
+  });
+  
+  if (inventoryIssues.length > 0) {
+    const consolidated = consolidateInventoryIssues(inventoryIssues);
+    results.warnings.push(consolidated);
+  }
+  
+  // === TREND ANALYSIS ===
+  if (calculatedData.length >= 2) {
+    const trendAnalysis = analyzeTrends(calculatedData);
+    results.trends = trendAnalysis;
+  }
+  
+  // === LATEST PERIOD INFO (Positive/Neutral) ===
+  const wcValidation = validateWorkingCapitalEfficiency(latestPeriod);
+  if (wcValidation && (wcValidation.type === 'success' || wcValidation.type === 'info')) {
+    results.infos.push({
+      ...wcValidation,
+      periodLabel: `Período ${latestIndex + 1} (Atual)`
+    });
+  }
+  
+  // Update summary
+  results.summary = {
+    total: results.critical.length + results.warnings.length + results.trends.length,
+    critical: results.critical.length,
+    warnings: results.warnings.length + results.trends.filter(t => t.severity === 'high').length
+  };
+  
+  return results;
+}
+
+/**
+ * Check for liquidity crisis in latest period
+ */
+function validateLiquidityCrisis(periodData, periodNumber) {
+  const { closingCash, netCashFlowBeforeFinancing, operatingCashFlow } = periodData;
+  
+  // Critical: Negative FCL with very low cash
+  if (netCashFlowBeforeFinancing < 0 && closingCash < Math.abs(netCashFlowBeforeFinancing * 1.5)) {
+    return {
+      type: 'error',
+      category: '🚨 Crise de Liquidez',
+      message: `FCL negativo (${formatCurrency(netCashFlowBeforeFinancing)}) com caixa baixo (${formatCurrency(closingCash)}). Risco de insolvência.`,
+      severity: 'critical',
+      periodLabel: `Período ${periodNumber} (Atual)`,
+      priority: 1,
+      suggestion: 'AÇÃO IMEDIATA: Suspender CAPEX não essencial, acelerar cobrança, buscar financiamento emergencial.'
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Consolidate balance sheet issues across periods
+ */
+function consolidateBalanceSheetIssues(bsIssues) {
+  const periods = bsIssues.map(issue => issue.periodLabel.match(/\d+/)[0]).join(', ');
+  const avgDifference = bsIssues.reduce((sum, issue) => sum + Math.abs(issue.values.difference), 0) / bsIssues.length;
+  
+  return {
+    type: 'warning',
+    category: 'Diferenças no Balanço Patrimonial',
+    message: `Diferenças significativas detectadas em ${bsIssues.length} período(s): ${periods}. Diferença média: ${formatCurrency(avgDifference)}.`,
+    severity: 'medium',
+    affectedPeriods: bsIssues.map(i => i.periodLabel),
+    isConsolidated: true,
+    details: bsIssues,
+    suggestion: 'Revisar inputs de Ativo Imobilizado, Empréstimos e Patrimônio Líquido Inicial para melhor consistência.',
+    priority: 2
+  };
+}
+
+/**
+ * Consolidate inventory issues across periods
+ */
+function consolidateInventoryIssues(inventoryIssues) {
+  const periods = inventoryIssues.map(issue => issue.periodLabel.match(/\d+/)[0]).join(', ');
+  const maxDays = Math.max(...inventoryIssues.map(issue => issue.values.days));
+  
+  return {
+    type: 'warning',
+    category: 'Prazo Médio de Estoques Elevado',
+    message: `PME elevado detectado em ${inventoryIssues.length} período(s): ${periods}. Máximo: ${formatDays(maxDays)}.`,
+    severity: 'medium',
+    affectedPeriods: inventoryIssues.map(i => i.periodLabel),
+    isConsolidated: true,
+    details: inventoryIssues,
+    suggestion: 'Analisar causas: estoques obsoletos, problemas de vendas, ou sazonalidade do negócio.',
+    priority: 3
+  };
+}
+
+/**
+ * Analyze trends across periods
+ */
+function analyzeTrends(calculatedData) {
+  const trends = [];
+  
+  // Cash flow trend
+  const cashFlowTrend = analyzeCashFlowTrend(calculatedData);
+  if (cashFlowTrend) trends.push(cashFlowTrend);
+  
+  // Balance sheet difference trend
+  const bsTrend = analyzeBalanceSheetTrend(calculatedData);
+  if (bsTrend) trends.push(bsTrend);
+  
+  return trends;
+}
+
+function analyzeCashFlowTrend(calculatedData) {
+  const negativeCount = calculatedData.filter(p => p.netCashFlowBeforeFinancing < 0).length;
+  const totalPeriods = calculatedData.length;
+  
+  if (negativeCount >= Math.ceil(totalPeriods * 0.6)) {
+    return {
+      type: 'trend',
+      category: 'Tendência de Fluxo de Caixa Livre Negativo',
+      message: `FCL negativo em ${negativeCount} de ${totalPeriods} períodos. Padrão preocupante.`,
+      severity: 'high',
+      suggestion: 'Revisar estratégia de CAPEX e gestão de capital de giro.',
+      priority: 2
+    };
+  }
+  
+  return null;
+}
+
+function analyzeBalanceSheetTrend(calculatedData) {
+  const differences = calculatedData.map(p => Math.abs(p.balanceSheetDifference));
+  const isWorsening = differences.length >= 3 && 
+    differences[differences.length - 1] > differences[differences.length - 3];
+  
+  if (isWorsening && differences[differences.length - 1] > 10000) {
+    return {
+      type: 'trend',
+      category: 'Deterioração da Qualidade dos Dados',
+      message: `Diferenças no balanço aumentando ao longo do tempo. Última: ${formatCurrency(differences[differences.length - 1])}.`,
+      severity: 'medium',
+      suggestion: 'Revisar processo de coleta de dados e consistência dos inputs.',
+      priority: 4
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Validates balance sheet consistency by checking A = L + E
+ * @param {import('../types/financial').CalculatedPeriodData} periodData
+ * @returns {object|null} Validation result or null if valid
+ */
+export function validateBalanceSheetConsistency(periodData) {
+  const assets = periodData.estimatedTotalAssets;
+  const liabilities = periodData.estimatedTotalLiabilities;
+  const equity = periodData.equity;
+  
+  const independentDifference = assets - (liabilities + equity);
+  const storedDifference = periodData.balanceSheetDifference;
+  
+  const calculationConsistency = Math.abs(independentDifference - storedDifference) < 0.01;
+  const materialThreshold = Math.max(assets * 0.01, 1000);
+  const isMateriallyBalanced = Math.abs(storedDifference) < materialThreshold;
+  
+  if (!calculationConsistency) {
+    return {
+      type: 'error',
+      category: 'Inconsistência de Cálculo',
+      message: `Diferença de Balanço armazenada (${formatCurrency(storedDifference)}) não confere com cálculo independente (${formatCurrency(independentDifference)}).`,
+      severity: 'high',
+    };
+  }
+  
+  if (!isMateriallyBalanced) {
+    return {
+      type: 'warning',
+      category: 'Equilíbrio do Balanço',
+      message: `Diferença de ${formatCurrency(storedDifference)} no Balanço Patrimonial.`,
+      severity: 'medium',
+      suggestion: 'Verifique Ativo Imobilizado, Empréstimos Bancários e Patrimônio Líquido Inicial.'
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Enhanced inventory warning for unrealistic inventory levels
+ * @param {import('../types/financial').CalculatedPeriodData} periodData
+ * @returns {object|null} Validation result or null if valid
+ */
+export function validateInventoryLevels(periodData) {
+  const inventoryDays = periodData.inventoryDaysDerived;
+  
+  if (inventoryDays > 365) {
+    return {
+      type: 'warning',
+      category: 'Prazo Médio de Estoques Elevado',
+      message: `PME de ${formatDays(inventoryDays)} indica rotação muito lenta.`,
+      severity: 'medium',
+      suggestion: 'Verificar estoques obsoletos e processos de vendas.'
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Validate working capital efficiency
+ * @param {import('../types/financial').CalculatedPeriodData} periodData
+ * @returns {object|null} Validation result or null if valid
+ */
+export function validateWorkingCapitalEfficiency(periodData) {
+  const wcDays = periodData.wcDays;
+  
+  if (wcDays < 0) {
+    return {
+      type: 'success',
+      category: 'Ciclo de Caixa Negativo (Excelente)',
+      message: `Ciclo de caixa negativo de ${formatDays(Math.abs(wcDays))} é muito favorável.`,
+      severity: 'positive',
+      suggestion: 'Manter essa eficiência operacional.'
+    };
+  }
+  
+  if (wcDays > 120) {
+    return {
+      type: 'info',
+      category: 'Ciclo de Caixa Longo',
+      message: `Ciclo de caixa de ${formatDays(wcDays)} oferece oportunidades de otimização.`,
+      severity: 'low',
+      suggestion: 'Acelerar cobrança e negociar prazos maiores com fornecedores.'
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Enhanced ValidationAlerts component with better UX
  */
 export function ValidationAlerts({ validationResults }) {
-  if (!validationResults ||
-    (validationResults.warnings.length === 0 &&
-    validationResults.criticalIssues.length === 0 &&
-    validationResults.recommendations.length === 0)) {
-    return null;
+  const [expandedSections, setExpandedSections] = useState(new Set());
+  
+  if (!validationResults || validationResults.summary.total === 0) {
+    return (
+      <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center">
+          <span className="text-green-600 text-lg mr-2">✅</span>
+          <span className="text-green-800 font-medium">Dados validados com sucesso - nenhum problema crítico detectado.</span>
+        </div>
+      </div>
+    );
   }
-
+  
+  const toggleSection = (sectionId) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedSections(newExpanded);
+  };
+  
+  const { critical, warnings, trends, infos, summary, latest } = validationResults;
+  
+  const AlertSection = ({ alerts, title, bgColor, borderColor, textColor, icon, sectionId, defaultExpanded = false }) => {
+    if (!alerts || alerts.length === 0) return null;
+    
+    const isExpanded = expandedSections.has(sectionId) ?? defaultExpanded;
+    
+    return (
+      <div className={`${bgColor} border ${borderColor} rounded-lg mb-3`}>
+        <div 
+          className="p-4 cursor-pointer flex items-center justify-between"
+          onClick={() => toggleSection(sectionId)}
+        >
+          <div className="flex items-center">
+            <span className="text-lg mr-3">{icon}</span>
+            <h4 className={`font-semibold ${textColor}`}>
+              {title} ({alerts.length})
+            </h4>
+          </div>
+          <span className={`${textColor} transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+            ▼
+          </span>
+        </div>
+        
+        {isExpanded && (
+          <div className="px-4 pb-4 space-y-3">
+            {alerts.map((alert, index) => (
+              <div key={index} className="bg-white p-3 rounded border-l-4 border-current">
+                <div className="flex justify-between items-start mb-1">
+                  <span className="font-medium text-slate-800">{alert.category}</span>
+                  {alert.periodLabel && (
+                    <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
+                      {alert.periodLabel}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-700 mb-2">{alert.message}</p>
+                {alert.suggestion && (
+                  <p className="text-xs text-slate-600 italic">
+                    💡 <strong>Sugestão:</strong> {alert.suggestion}
+                  </p>
+                )}
+                
+                {/* Show consolidated details if available */}
+                {alert.isConsolidated && alert.details && expandedSections.has(`${sectionId}-details-${index}`) && (
+                  <div className="mt-2 pl-4 border-l-2 border-slate-200">
+                    {alert.details.map((detail, detailIndex) => (
+                      <div key={detailIndex} className="text-xs text-slate-600 py-1">
+                        <strong>{detail.period}:</strong> {detail.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {alert.isConsolidated && alert.details && (
+                  <button
+                    className="text-xs text-blue-600 hover:text-blue-800 mt-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSection(`${sectionId}-details-${index}`);
+                    }}
+                  >
+                    {expandedSections.has(`${sectionId}-details-${index}`) ? 'Ocultar' : 'Ver'} detalhes por período
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
   return (
-    <div className="mb-8 space-y-4 print:hidden"> {/* Hidden on print to keep report clean */}
-      {validationResults.criticalIssues.length > 0 && (
-        <div className="bg-red-100 border-l-4 border-red-500 p-4 rounded-md shadow">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-6 w-6 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 002 0v-2a1 1 0 00-2 0v2zm0-5a1 1 0 002 0V6a1 1 0 00-2 0v2z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-md font-bold text-red-800">🚨 Alertas Críticos! (Revisão Urgente)</h3>
-              <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
-                {validationResults.criticalIssues.map((issue, index) => (
-                  <li key={`critical-${index}`}>{issue.message}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
+    <section className="mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-slate-700 border-b border-slate-200 pb-2">
+          🔍 Verificações de Qualidade dos Dados
+        </h3>
+        <div className="text-sm text-slate-500">
+          Foco: Período {latest} (Atual) • {summary.total} alerta(s) total
         </div>
-      )}
-
-      {validationResults.warnings.length > 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-6 w-6 text-yellow-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-md font-bold text-yellow-800">⚠️ Avisos e Pontos de Atenção</h3>
-              <ul className="mt-2 text-sm text-yellow-700 list-disc list-inside space-y-1">
-                {validationResults.warnings.map((warning, index) => (
-                  <li key={`warning-${index}`}>{warning.message}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {validationResults.recommendations.length > 0 && (
-        <div className="bg-sky-50 border-l-4 border-sky-400 p-4 rounded-md shadow">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-6 w-6 text-sky-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-md font-bold text-sky-800">💡 Insights & Recomendações da Validação</h3>
-              <ul className="mt-2 text-sm text-sky-700 list-disc list-inside space-y-1">
-                {validationResults.recommendations.map((rec, index) => (
-                  <li key={`rec-${index}`}>{rec.message}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+      
+      <AlertSection
+        alerts={critical}
+        title="Problemas Críticos"
+        bgColor="bg-red-50"
+        borderColor="border-red-300"
+        textColor="text-red-800"
+        icon="🚨"
+        sectionId="critical"
+        defaultExpanded={true}
+      />
+      
+      <AlertSection
+        alerts={warnings}
+        title="Avisos Importantes"
+        bgColor="bg-amber-50"
+        borderColor="border-amber-300"
+        textColor="text-amber-800"
+        icon="⚠️"
+        sectionId="warnings"
+        defaultExpanded={warnings.length <= 2}
+      />
+      
+      <AlertSection
+        alerts={trends}
+        title="Análise de Tendências"
+        bgColor="bg-purple-50"
+        borderColor="border-purple-300"
+        textColor="text-purple-800"
+        icon="📈"
+        sectionId="trends"
+        defaultExpanded={false}
+      />
+      
+      <AlertSection
+        alerts={infos}
+        title="Pontos Positivos"
+        bgColor="bg-green-50"
+        borderColor="border-green-300"
+        textColor="text-green-800"
+        icon="✅"
+        sectionId="infos"
+        defaultExpanded={false}
+      />
+    </section>
   );
 }
