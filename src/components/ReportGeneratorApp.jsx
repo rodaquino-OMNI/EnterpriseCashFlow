@@ -12,7 +12,7 @@ import ReportRenderer from './ReportPanel/ReportRenderer';
 // Hooks
 import { useLibrary } from '../hooks/useLibrary';
 import { useFinancialCalculator } from '../hooks/useFinancialCalculator';
-import { useExcelParser } from '../hooks/useExcelParser';
+import { useSmartExcelParser } from '../hooks/useSmartExcelParser';
 import { usePdfParser } from '../hooks/usePdfParser';
 import { useAiService } from '../hooks/useAiService';
 import { useAiAnalysis } from '../hooks/useAiAnalysis';
@@ -20,8 +20,9 @@ import { useAiDataExtraction } from '../hooks/useAiDataExtraction';
 
 // Utils
 import { fieldDefinitions, getFieldKeys, validateAllFields } from '../utils/fieldDefinitions';
-import { DEFAULT_PERIODS_MANUAL, DEFAULT_PERIODS_EXCEL, DEFAULT_AI_PROVIDER } from '../utils/constants';
+import { DEFAULT_PERIODS_MANUAL, DEFAULT_PERIODS_EXCEL, DEFAULT_AI_PROVIDER, PERIOD_TYPES } from '../utils/constants';
 import { ANALYSIS_TYPES } from '../utils/aiAnalysisTypes';
+import { generateSmartTemplate, generateBasicDriversTemplate, TEMPLATE_TYPES } from '../utils/excelTemplateGenerator';
 
 export default function ReportGeneratorApp() {
   const [inputMethod, setInputMethod] = useState('manual');
@@ -47,11 +48,11 @@ export default function ReportGeneratorApp() {
 
   // --- Initialize Hooks ---
   const { library: ExcelJS, loadLibrary: loadExcelJS, isLoading: isLoadingExcelJS, error: excelJsErrorHook } = useLibrary('ExcelJS');
-  const { library: html2pdf, loadLibrary: loadHtml2pdf, isLoading: isLoadingHtml2pdf, error: html2pdfErrorHook } = useLibrary('html2pdf');
+  const { loadLibrary: loadHtml2pdf, isLoading: isLoadingHtml2pdf, error: html2pdfErrorHook } = useLibrary('html2pdf');
   const { library: pdfjsLibInstance, loadLibrary: loadPdfjsLib, isLoading: isLoadingPdfjs, error: pdfjsErrorHook } = useLibrary('pdfjsLib');
 
   const { calculate, isCalculating, calculationError: calcErrorHook } = useFinancialCalculator();
-  const { parseFile: parseExcelFile, isParsing: isExcelParsing, parsingError: excelParsingErrorHook, setParsingError: clearExcelParsingError } = useExcelParser(ExcelJS);
+  const { parseFile: parseSmartExcelFile, isParsing: isExcelParsing, parsingError: excelParsingErrorHook } = useSmartExcelParser(ExcelJS);
 
   // Main AI service hook (for making calls)
   const aiService = useAiService(selectedAiProviderKey);
@@ -62,42 +63,23 @@ export default function ReportGeneratorApp() {
   const { extractFinancialData, isExtracting: isAiExtracting, extractionError: aiExtractionErrorHook, setExtractionError: clearAiExtractionError } = useAiDataExtraction(aiService);
 
   // Initialize/reset currentInputData
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fieldKeys = getFieldKeys();
-    let numPeriodsToInit = inputMethod === 'manual' ? numberOfPeriods :
-      inputMethod === 'excel' ? DEFAULT_PERIODS_EXCEL :
-      pdfNumberOfPeriods;
+    const numPeriodsToInit = numberOfPeriods;
 
-    // Only re-initialize if inputMethod actually changes or if in manual mode and numberOfPeriods changes
-    if (inputMethod === 'manual' || inputMethod === 'excel') {
-      const newBlankInputData = Array(numPeriodsToInit).fill(null).map((_, periodIndex) => {
-        const newPeriod = {};
-        // Preserve existing manual data if number of periods changes within manual mode
-        const existingPeriodForManual = (inputMethod === 'manual' && currentInputData && currentInputData[periodIndex]) ? currentInputData[periodIndex] : {};
-        fieldKeys.forEach(fieldKey => {
-          const def = fieldDefinitions[fieldKey];
-          newPeriod[fieldKey] = (def.firstPeriodOnly && periodIndex > 0) ? null :
-            (existingPeriodForManual[fieldKey] === undefined ? null : existingPeriodForManual[fieldKey]);
-        });
-        return newPeriod;
+    const newBlankInputData = Array(numPeriodsToInit).fill(null).map((_, periodIndex) => {
+      const newPeriod = {};
+      const existingDataForPeriod = currentInputData[periodIndex] || {};
+      fieldKeys.forEach(fieldKey => {
+        const def = fieldDefinitions[fieldKey];
+        newPeriod[fieldKey] = (def.firstPeriodOnly && periodIndex > 0) ? null :
+          (existingDataForPeriod[fieldKey] === undefined ? null : existingDataForPeriod[fieldKey]);
       });
-      setCurrentInputData(newBlankInputData);
-    } else if (inputMethod === 'pdf') {
-      // For PDF, currentInputData is populated by AI extraction.
-      // We might want to initialize with empty structure based on pdfNumberOfPeriods
-      // or wait for extraction. For now, let useEffect for numberOfPeriods handle it.
-      const newBlankInputData = Array(pdfNumberOfPeriods).fill(null).map((_, periodIndex) => {
-        const newPeriod = {};
-        fieldKeys.forEach(fieldKey => {
-          const def = fieldDefinitions[fieldKey];
-          newPeriod[fieldKey] = (def.firstPeriodOnly && periodIndex > 0) ? null : null;
-        });
-        return newPeriod;
-      });
-      setCurrentInputData(newBlankInputData);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [numberOfPeriods, inputMethod, pdfNumberOfPeriods]); // Removed currentInputData from dependencies
+      return newPeriod;
+    });
+    setCurrentInputData(newBlankInputData);
+  }, [numberOfPeriods]); // Intentionally excluding currentInputData to avoid infinite loop
 
   const isProcessingSomething = isLoadingExcelJS || isExcelParsing || isCalculating || isLoadingHtml2pdf || isLoadingPdfjs || isPdfTextParsing || isAiExtracting || aiService.isLoading || Object.values(ANALYSIS_TYPES).some(type => aiAnalysisManager.isLoading(type));
 
@@ -112,11 +94,11 @@ export default function ReportGeneratorApp() {
 
     if (hookErrors.length > 0) {
       const combinedMessage = hookErrors.map(e => e.message).join('; \n');
-      if (appError?.message !== combinedMessage) { // Avoid setting same error repeatedly
+      if (appError?.message !== combinedMessage) {
         setAppError(new Error(combinedMessage || "Ocorreu um erro desconhecido."));
       }
     } else if (!validationErrorDetails && appError) {
-      setAppError(null); // Clear general appError if no hook errors and no validation errors
+      setAppError(null);
     }
   }, [excelJsErrorHook, html2pdfErrorHook, pdfjsErrorHook, excelParsingErrorHook,
       pdfTextParsingErrorHook, calcErrorHook, aiExtractionErrorHook,
@@ -133,7 +115,7 @@ export default function ReportGeneratorApp() {
 
   const handleSelectedAiProviderChange = useCallback((providerKey) => {
     setSelectedAiProviderKey(providerKey);
-    aiService.setSelectedProviderKey(providerKey); // Ensure aiService hook also updates its internal state
+    aiService.setSelectedProviderKey(providerKey);
     aiAnalysisManager.clearAllAnalyses();
   }, [aiService, aiAnalysisManager]);
 
@@ -142,12 +124,10 @@ export default function ReportGeneratorApp() {
     setCalculatedData([]);
     setAppError(null); setValidationErrorDetails(null); setExtractionProgress(null);
     aiAnalysisManager.clearAllAnalyses();
-    if (method === 'manual') { setNumberOfPeriods(DEFAULT_PERIODS_MANUAL); }
-    else if (method === 'excel') { setNumberOfPeriods(DEFAULT_PERIODS_EXCEL); }
-    else if (method === 'pdf') {
-      setNumberOfPeriods(pdfNumberOfPeriods);
-    }
-  }, [pdfNumberOfPeriods, aiAnalysisManager]);
+    if (method === 'manual') setNumberOfPeriods(DEFAULT_PERIODS_MANUAL);
+    else if (method === 'excel') setNumberOfPeriods(DEFAULT_PERIODS_EXCEL);
+    else if (method === 'pdf') setNumberOfPeriods(2);
+  }, [aiAnalysisManager]);
 
   const handleManualInputChange = useCallback((periodIndex, fieldKey, value) => {
     setCurrentInputData(prevData =>
@@ -174,78 +154,76 @@ export default function ReportGeneratorApp() {
     } catch (err) { /* Error handled by calculationError state & useEffect */ }
   };
 
-  // Template download functionality implementation
-  const handleTemplateDownload = async () => {
-    if (!ExcelJS) {
-      await loadExcelJS();
-      return;
-    }
-    
-    try {
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet('Dados Financeiros');
-      
-      // Add headers based on field definitions
-      const headers = ['Período', ...getFieldKeys().map(key => fieldDefinitions[key].label)];
-      sheet.addRow(headers);
-      
-      // Add example rows with empty cells for input
-      const periodsToGenerate = numberOfPeriods || DEFAULT_PERIODS_EXCEL;
-      for (let i = 0; i < periodsToGenerate; i++) {
-        sheet.addRow([`Período ${i + 1}`, ...Array(headers.length - 1).fill('')]);
-      }
-      
-      // Format cells
-      sheet.getRow(1).font = { bold: true };
-      
-      // Generate and download the file
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'template_dados_financeiros.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error("Erro ao gerar template Excel:", error);
-      setAppError(new Error(`Erro ao gerar template Excel: ${error.message}`));
-    }
-  };
-  
-  // Excel file upload implementation
-  const handleExcelFileUpload = async (file) => {
-    if (!ExcelJS) {
-      await loadExcelJS();
-      return;
-    }
-    
-    clearExcelParsingError();
+  const handleTemplateDownloadRequest = async (templateTypeKey) => {
     setAppError(null);
-    setValidationErrorDetails(null);
-    setCalculatedData([]);
-    aiAnalysisManager.clearAllAnalyses();
-    
     try {
-      const parsedResult = await parseExcelFile(file);
-      // Fix: The useExcelParser returns an object with a 'data' property, not an array directly
-      if (parsedResult && parsedResult.data && parsedResult.data.length > 0) {
-        // Use parsedResult.data instead of parsedData directly
-        setCurrentInputData(parsedResult.data);
-        
-        // Auto-proceed to calculate
-        const result = await calculate(parsedResult.data, periodType);
-        setCalculatedData(result);
-      } else {
-        throw new Error("Não foi possível extrair dados do arquivo Excel");
+      const excel = await loadExcelJS();
+      if (!excel) { setAppError(new Error(excelJsErrorHook?.message || "ExcelJS não carregado.")); return; }
+
+      let wb;
+      let fileName = 'Template_Financeiro_Personalizado.xlsx';
+
+      const currentNumP = numberOfPeriods;
+      const currentPTypeLabel = periodType;
+
+      switch (templateTypeKey) {
+        case TEMPLATE_TYPES.SMART_ADAPTIVE:
+          wb = await generateSmartTemplate(currentNumP, currentPTypeLabel, excel);
+          fileName = `Template_Inteligente_${currentNumP}_Periodos.xlsx`;
+          break;
+        case TEMPLATE_TYPES.BASIC_DRIVERS:
+          wb = await generateBasicDriversTemplate(currentNumP, currentPTypeLabel, excel);
+          fileName = `Template_Basico_Drivers_${currentNumP}_Periodos.xlsx`;
+          break;
+        default:
+          throw new Error("Tipo de template não suportado para download.");
       }
-    } catch (error) {
-      console.error("Erro ao processar arquivo Excel:", error);
-      // Error will be handled by the error aggregation effect
+
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove();
+
+    } catch (err) { console.error("Error downloading template:", err); setAppError(err); }
+  };
+
+  const handleExcelFileUpload = async (file) => {
+    setAppError(null);
+    setValidationErrorDetails(null); setCalculatedData([]);
+    aiAnalysisManager.clearAllAnalyses();
+    try {
+      const {
+        data: parsedInputData,
+        detectedPeriods,
+        templateType,
+        warnings: parseWarnings,
+        dataInsights,
+        suggestions
+      } = await parseSmartExcelFile(file);
+
+      console.log("Smart Parser Result:", {parsedInputData, detectedPeriods, templateType, parseWarnings, dataInsights, suggestions});
+
+      if (parseWarnings && parseWarnings.length > 0) {
+        setAppError(new Error(`Avisos durante o parse do Excel: ${parseWarnings.join('; ')}`));
+      }
+
+      setNumberOfPeriods(detectedPeriods);
+      setCurrentInputData(parsedInputData);
+
+      const validationErrs = validateAllFields(parsedInputData);
+      if (validationErrs.length > 0) {
+        setValidationErrorDetails(validationErrs);
+        setAppError(new Error("Dados do Excel carregados, mas contêm erros de validação. Verifique os campos destacados."));
+        return;
+      }
+      const result = await calculate(parsedInputData, periodType);
+      setCalculatedData(result);
+    } catch (err) {
+      console.error("Error in handleExcelFileUpload:", err);
     }
   };
-  
-  // PDF file upload implementation
+
   const handlePdfFileUpload = async (file) => {
     if (!pdfjsLibInstance) {
       await loadPdfjsLib();
@@ -261,7 +239,6 @@ export default function ReportGeneratorApp() {
     setExtractionProgress({ stage: "Extraindo texto", progress: 0 });
     
     try {
-      // First extract text from the PDF
       const extractedText = await extractTextFromPdf(file);
       setExtractionProgress({ stage: "Analisando dados com IA", progress: 50 });
       
@@ -269,7 +246,6 @@ export default function ReportGeneratorApp() {
         throw new Error("Não foi possível extrair texto do PDF");
       }
       
-      // Then use AI to extract structured financial data
       const apiKey = apiKeys[selectedAiProviderKey] || '';
       const extractedData = await extractFinancialData(
         extractedText, 
@@ -282,8 +258,6 @@ export default function ReportGeneratorApp() {
       
       if (extractedData && extractedData.length > 0) {
         setCurrentInputData(extractedData);
-        
-        // Auto-proceed to calculate
         const result = await calculate(extractedData, pdfPeriodType);
         setCalculatedData(result);
         setExtractionProgress({ stage: "Concluído", progress: 100 });
@@ -294,27 +268,23 @@ export default function ReportGeneratorApp() {
     } catch (error) {
       console.error("Erro ao processar arquivo PDF:", error);
       setExtractionProgress(null);
-      // Error will be handled by the error aggregation effect
     }
   };
 
-  // Memoize companyInfo to prevent unnecessary re-renders of ReportRenderer if only other state changes
   const companyInfoMemo = useMemo(() => ({
     name: companyName,
     reportTitle,
     periodType,
-    // Pass the actual number of periods from calculatedData if available, else from input settings
     numberOfPeriods: calculatedData.length > 0 ? calculatedData.length : numberOfPeriods
   }), [companyName, reportTitle, periodType, calculatedData, numberOfPeriods]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 text-slate-900 p-4 md:p-8 font-sans">
       <header className="text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-bold text-blue-700">
           Gerador de Relatório Diretoria Multimodal com IA ✨
         </h1>
       </header>
-
       <AiProviderSelector
         selectedProviderKey={selectedAiProviderKey}
         onProviderChange={handleSelectedAiProviderChange}
@@ -322,7 +292,6 @@ export default function ReportGeneratorApp() {
         onApiKeyChange={handleApiKeyChange}
         className="mb-8"
       />
-
       <InputMethodSelector
         inputMethod={inputMethod}
         onInputMethodChange={handleInputMethodChange}
@@ -335,15 +304,15 @@ export default function ReportGeneratorApp() {
 
       {inputMethod === 'excel' && (
         <ExcelUploader
-          onTemplateDownload={handleTemplateDownload}
+          onTemplateDownloadRequest={handleTemplateDownloadRequest}
           onFileUpload={handleExcelFileUpload}
           isLoading={isProcessingSomething}
           excelJsLoading={isLoadingExcelJS}
           excelJsError={excelJsErrorHook}
-          numberOfPeriodsForTemplate={inputMethod === 'manual' ? numberOfPeriods : DEFAULT_PERIODS_EXCEL}
+          numberOfPeriodsContext={numberOfPeriods}
+          periodTypeLabelContext={PERIOD_TYPES[periodType]?.label || periodType}
         />
       )}
-
       {inputMethod === 'manual' && (
         <ManualDataEntry
           numberOfPeriods={numberOfPeriods}
@@ -357,7 +326,6 @@ export default function ReportGeneratorApp() {
           validationErrors={validationErrorDetails}
         />
       )}
-
       {inputMethod === 'pdf' && (
         <PdfUploader
           onPdfFileUpload={handlePdfFileUpload}
@@ -370,14 +338,12 @@ export default function ReportGeneratorApp() {
           extractionProgress={extractionProgress}
         />
       )}
-
       {appError && !isProcessingSomething && (
         <div className="my-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-md" role="alert">
           <p className="font-bold">Ocorreu um Erro na Aplicação:</p>
           <pre className="whitespace-pre-wrap text-sm mt-1">{appError.message}</pre>
         </div>
       )}
-
       {isProcessingSomething && (
         <div className="my-6 p-6 flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
@@ -385,18 +351,15 @@ export default function ReportGeneratorApp() {
         </div>
       )}
 
-      {calculatedData.length > 0 && !isCalculating && !isExcelParsing && !isPdfTextParsing && !isAiExtracting && !appError && (
+      {calculatedData.length > 0 && !isProcessingSomething && !appError && (
         <ReportRenderer
           calculatedData={calculatedData}
-          companyInfo={companyInfoMemo} // Use memoized version
+          companyInfo={companyInfoMemo}
           onLoadHtml2pdf={loadHtml2pdf}
           html2pdfError={html2pdfErrorHook}
-          // Pass the entire aiAnalysisManager hook's return
-          // This allows ReportRenderer to access analyses, isLoading(type), errors[type], and performAnalysis
           aiAnalysisManager={aiAnalysisManager}
         />
       )}
-
     </div>
   );
 }

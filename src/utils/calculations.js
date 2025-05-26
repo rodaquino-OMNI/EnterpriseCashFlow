@@ -1,15 +1,29 @@
 // src/utils/calculations.js
 import { PERIOD_TYPES } from './constants.js';
+// No direct import of fieldDefinitions here, logic relies on periodInput keys
 
 /**
- * Processes financial data for multiple periods.
- * @param {import('../types/financial').PeriodInputData[]} periodsInputDataRaw - Raw input data for each period.
- * @param {import('../types/financial').PeriodTypeOption} periodTypeLabel - The type of period ('anos', 'trimestres', 'meses').
- * @returns {import('../types/financial').CalculatedPeriodData[]} - Array of calculated data for each period.
+ * Helper to check if a valid (numeric) override value exists in periodInput.
+ * @param {import('../types/financial').PeriodInputData} periodInput
+ * @param {string} overrideKey e.g., 'override_cogs'
+ * @returns {number | null} The numeric value or null if not a valid override.
+ */
+function getOverrideValue(periodInput, overrideKey) {
+  const value = periodInput[overrideKey];
+  if (value !== null && typeof value !== 'undefined' && value !== '' && !isNaN(Number(value))) {
+    return Number(value);
+  }
+  return null;
+}
+
+/**
+ * Processes financial data for multiple periods with adaptive logic.
+ * @param {import('../types/financial').PeriodInputData[]} periodsInputDataRaw
+ * @param {import('../types/financial').PeriodTypeOption} periodTypeLabel
+ * @returns {import('../types/financial').CalculatedPeriodData[]}
  */
 export function processFinancialData(periodsInputDataRaw, periodTypeLabel) {
   if (!periodsInputDataRaw || periodsInputDataRaw.length === 0) {
-    console.warn("processFinancialData called with empty or null input.");
     return [];
   }
 
@@ -17,165 +31,199 @@ export function processFinancialData(periodsInputDataRaw, periodTypeLabel) {
   const daysInPeriod = PERIOD_TYPES[periodTypeLabel]?.days || 365;
 
   const calculatedDataAllPeriods = periodsInputDataRaw.map((periodInput, periodIndex) => {
-    // --- P&L Inputs & Initial Processing ---
-    const revenue = periodInput.revenue === null || typeof periodInput.revenue === 'undefined' ? 0 : Number(periodInput.revenue);
-    const grossMarginPercentageInput = (periodInput.grossMarginPercentage === null || typeof periodInput.grossMarginPercentage === 'undefined' ? 0 : Number(periodInput.grossMarginPercentage)) / 100;
-    const operatingExpenses = periodInput.operatingExpenses === null || typeof periodInput.operatingExpenses === 'undefined' ? 0 : Number(periodInput.operatingExpenses);
-    const depreciationAndAmortisation = periodInput.depreciationAndAmortisation === null || typeof periodInput.depreciationAndAmortisation === 'undefined' ? 0 : Number(periodInput.depreciationAndAmortisation);
-    const netInterestExpenseIncome = periodInput.netInterestExpenseIncome === null || typeof periodInput.netInterestExpenseIncome === 'undefined' ? 0 : Number(periodInput.netInterestExpenseIncome);
-    const incomeTaxRatePercentageInput = (periodInput.incomeTaxRatePercentage === null || typeof periodInput.incomeTaxRatePercentage === 'undefined' ? 0 : Number(periodInput.incomeTaxRatePercentage)) / 100;
-    const dividendsPaid = periodInput.dividendsPaid === null || typeof periodInput.dividendsPaid === 'undefined' ? 0 : Number(periodInput.dividendsPaid);
-    const extraordinaryItems = periodInput.extraordinaryItems === null || typeof periodInput.extraordinaryItems === 'undefined' ? 0 : Number(periodInput.extraordinaryItems);
-    const capitalExpenditures = periodInput.capitalExpenditures === null || typeof periodInput.capitalExpenditures === 'undefined' ? 0 : Number(periodInput.capitalExpenditures);
-
-    // --- P&L Reconstruction ---
-    const cogs = revenue * (1 - grossMarginPercentageInput);
-    const grossProfit = revenue - cogs;
-    const ebitda = grossProfit - operatingExpenses;
-    const ebit = ebitda - depreciationAndAmortisation;
-    const pbt = ebit + netInterestExpenseIncome + extraordinaryItems;
-    const incomeTax = pbt > 0 ? pbt * incomeTaxRatePercentageInput : 0;
-    const netProfit = pbt - incomeTax;
-    const retainedProfit = netProfit - dividendsPaid;
-
-    // --- Balance Sheet & WC Inputs ---
-    const accountsReceivableValueAvg = periodInput.accountsReceivableValueAvg === null || typeof periodInput.accountsReceivableValueAvg === 'undefined' ? 0 : Number(periodInput.accountsReceivableValueAvg);
-    const inventoryValueAvg = periodInput.inventoryValueAvg === null || typeof periodInput.inventoryValueAvg === 'undefined' ? 0 : Number(periodInput.inventoryValueAvg);
-    const accountsPayableValueAvg = periodInput.accountsPayableValueAvg === null || typeof periodInput.accountsPayableValueAvg === 'undefined' ? 0 : Number(periodInput.accountsPayableValueAvg);
-    const netFixedAssets = periodInput.netFixedAssets === null || typeof periodInput.netFixedAssets === 'undefined' ? 0 : Number(periodInput.netFixedAssets);
-    const totalBankLoans = periodInput.totalBankLoans === null || typeof periodInput.totalBankLoans === 'undefined' ? 0 : Number(periodInput.totalBankLoans);
-
-    // --- Derive Days & Inventory Value (for BS) ---
-    const arDaysDerived = revenue > 0 ? (accountsReceivableValueAvg / revenue) * daysInPeriod : 0;
-    const inventoryDaysDerived = cogs > 0 ? (inventoryValueAvg / cogs) * daysInPeriod : 0;
-    const apDaysDerived = cogs > 0 ? (accountsPayableValueAvg / cogs) * daysInPeriod : 0;
+    // --- Get DRIVER Inputs (default to 0 if not provided, for calculation safety) ---
+    const revenue_driver = Number(periodInput.revenue || 0);
+    const grossMarginPercentage_driver = Number(periodInput.grossMarginPercentage || 0) / 100;
+    const operatingExpenses_driver = Number(periodInput.operatingExpenses || 0);
+    const depreciationAndAmortisation_driver = Number(periodInput.depreciationAndAmortisation || 0);
+    const netInterestExpenseIncome_driver = Number(periodInput.netInterestExpenseIncome || 0);
+    const incomeTaxRatePercentage_driver = Number(periodInput.incomeTaxRatePercentage || 0) / 100;
+    const dividendsPaid_driver = Number(periodInput.dividendsPaid || 0);
+    const extraordinaryItems_driver = Number(periodInput.extraordinaryItems || 0);
+    const capitalExpenditures_driver = Number(periodInput.capitalExpenditures || 0);
     
-    // The inventoryValue for BS and WC calculations IS the inventoryValueAvg input.
-    const inventoryValueForBalanceSheetAndWC = inventoryValueAvg;
-    
-    const workingCapitalValue = accountsReceivableValueAvg + inventoryValueForBalanceSheetAndWC - accountsPayableValueAvg;
-    const wcDays = arDaysDerived + inventoryDaysDerived - apDaysDerived;
+    const accountsReceivableValueAvg_driver = Number(periodInput.accountsReceivableValueAvg || 0);
+    const inventoryValueAvg_driver = Number(periodInput.inventoryValueAvg || 0);
+    const accountsPayableValueAvg_driver = Number(periodInput.accountsPayableValueAvg || 0);
+    const netFixedAssets_driver = Number(periodInput.netFixedAssets || 0);
+    const totalBankLoans_driver = Number(periodInput.totalBankLoans || 0);
+    const openingCash_driver = periodIndex === 0 ? Number(periodInput.openingCash || 0) : (previousPeriodCalculated?.closingCash || 0);
+    const initialEquity_driver = periodIndex === 0 ? Number(periodInput.initialEquity || 0) : (previousPeriodCalculated?.equity || 0);
 
-    // --- Cash Flow Analysis ---
-    const openingCashForPeriod = periodIndex === 0 ? 
-      (periodInput.openingCash === null || typeof periodInput.openingCash === 'undefined' ? 0 : Number(periodInput.openingCash)) : 
-      (previousPeriodCalculated?.closingCash || 0);
 
-    const operatingCashFlow = netProfit + depreciationAndAmortisation;
-    const prevWcValue = previousPeriodCalculated?.workingCapitalValue;
-    const workingCapitalChange = (prevWcValue !== null && typeof prevWcValue !== 'undefined') ? 
-      workingCapitalValue - prevWcValue : workingCapitalValue;
-    const cashFromOpsAfterWC = operatingCashFlow - workingCapitalChange;
-    const netCashFlowBeforeFinancing = cashFromOpsAfterWC - capitalExpenditures;
-    const prevTotalBankLoans = previousPeriodCalculated?.totalBankLoans;
-    const changeInDebt = (prevTotalBankLoans !== null && typeof prevTotalBankLoans !== 'undefined') ? 
-      totalBankLoans - prevTotalBankLoans : totalBankLoans;
-    const cashFlowFromFinancing = changeInDebt - dividendsPaid;
-    const netChangeInCash = netCashFlowBeforeFinancing + cashFlowFromFinancing;
-    const closingCash = openingCashForPeriod + netChangeInCash;
+    // --- P&L Reconstruction with Overrides ---
+    const revenue = revenue_driver; // Revenue is always a primary driver
 
-    // --- Balance Sheet FINAL Reconstruction & Difference (using definitive values) ---
-    const finalEstimatedCurrentAssets = closingCash + accountsReceivableValueAvg + inventoryValueForBalanceSheetAndWC;
-    const finalEstimatedTotalAssets = finalEstimatedCurrentAssets + netFixedAssets;
-
-    let finalEquity;
-    if (periodIndex === 0) {
-      finalEquity = (periodInput.initialEquity === null || typeof periodInput.initialEquity === 'undefined' ? 0 : Number(periodInput.initialEquity)) + retainedProfit;
-    } else {
-      finalEquity = (previousPeriodCalculated?.equity || 0) + retainedProfit;
+    let cogs = getOverrideValue(periodInput, 'override_cogs');
+    if (cogs === null) {
+      cogs = revenue * (1 - grossMarginPercentage_driver);
     }
 
-    // Liabilities remain simplified for this model based on inputs
-    const finalEstimatedCurrentLiabilities = accountsPayableValueAvg;
-    const finalEstimatedNonCurrentLiabilities = totalBankLoans;
-    const finalEstimatedTotalLiabilities = finalEstimatedCurrentLiabilities + finalEstimatedNonCurrentLiabilities;
+    let grossProfit = getOverrideValue(periodInput, 'override_grossProfit');
+    if (grossProfit === null) {
+      grossProfit = revenue - cogs; // Uses potentially overridden cogs
+    }
 
-    // CRITICAL: Calculate balanceSheetDifference using these final derived/input BS figures for THIS period
+    let ebitda = getOverrideValue(periodInput, 'override_ebitda');
+    if (ebitda === null) {
+      ebitda = grossProfit - operatingExpenses_driver; // Uses potentially overridden grossProfit
+    }
+
+    let ebit = getOverrideValue(periodInput, 'override_ebit');
+    if (ebit === null) {
+      ebit = ebitda - depreciationAndAmortisation_driver; // Uses potentially overridden ebitda
+    }
+
+    let pbt = getOverrideValue(periodInput, 'override_pbt');
+    if (pbt === null) {
+        pbt = ebit + netInterestExpenseIncome_driver + extraordinaryItems_driver; // Uses potentially overridden ebit
+    }
+    
+    let incomeTax = getOverrideValue(periodInput, 'override_incomeTax');
+    if (incomeTax === null) {
+        incomeTax = pbt > 0 ? pbt * incomeTaxRatePercentage_driver : 0; // Uses potentially overridden pbt
+    }
+
+    let netProfit = getOverrideValue(periodInput, 'override_netProfit');
+    if (netProfit === null) {
+      netProfit = pbt - incomeTax; // Uses potentially overridden pbt and incomeTax
+    }
+    
+    const retainedProfit = netProfit - dividendsPaid_driver; // Uses potentially overridden netProfit
+
+    // --- WORKING CAPITAL DAYS (Always derived from average value inputs) ---
+    const arDaysDerived = revenue > 0 ? (accountsReceivableValueAvg_driver / revenue) * daysInPeriod : 0;
+    const inventoryDaysDerived = cogs > 0 ? (inventoryValueAvg_driver / cogs) * daysInPeriod : 0;
+    const apDaysDerived = cogs > 0 ? (accountsPayableValueAvg_driver / cogs) * daysInPeriod : 0;
+    const wcDays = arDaysDerived + inventoryDaysDerived - apDaysDerived;
+
+    // --- WORKING CAPITAL VALUE (Always from average value inputs) ---
+    const workingCapitalValue = accountsReceivableValueAvg_driver + inventoryValueAvg_driver - accountsPayableValueAvg_driver;
+
+    // --- CASH FLOW ANALYSIS (Uses final P&L values, driver-based WC values, and input CAPEX) ---
+    let operatingCashFlow = getOverrideValue(periodInput, 'override_operatingCashFlow');
+    if (operatingCashFlow === null) {
+      operatingCashFlow = netProfit + depreciationAndAmortisation_driver;
+    }
+
+    const prevWcValue = previousPeriodCalculated?.workingCapitalValue; // Uses WC value from previous period
+    let workingCapitalChange = getOverrideValue(periodInput, 'override_workingCapitalChange');
+    if (workingCapitalChange === null) {
+        workingCapitalChange = (prevWcValue !== null && typeof prevWcValue !== 'undefined') 
+            ? workingCapitalValue - prevWcValue 
+            : workingCapitalValue;
+    }
+    
+    const cashFromOpsAfterWC = operatingCashFlow - workingCapitalChange;
+    const netCashFlowBeforeFinancing = cashFromOpsAfterWC - capitalExpenditures_driver;
+    
+    const prevTotalBankLoans = previousPeriodCalculated?.totalBankLoans; // Uses totalBankLoans from previous period
+    const changeInDebt = (prevTotalBankLoans !== null && typeof prevTotalBankLoans !== 'undefined') 
+        ? totalBankLoans_driver - prevTotalBankLoans 
+        : totalBankLoans_driver; // Assume initial debt if first period
+        
+    const cashFlowFromFinancing = changeInDebt - dividendsPaid_driver;
+    const netChangeInCash = netCashFlowBeforeFinancing + cashFlowFromFinancing;
+    
+    const calculatedClosingCash = openingCash_driver + netChangeInCash;
+    const closingCash = getOverrideValue(periodInput, 'override_closingCash') ?? calculatedClosingCash;
+    const cashReconciliationDifference = (getOverrideValue(periodInput, 'override_closingCash') !== null) 
+                                       ? closingCash - calculatedClosingCash 
+                                       : 0;
+
+    // --- BALANCE SHEET ASSEMBLY (Adaptive - Prioritize Overrides for Ending Balances) ---
+    const arValueForBS = getOverrideValue(periodInput, 'override_AR_ending') ?? accountsReceivableValueAvg_driver;
+    const inventoryValueForBS = getOverrideValue(periodInput, 'override_Inventory_ending') ?? inventoryValueAvg_driver;
+    const accountsPayableValueForBS = getOverrideValue(periodInput, 'override_AP_ending') ?? accountsPayableValueAvg_driver;
+
+    let finalEstimatedCurrentAssets = getOverrideValue(periodInput, 'override_totalCurrentAssets');
+    if (finalEstimatedCurrentAssets === null) {
+      finalEstimatedCurrentAssets = closingCash + arValueForBS + inventoryValueForBS;
+    }
+
+    let finalEstimatedTotalAssets = getOverrideValue(periodInput, 'override_totalAssets');
+    if (finalEstimatedTotalAssets === null) {
+      finalEstimatedTotalAssets = finalEstimatedCurrentAssets + netFixedAssets_driver;
+    }
+    
+    let finalEquity = getOverrideValue(periodInput, 'override_equity_ending');
+    if (finalEquity === null) {
+      if (periodIndex === 0) {
+        finalEquity = initialEquity_driver + retainedProfit;
+      } else {
+        finalEquity = (previousPeriodCalculated?.equity || 0) + retainedProfit;
+      }
+    }
+
+    let finalEstimatedTotalLiabilities = getOverrideValue(periodInput, 'override_totalLiabilities');
+    if (finalEstimatedTotalLiabilities === null) {
+        const finalEstimatedCurrentLiabilities = getOverrideValue(periodInput, 'override_totalCurrentLiabilities') ?? accountsPayableValueForBS;
+        // For simplicity, if totalLiabilities is not overridden, non-current is totalBankLoans
+        const finalEstimatedNonCurrentLiabilities = totalBankLoans_driver; 
+        finalEstimatedTotalLiabilities = finalEstimatedCurrentLiabilities + finalEstimatedNonCurrentLiabilities;
+    }
+    
     const finalBalanceSheetDifference = finalEstimatedTotalAssets - (finalEstimatedTotalLiabilities + finalEquity);
 
-    // --- Other Analyses ---
-    const arPer100Revenue = revenue ? (accountsReceivableValueAvg / revenue) * 100 : 0;
-    const inventoryPer100Revenue = revenue ? (inventoryValueForBalanceSheetAndWC / revenue) * 100 : 0;
-    const apPer100Revenue = cogs ? (accountsPayableValueAvg / cogs) * 100 : 0;
+    // --- Additional KPIs ---
+    const gmPct = revenue ? (grossProfit / revenue) * 100 : 0;
+    const opProfitPct = revenue ? (ebit / revenue) * 100 : 0;
+    const netProfitPct = revenue ? (netProfit / revenue) * 100 : 0;
+    const arPer100Revenue = revenue ? (accountsReceivableValueAvg_driver / revenue) * 100 : 0;
+    const inventoryPer100Revenue = revenue ? (inventoryValueAvg_driver / revenue) * 100 : 0;
+    const apPer100Revenue = cogs ? (accountsPayableValueAvg_driver / cogs) * 100 : 0;
     const wcPer100Revenue = revenue ? (workingCapitalValue / revenue) * 100 : 0;
     const fundingGapOrSurplus = -(netCashFlowBeforeFinancing);
 
     const currentPeriodResult = {
-      // Original Inputs
-      ...periodInput,
+      // Store original inputs (as numbers or null)
+      revenue: revenue_driver, grossMarginPercentage: periodInput.grossMarginPercentage, 
+      operatingExpenses: operatingExpenses_driver, depreciationAndAmortisation: depreciationAndAmortisation_driver,
+      netInterestExpenseIncome: netInterestExpenseIncome_driver, incomeTaxRatePercentage: periodInput.incomeTaxRatePercentage,
+      dividendsPaid: dividendsPaid_driver, extraordinaryItems: extraordinaryItems_driver, capitalExpenditures: capitalExpenditures_driver,
+      openingCash: periodInput.openingCash, accountsReceivableValueAvg: accountsReceivableValueAvg_driver,
+      inventoryValueAvg: inventoryValueAvg_driver, netFixedAssets: netFixedAssets_driver,
+      accountsPayableValueAvg: accountsPayableValueAvg_driver, totalBankLoans: totalBankLoans_driver, initialEquity: periodInput.initialEquity,
+      // Store all override inputs
+      override_cogs: periodInput.override_cogs, override_grossProfit: periodInput.override_grossProfit,
+      override_ebitda: periodInput.override_ebitda, override_ebit: periodInput.override_ebit,
+      override_pbt: periodInput.override_pbt, override_incomeTax: periodInput.override_incomeTax,
+      override_netProfit: periodInput.override_netProfit, override_AR_ending: periodInput.override_AR_ending,
+      override_Inventory_ending: periodInput.override_Inventory_ending, override_AP_ending: periodInput.override_AP_ending,
+      override_totalCurrentAssets: periodInput.override_totalCurrentAssets, override_totalAssets: periodInput.override_totalAssets,
+      override_totalCurrentLiabilities: periodInput.override_totalCurrentLiabilities, override_totalLiabilities: periodInput.override_totalLiabilities,
+      override_equity_ending: periodInput.override_equity_ending, override_closingCash: periodInput.override_closingCash,
+      override_operatingCashFlow: periodInput.override_operatingCashFlow, override_workingCapitalChange: periodInput.override_workingCapitalChange,
 
-      // P&L Calculated
-      revenue,
-      cogs,
-      grossProfit,
-      gmPct: grossMarginPercentageInput * 100,
-      operatingExpenses,
-      ebitda,
-      depreciationAndAmortisation,
-      ebit,
-      opProfitPct: revenue ? (ebit / revenue) * 100 : 0,
-      netInterestExpenseIncome,
-      extraordinaryItems,
-      pbt,
-      incomeTaxRatePercentageActual: incomeTaxRatePercentageInput,
-      incomeTax,
-      netProfit,
-      netProfitPct: revenue ? (netProfit / revenue) * 100 : 0,
-      dividendsPaid,
-      retainedProfit,
-      capitalExpenditures,
-
-      // Balance Sheet & WC Calculated/Derived
-      openingCash: openingCashForPeriod,
-      closingCash,
+      // P&L Final Values
+      cogs, grossProfit, gmPct, ebitda, ebit, opProfitPct, pbt,
+      incomeTaxRatePercentageActual: incomeTaxRatePercentage_driver, // Keep track of driver used for tax calc
+      incomeTax, netProfit, netProfitPct, retainedProfit,
       
-      accountsReceivableValueAvg, // Input
-      arDaysDerived, // Derived
-      
-      inventoryValueAvg, // Input
-      inventoryDaysDerived, // Derived
-      inventoryValue: inventoryValueForBalanceSheetAndWC, // This is inventoryValueAvg
-      
-      accountsPayableValueAvg, // Input
-      apDaysDerived, // Derived
-      
-      wcDays, // Derived using all derived days
-
-      // Use FINAL BS figures
-      estimatedCurrentAssets: finalEstimatedCurrentAssets,
-      netFixedAssets,
+      // BS & WC Final Values
+      calculatedOpeningCash: openingCash_driver, // The actual opening cash used
+      closingCash, arDaysDerived, inventoryDaysDerived, apDaysDerived, wcDays,
+      inventoryValue: inventoryValueForBS, // What's used in BS
+      workingCapitalValue, workingCapitalChange,
+      estimatedCurrentAssets: finalEstimatedCurrentAssets, 
       estimatedTotalAssets: finalEstimatedTotalAssets,
-      totalBankLoans,
-      estimatedCurrentLiabilities: finalEstimatedCurrentLiabilities,
-      estimatedNonCurrentLiabilities: finalEstimatedNonCurrentLiabilities,
-      estimatedTotalLiabilities: finalEstimatedTotalLiabilities,
-      equity: finalEquity,
-      balanceSheetDifference: finalBalanceSheetDifference, // Use the consistently calculated difference
+      estimatedTotalLiabilities: finalEstimatedTotalLiabilities, 
+      equity: finalEquity, 
+      balanceSheetDifference: finalBalanceSheetDifference,
+      cashReconciliationDifference, // New field for cash override impact
+      
+      // KPIs
+      arPer100Revenue, inventoryPer100Revenue, apPer100Revenue, wcPer100Revenue,
+      operatingCashFlow, cashFromOpsAfterWC, netCashFlowBeforeFinancing,
+      changeInDebt, cashFlowFromFinancing, netChangeInCash, fundingGapOrSurplus,
 
-      workingCapitalValue,
-      workingCapitalChange,
-      arPer100Revenue,
-      inventoryPer100Revenue,
-      apPer100Revenue,
-      wcPer100Revenue,
-
-      operatingCashFlow,
-      cashFromOpsAfterWC,
-      netCashFlowBeforeFinancing,
-      changeInDebt,
-      cashFlowFromFinancing,
-      netChangeInCash,
-      fundingGapOrSurplus,
-
-      // Standardized day outputs for KPIs (all derived now)
-      arDays: arDaysDerived,
-      invDays: inventoryDaysDerived,
-      apDays: apDaysDerived,
+      // Standardized day outputs for direct KPI use
+      arDays: arDaysDerived, 
+      invDays: inventoryDaysDerived, 
+      apDays: apDaysDerived, 
     };
-
-    previousPeriodCalculated = currentPeriodResult;
+    previousPeriodCalculated = currentPeriodResult; 
     return currentPeriodResult;
   });
-
   return calculatedDataAllPeriods;
 }

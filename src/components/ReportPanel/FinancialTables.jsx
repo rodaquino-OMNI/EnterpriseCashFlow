@@ -13,6 +13,20 @@ import { PERIOD_TYPES } from '../../utils/constants';
 export default function FinancialTables({ calculatedData, periodType, detailedMode }) {
   const periodLabel = PERIOD_TYPES[periodType]?.shortLabel || periodType;
 
+  // Special mapping for fields that have different override key names
+  const getOverrideKey = (fieldKey) => {
+    const overrideKeyMap = {
+      'accountsReceivableValueAvg': 'override_AR_ending',
+      'inventoryValueAvg': 'override_Inventory_ending', 
+      'accountsPayableValueAvg': 'override_AP_ending',
+      'equity': 'override_equity_ending',
+      'closingCash': 'override_closingCash',
+      'operatingCashFlow': 'override_operatingCashFlow',
+      'workingCapitalChange': 'override_workingCapitalChange'
+    };
+    return overrideKeyMap[fieldKey] || `override_${fieldKey}`;
+  };
+
   const generatePeriodHeaders = (withTrend = true) => {
     return (
       <>
@@ -119,11 +133,29 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
           return (
             <tr key={key} className="hover:bg-slate-50">
               <td className="border p-2 font-medium">{getColumnLabel(key)}</td>
-              {values.map((value, idx) => (
-                <td key={idx} className="border p-2 text-right">
-                  {formatCellValue(key, value)}
-                </td>
-              ))}
+              {values.map((value, idx) => {
+                const periodData = calculatedData[idx];
+                const overrideKey = getOverrideKey(key);
+                const isValueOverridden = periodData[overrideKey] !== null && 
+                                         typeof periodData[overrideKey] !== 'undefined' && 
+                                         periodData[overrideKey] !== '';
+                
+                return (
+                  <td key={idx} className="border p-2 text-right">
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>{formatCellValue(key, value)}</span>
+                      {isValueOverridden && (
+                        <span 
+                          className="text-blue-500 text-sm" 
+                          title="Valor informado pelo usuário (override)"
+                        >
+                          🔧
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                );
+              })}
               {values.length > 1 && (
                 <td className="border p-2 text-center">
                   {getTrendIndicator(values)}
