@@ -7,6 +7,8 @@ import ManualDataEntry from './InputPanel/ManualDataEntry';
 import ExcelUploader from './InputPanel/ExcelUploader';
 import PdfUploader from './InputPanel/PdfUploader';
 import AiProviderSelector from './InputPanel/AiProviderSelector';
+import PeriodTypeConfirmation from './InputPanel/PeriodTypeConfirmation';
+import ExcelUploadProgress from './InputPanel/ExcelUploadProgress';
 import ReportRenderer from './ReportPanel/ReportRenderer';
 
 // Hooks
@@ -20,7 +22,7 @@ import { useAiDataExtraction } from '../hooks/useAiDataExtraction';
 
 // Utils
 import { fieldDefinitions, getFieldKeys, validateAllFields } from '../utils/fieldDefinitions';
-import { DEFAULT_PERIODS_MANUAL, DEFAULT_PERIODS_EXCEL, DEFAULT_AI_PROVIDER, PERIOD_TYPES } from '../utils/constants';
+import { DEFAULT_PERIODS_MANUAL, DEFAULT_PERIODS_EXCEL, DEFAULT_AI_PROVIDER } from '../utils/constants';
 import { ANALYSIS_TYPES } from '../utils/aiAnalysisTypes';
 import { generateSmartTemplate, generateBasicDriversTemplate, TEMPLATE_TYPES } from '../utils/excelTemplateGenerator';
 
@@ -46,13 +48,24 @@ export default function ReportGeneratorApp() {
   const [appError, setAppError] = useState(null);
   const [validationErrorDetails, setValidationErrorDetails] = useState(null);
 
+  // New state for Excel upload flow
+  const [pendingExcelParseResult, setPendingExcelParseResult] = useState(null);
+  const [showPeriodTypeConfirmation, setShowPeriodTypeConfirmation] = useState(false);
+
   // --- Initialize Hooks ---
   const { library: ExcelJS, loadLibrary: loadExcelJS, isLoading: isLoadingExcelJS, error: excelJsErrorHook } = useLibrary('ExcelJS');
   const { loadLibrary: loadHtml2pdf, isLoading: isLoadingHtml2pdf, error: html2pdfErrorHook } = useLibrary('html2pdf');
   const { library: pdfjsLibInstance, loadLibrary: loadPdfjsLib, isLoading: isLoadingPdfjs, error: pdfjsErrorHook } = useLibrary('pdfjsLib');
 
   const { calculate, isCalculating, calculationError: calcErrorHook } = useFinancialCalculator();
-  const { parseFile: parseSmartExcelFile, isParsing: isExcelParsing, parsingError: excelParsingErrorHook } = useSmartExcelParser(ExcelJS);
+  const { 
+    parseFile: parseSmartExcelFile, 
+    isParsing: isExcelParsing, 
+    error: excelParsingErrorHook,
+    progress: excelParsingProgress,
+    currentStep: excelParsingCurrentStep,
+    resetParser: resetExcelParser
+  } = useSmartExcelParser(ExcelJS);
 
   // Main AI service hook (for making calls)
   const aiService = useAiService(selectedAiProviderKey);
@@ -62,24 +75,30 @@ export default function ReportGeneratorApp() {
   const { extractTextFromPdf, isParsing: isPdfTextParsing, parsingError: pdfTextParsingErrorHook, setParsingError: clearPdfTextParsingError } = usePdfParser();
   const { extractFinancialData, isExtracting: isAiExtracting, extractionError: aiExtractionErrorHook, setExtractionError: clearAiExtractionError } = useAiDataExtraction(aiService);
 
-  // Initialize/reset currentInputData
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Initialize/reset currentInputData when numberOfPeriods changes
   useEffect(() => {
     const fieldKeys = getFieldKeys();
     const numPeriodsToInit = numberOfPeriods;
-
-    const newBlankInputData = Array(numPeriodsToInit).fill(null).map((_, periodIndex) => {
-      const newPeriod = {};
-      const existingDataForPeriod = currentInputData[periodIndex] || {};
-      fieldKeys.forEach(fieldKey => {
-        const def = fieldDefinitions[fieldKey];
-        newPeriod[fieldKey] = (def.firstPeriodOnly && periodIndex > 0) ? null :
-          (existingDataForPeriod[fieldKey] === undefined ? null : existingDataForPeriod[fieldKey]);
+    
+    // Initialize with the correct number of periods
+    setCurrentInputData(prevData => {
+      // Only update if the length has actually changed
+      if (prevData.length === numPeriodsToInit) {
+        return prevData;
+      }
+      
+      return Array(numPeriodsToInit).fill(null).map((_, periodIndex) => {
+        const newPeriod = {};
+        const existingDataForPeriod = prevData[periodIndex] || {};
+        fieldKeys.forEach(fieldKey => {
+          const def = fieldDefinitions[fieldKey];
+          newPeriod[fieldKey] = (def.firstPeriodOnly && periodIndex > 0) ? null :
+            (existingDataForPeriod[fieldKey] === undefined ? null : existingDataForPeriod[fieldKey]);
+        });
+        return newPeriod;
       });
-      return newPeriod;
     });
-    setCurrentInputData(newBlankInputData);
-  }, [numberOfPeriods]); // Intentionally excluding currentInputData to avoid infinite loop
+  }, [numberOfPeriods]); // Only depend on numberOfPeriods since we use functional setState
 
   const isProcessingSomething = isLoadingExcelJS || isExcelParsing || isCalculating || isLoadingHtml2pdf || isLoadingPdfjs || isPdfTextParsing || isAiExtracting || aiService.isLoading || Object.values(ANALYSIS_TYPES).some(type => aiAnalysisManager.isLoading(type));
 
@@ -123,11 +142,20 @@ export default function ReportGeneratorApp() {
     setInputMethod(method);
     setCalculatedData([]);
     setAppError(null); setValidationErrorDetails(null); setExtractionProgress(null);
+    setPendingExcelParseResult(null); setShowPeriodTypeConfirmation(false);
+    resetExcelParser();
     aiAnalysisManager.clearAllAnalyses();
     if (method === 'manual') setNumberOfPeriods(DEFAULT_PERIODS_MANUAL);
-    else if (method === 'excel') setNumberOfPeriods(DEFAULT_PERIODS_EXCEL);
+    else if (method === 'excel') {
+      setNumberOfPeriods(DEFAULT_PERIODS_EXCEL);
+      // Automatically load ExcelJS when Excel method is selected
+      loadExcelJS().catch(err => {
+        console.error("Failed to load ExcelJS:", err);
+        setAppError(err);
+      });
+    }
     else if (method === 'pdf') setNumberOfPeriods(2);
-  }, [aiAnalysisManager]);
+  }, [aiAnalysisManager, resetExcelParser, loadExcelJS]);
 
   const handleManualInputChange = useCallback((periodIndex, fieldKey, value) => {
     setCurrentInputData(prevData =>
@@ -191,37 +219,79 @@ export default function ReportGeneratorApp() {
   const handleExcelFileUpload = async (file) => {
     setAppError(null);
     setValidationErrorDetails(null); setCalculatedData([]);
+    setPendingExcelParseResult(null); setShowPeriodTypeConfirmation(false);
     aiAnalysisManager.clearAllAnalyses();
+    
     try {
-      const {
-        data: parsedInputData,
-        detectedPeriods,
-        templateType,
-        warnings: parseWarnings,
-        dataInsights,
-        suggestions
-      } = await parseSmartExcelFile(file);
-
-      console.log("Smart Parser Result:", {parsedInputData, detectedPeriods, templateType, parseWarnings, dataInsights, suggestions});
-
-      if (parseWarnings && parseWarnings.length > 0) {
-        setAppError(new Error(`Avisos durante o parse do Excel: ${parseWarnings.join('; ')}`));
-      }
-
-      setNumberOfPeriods(detectedPeriods);
-      setCurrentInputData(parsedInputData);
-
-      const validationErrs = validateAllFields(parsedInputData);
-      if (validationErrs.length > 0) {
-        setValidationErrorDetails(validationErrs);
-        setAppError(new Error("Dados do Excel carregados, mas contêm erros de validação. Verifique os campos destacados."));
+      const parseResult = await parseSmartExcelFile(file, periodType);
+      console.log("Smart Parser Result:", parseResult);
+      
+      // Check if there's a period type mismatch
+      if (parseResult.detectedPeriodType && parseResult.detectedPeriodType !== periodType) {
+        setPendingExcelParseResult(parseResult);
+        setShowPeriodTypeConfirmation(true);
         return;
       }
-      const result = await calculate(parsedInputData, periodType);
-      setCalculatedData(result);
+      
+      // No period type conflict, proceed directly
+      await processParsedExcelData(parseResult);
+      
     } catch (err) {
       console.error("Error in handleExcelFileUpload:", err);
     }
+  };
+
+  const processParsedExcelData = async (parseResult) => {
+    const {
+      data: parsedInputData,
+      detectedPeriods,
+      detectedPeriodType,
+      warnings: parseWarnings
+    } = parseResult;
+
+    if (parseWarnings && parseWarnings.length > 0) {
+      console.warn("Parse warnings:", parseWarnings);
+    }
+
+    // Update app state
+    setNumberOfPeriods(detectedPeriods);
+    if (detectedPeriodType && detectedPeriodType !== periodType) {
+      setPeriodType(detectedPeriodType);
+    }
+    setCurrentInputData(parsedInputData);
+
+    // Validate and calculate
+    const validationErrs = validateAllFields(parsedInputData);
+    if (validationErrs.length > 0) {
+      setValidationErrorDetails(validationErrs);
+      setAppError(new Error("Dados do Excel carregados, mas contêm erros de validação. Verifique os campos destacados."));
+      return;
+    }
+
+    const result = await calculate(parsedInputData, detectedPeriodType || periodType);
+    setCalculatedData(result);
+  };
+
+  const handlePeriodTypeConfirmation = async (confirmedPeriodType) => {
+    setShowPeriodTypeConfirmation(false);
+    
+    if (pendingExcelParseResult) {
+      // Update the period type in the parse result
+      const updatedParseResult = {
+        ...pendingExcelParseResult,
+        detectedPeriodType: confirmedPeriodType
+      };
+      
+      await processParsedExcelData(updatedParseResult);
+    }
+    
+    setPendingExcelParseResult(null);
+  };
+
+  const handlePeriodTypeConfirmationCancel = () => {
+    setShowPeriodTypeConfirmation(false);
+    setPendingExcelParseResult(null);
+    resetExcelParser();
   };
 
   const handlePdfFileUpload = async (file) => {
@@ -307,10 +377,10 @@ export default function ReportGeneratorApp() {
           onTemplateDownloadRequest={handleTemplateDownloadRequest}
           onFileUpload={handleExcelFileUpload}
           isLoading={isProcessingSomething}
-          excelJsLoading={isLoadingExcelJS}
+          isExcelJsLoading={isLoadingExcelJS}
           excelJsError={excelJsErrorHook}
-          numberOfPeriodsContext={numberOfPeriods}
-          periodTypeLabelContext={PERIOD_TYPES[periodType]?.label || periodType}
+          currentAppNumberOfPeriods={numberOfPeriods}
+          currentAppPeriodType={periodType}
         />
       )}
       {inputMethod === 'manual' && (
@@ -338,13 +408,32 @@ export default function ReportGeneratorApp() {
           extractionProgress={extractionProgress}
         />
       )}
+
+      {/* Excel Upload Progress Modal */}
+      <ExcelUploadProgress
+        isVisible={isExcelParsing}
+        progress={excelParsingProgress}
+        currentStep={excelParsingCurrentStep}
+        qualityAnalysis={pendingExcelParseResult?.qualityAnalysis}
+        recommendations={pendingExcelParseResult?.recommendations}
+      />
+
+      {/* Period Type Confirmation Modal */}
+      <PeriodTypeConfirmation
+        isVisible={showPeriodTypeConfirmation}
+        detectedPeriodType={pendingExcelParseResult?.detectedPeriodType}
+        expectedPeriodType={periodType}
+        onConfirm={handlePeriodTypeConfirmation}
+        onCancel={handlePeriodTypeConfirmationCancel}
+      />
+
       {appError && !isProcessingSomething && (
         <div className="my-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-md" role="alert">
           <p className="font-bold">Ocorreu um Erro na Aplicação:</p>
           <pre className="whitespace-pre-wrap text-sm mt-1">{appError.message}</pre>
         </div>
       )}
-      {isProcessingSomething && (
+      {isProcessingSomething && !isExcelParsing && (
         <div className="my-6 p-6 flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-lg text-slate-600">Processando dados...</p>

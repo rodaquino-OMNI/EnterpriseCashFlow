@@ -8,18 +8,43 @@ export function useLibrary(libraryNameGlobal) {
 
   const loadLibrary = useCallback(async () => {
     if (library) return library; // Already "loaded" (available)
-
+    
     setIsLoading(true);
     setError(null);
-
-    // Simulate a small delay for "loading" or to allow scripts to potentially finish loading
-    // In a real scenario, this would be where you might dynamically inject a script tag
-    // if the library wasn't preloaded.
+    
+    // For ExcelJS specifically, try multiple global names and wait for it to load
+    if (libraryNameGlobal === 'ExcelJS') {
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max wait
+      
+      while (attempts < maxAttempts) {
+        // ExcelJS can be available as ExcelJS, excel, or ExcelJS.Workbook
+        if (window.ExcelJS || window.excel || (window.ExcelJS && window.ExcelJS.Workbook)) {
+          const libInstance = window.ExcelJS || window.excel;
+          setLibrary(() => libInstance);
+          setIsLoading(false);
+          return libInstance;
+        }
+        
+        // Wait 100ms before next attempt
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      
+      // If we get here, ExcelJS didn't load
+      const errMsg = `Biblioteca ${libraryNameGlobal} não carregou no tempo esperado. Verifique sua conexão de internet e se o CDN está acessível.`;
+      console.error(errMsg);
+      setError(new Error(errMsg));
+      setIsLoading(false);
+      return null;
+    }
+    
+    // Original logic for other libraries
     await new Promise(resolve => setTimeout(resolve, 50));
-
+    
     if (window[libraryNameGlobal]) {
       const libInstance = window[libraryNameGlobal];
-      setLibrary(() => libInstance); // Use functional update for safety
+      setLibrary(() => libInstance);
       setIsLoading(false);
       return libInstance;
     } else {
@@ -29,7 +54,6 @@ export function useLibrary(libraryNameGlobal) {
       setIsLoading(false);
       return null;
     }
-
   }, [library, libraryNameGlobal]);
 
   // Optional: Reset state if needed
