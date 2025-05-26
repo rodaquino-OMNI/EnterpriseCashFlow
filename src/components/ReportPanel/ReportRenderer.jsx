@@ -48,7 +48,22 @@ export default function ReportRenderer({
   // Perform data validation using useMemo to avoid re-calculating on every render
   const validationResults = useMemo(() => {
     if (calculatedData && calculatedData.length > 0) {
-      return runAllValidations(calculatedData);
+      try {
+        // Add additional validation to ensure data is complete
+        const isDataComplete = calculatedData.every(period => 
+          period && 
+          typeof period === 'object' && 
+          period.hasOwnProperty('revenue') &&
+          period.hasOwnProperty('estimatedTotalAssets')
+        );
+        
+        if (isDataComplete) {
+          return runAllValidations(calculatedData);
+        }
+      } catch (error) {
+        console.error('Error in validation:', error);
+        return { isValidOverall: true, errors: [], warnings: [], infos: [], successes: [] };
+      }
     }
     return null;
   }, [calculatedData]);

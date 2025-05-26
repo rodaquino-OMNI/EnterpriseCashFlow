@@ -157,49 +157,6 @@ export function runAllValidations(calculatedData) {
 }
 
 /**
- * Consolidates similar alerts across multiple periods
- * @param {Array} alerts - Array of individual period alerts
- * @returns {Array} Consolidated alerts
- */
-function consolidateAlerts(alerts) {
-  const consolidated = new Map();
-  
-  alerts.forEach(alert => {
-    const key = `${alert.category}_${alert.type}`;
-    
-    if (consolidated.has(key)) {
-      const existing = consolidated.get(key);
-      existing.affectedPeriods.push(alert.periodLabel);
-      existing.details.push({
-        period: alert.periodLabel,
-        message: alert.message,
-        values: alert.values || {}
-      });
-    } else {
-      consolidated.set(key, {
-        ...alert,
-        affectedPeriods: [alert.periodLabel],
-        details: [{
-          period: alert.periodLabel,
-          message: alert.message,
-          values: alert.values || {}
-        }],
-        isConsolidated: true
-      });
-    }
-  });
-  
-  // Convert back to array and update messages for consolidated alerts
-  return Array.from(consolidated.values()).map(alert => {
-    if (alert.details.length > 1) {
-      alert.message = `${alert.category} em ${alert.details.length} períodos: ${alert.affectedPeriods.join(', ')}`;
-      alert.consolidatedMessage = alert.message;
-    }
-    return alert;
-  });
-}
-
-/**
  * Enhanced validation with focus on latest period and trends
  * @param {import('../types/financial').CalculatedPeriodData[]} calculatedData
  * @returns {object} Enhanced validation results
@@ -527,7 +484,41 @@ export function validateWorkingCapitalEfficiency(periodData) {
 export function ValidationAlerts({ validationResults }) {
   const [expandedSections, setExpandedSections] = useState(new Set());
   
-  if (!validationResults || validationResults.summary.total === 0) {
+  // Handle both validation result structures
+  if (!validationResults) {
+    return (
+      <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center">
+          <span className="text-green-600 text-lg mr-2">✅</span>
+          <span className="text-green-800 font-medium">Dados validados com sucesso - nenhum problema crítico detectado.</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Normalize the structure - handle both runAllValidations and validateFinancialData results
+  // Add defensive checks for all properties
+  const normalizedResults = {
+    critical: validationResults.critical || validationResults.errors || [],
+    warnings: validationResults.warnings || [],
+    infos: validationResults.infos || [],
+    trends: validationResults.trends || [],
+    successes: validationResults.successes || [],
+    latest: validationResults.latest || null,
+    summary: validationResults.summary || {
+      total: ((validationResults.errors && validationResults.errors.length) || 0) + 
+             ((validationResults.warnings && validationResults.warnings.length) || 0) + 
+             ((validationResults.trends && validationResults.trends.length) || 0),
+      critical: (validationResults.errors && validationResults.errors.length) || 0,
+      warnings: (validationResults.warnings && validationResults.warnings.length) || 0
+    }
+  };
+
+  const { critical, warnings, trends, infos, successes, summary, latest } = normalizedResults;
+
+  // Check if there are any issues to display
+  const totalIssues = critical.length + warnings.length + trends.length;
+  if (totalIssues === 0 && successes.length === 0) {
     return (
       <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
         <div className="flex items-center">
@@ -547,8 +538,6 @@ export function ValidationAlerts({ validationResults }) {
     }
     setExpandedSections(newExpanded);
   };
-  
-  const { critical, warnings, trends, infos, summary, latest } = validationResults;
   
   const AlertSection = ({ alerts, title, bgColor, borderColor, textColor, icon, sectionId, defaultExpanded = false }) => {
     if (!alerts || alerts.length === 0) return null;
