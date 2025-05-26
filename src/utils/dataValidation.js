@@ -3,6 +3,160 @@ import React, { useState } from 'react';
 import { formatCurrency, formatPercentage, formatDays } from './formatters';
 
 /**
+ * @typedef {'PME_BAIXO' | 'PME_ALTO_EXTREMO' | 'PMP_ALTO' | 'CICLO_NEGATIVO_ALTO' | 'CICLO_POSITIVO_ALTO' | 'MARGEM_VOLATILIDADE' | 'BALANCO_INCONSISTENTE' | 'CALCULO_BALANCO_INCONSISTENTE' | 'CARGA_TRIBUTARIA_ALTA' | 'FCO_VS_NETPROFIT_DIVERGENCE' | 'RISCO_INSOLVENCIA'} ValidationIssueType
+ */
+
+/**
+ * @typedef {Object} ValidationEntry
+ * @property {ValidationIssueType} type
+ * @property {string} message
+ * @property {number | null | undefined} value
+ * @property {string} field Key of the field in calculatedData
+ * @property {'critical' | 'warning' | 'info' | 'success'} severity
+ * @property {string} [periodLabel]
+ * @property {string} [suggestion]
+ * @property {{suspectedIssue?: string, suggestedMultiplier?: number}} [autoFix]
+ */
+
+// Enhanced validateBalanceSheetConsistencyInternal (renamed to avoid conflicts)
+export function validateBalanceSheetConsistencyInternal(periodData) {
+  const assets = periodData.estimatedTotalAssets;
+  const liabilities = periodData.estimatedTotalLiabilities;
+  const equity = periodData.equity;
+  
+  const independentDifference = assets - (liabilities + equity); // A - (L+E)
+  const storedDifference = periodData.balanceSheetDifference;   // Should be A - (L+E)
+  
+  if (Math.abs(independentDifference - storedDifference) > 1) { // Allow small float tolerance up to 1
+    return {
+      type: 'CALCULO_BALANCO_INCONSISTENTE', category: 'Erro Interno de Cálculo do Balanço',
+      message: `Erro de consistência interna no cálculo do balanço. Diferença armazenada (${formatCurrency(storedDifference)}) não confere com o cálculo independente dos totais exibidos (${formatCurrency(independentDifference)}). Isso indica um bug no sistema de cálculo. Contate o suporte.`,
+      severity: 'critical', value: independentDifference - storedDifference, field: 'balanceSheetDifference'
+    };
+  }
+  
+  const materialThreshold = Math.max(Math.abs(assets * 0.02), 100); // 2% of assets or R$100
+  if (Math.abs(storedDifference) > materialThreshold) {
+    return {
+      type: 'BALANCO_INCONSISTENTE', category: 'Equilíbrio do Balanço Patrimonial',
+      message: `Diferença significativa de ${formatCurrency(storedDifference)} no Balanço Patrimonial. Isso representa ${assets !== 0 ? formatPercentage(Math.abs(storedDifference / assets) * 100) : 'N/A'} dos ativos. Revisar URGENTEMENTE os dados de entrada para garantir a precisão da análise.`,
+      severity: 'critical', value: storedDifference, field: 'balanceSheetDifference',
+      suggestion: 'Verifique principalmente: Caixa Inicial (1º per.), PL Inicial (1º per.), Empréstimos Bancários, Imobilizado Líquido, e os valores médios de Contas a Receber, Estoque e Contas a Pagar.'
+    };
+  } else if (Math.abs(storedDifference) > 1) { 
+     return {
+      type: 'BALANCO_INCONSISTENTE', category: 'Equilíbrio do Balanço Patrimonial',
+      message: `Pequena diferença de ${formatCurrency(storedDifference)} no Balanço. Pode ser devido a arredondamentos, mas idealmente deveria ser zero. Revise os inputs se persistir.`,
+      severity: 'warning', value: storedDifference, field: 'balanceSheetDifference'
+    };
+  }
+  return null;
+}
+
+// Enhanced validateInventoryLevels (including high PME check)
+export function validateInventoryLevels(periodData) {
+  const inventoryDays = periodData.inventoryDaysDerived;
+  const inventoryValue = periodData.inventoryValueAvg;
+  const revenue = periodData.revenue;
+  const cogs = periodData.cogs;
+
+  // Check for extremely high PME (greater than 365 days)
+  if (inventoryDays > 365) {
+    return {
+      type: 'PME_ALTO_EXTREMO', category: 'Prazo Médio de Estoques (PME)',
+      message: `PME de ${formatDays(inventoryDays)} é irrealisticamente alto (maior que 1 ano). Verifique: (1) Valor médio de estoque (${formatCurrency(inventoryValue)}) está na escala correta (ex: não em milhares se outros valores não estão)? (2) CPV/CSV (${formatCurrency(cogs)}) está anualizado corretamente ou reflete o período?`,
+      severity: 'critical', value: inventoryDays, field: 'inventoryDaysDerived',
+      suggestion: 'Para varejo: PME típico 30-90 dias. Para indústria: 60-180 dias. Se o valor estiver correto, a empresa pode ter sérios problemas de obsolescência ou gestão de estoque.'
+    };
+  } else if (inventoryDays < 1 && inventoryValue > 0 && cogs > 0) { 
+    return {
+      type: 'PME_BAIXO', category: 'Prazo Médio de Estoques (PME)',
+      message: `PME muito baixo (${formatDays(inventoryDays)}), apesar de haver valor de estoque (${formatCurrency(inventoryValue)}). Verifique se os inputs de Estoque Médio e Custo (CPV/CSV) estão corretos e na mesma base temporal.`,
+      severity: 'warning', value: inventoryDays, field: 'inventoryDaysDerived'
+    };
+  }
+  
+  if (revenue > 0 && inventoryValue > 0) {
+    const inventoryToRevenueRatio = (inventoryValue / revenue) * 100;
+    if (inventoryToRevenueRatio > 75) { 
+      return {
+        type: 'PME_ALTO_EXTREMO', category: 'Nível de Estoques vs Receita',
+        message: `Estoques (${formatCurrency(inventoryValue)}) representam ${formatPercentage(inventoryToRevenueRatio)} da receita do período. Este é um nível muito alto e pode indicar excesso de estoque ou problemas de venda.`,
+        severity: 'warning', value: inventoryToRevenueRatio, field: 'inventoryValueAvg',
+        suggestion: 'Compare com benchmarks do setor e analise a adequação do nível de estoque.'
+      };
+    }
+  }
+  return null; 
+}
+
+// Enhanced validateRealisticBusinessMetrics
+export function validateRealisticBusinessMetrics(periodData) {
+  const issues = [];
+  if (!periodData) return issues;
+  
+  if ((periodData.closingCash || 0) < 0 && (periodData.ebit || 0) < 0) {
+    issues.push({
+      type: 'RISCO_INSOLVENCIA', category: 'Risco de Insolvência',
+      message: `Caixa final negativo (${formatCurrency(periodData.closingCash)}) combinado com Lucro Operacional (EBIT) negativo (${formatCurrency(periodData.ebit)}) indica um risco extremo de insolvência.`,
+      severity: 'critical', value: periodData.closingCash, field: 'closingCash',
+      suggestion: 'AÇÃO URGENTE: Análise aprofundada da estrutura de custos, fontes de receita e liquidez. Considerar reestruturação financeira.'
+    });
+  }
+  
+  return issues;
+}
+
+// Enhanced runAllValidations to call the new validation functions
+export function runAllValidations(calculatedData) {
+  if (!calculatedData || calculatedData.length === 0) {
+    return { isValidOverall: true, errors: [], warnings: [], infos: [], successes: [] };
+  }
+  
+  const results = { isValidOverall: true, errors: [], warnings: [], infos: [], successes: [] };
+  
+  const addValidationResult = (result) => {
+    if (!result) return;
+    if (Array.isArray(result)) { 
+      result.forEach(r => addValidationResult(r)); 
+      return; 
+    }
+    if (result.severity === 'critical') { 
+      results.errors.push(result); 
+      results.isValidOverall = false; 
+    }
+    else if (result.severity === 'warning') { 
+      results.warnings.push(result); 
+    }
+    else if (result.severity === 'info') { 
+      results.infos.push(result); 
+    }
+    else if (result.severity === 'success') { 
+      results.successes.push(result); 
+    }
+  };
+  
+  calculatedData.forEach((period, index) => {
+    const periodLabel = `Período ${index + 1}`;
+    
+    // Call enhanced validation functions
+    addValidationResult({ ...validateBalanceSheetConsistencyInternal(period), periodLabel });
+    addValidationResult({ ...validateInventoryLevels(period), periodLabel });
+    addValidationResult({ ...validateWorkingCapitalEfficiency(period), periodLabel });
+    
+    // Call realistic business metrics validation
+    validateRealisticBusinessMetrics(period).forEach(issue => { 
+      addValidationResult({ ...issue, periodLabel }); 
+    });
+  });
+  
+  // Call cash flow patterns validation
+  addValidationResult(validateCashFlowPatterns(calculatedData)); 
+  
+  return results;
+}
+
+/**
  * Consolidates similar alerts across multiple periods
  * @param {Array} alerts - Array of individual period alerts
  * @returns {Array} Consolidated alerts
@@ -167,7 +321,7 @@ export function validateFinancialData(calculatedData) {
  * Check for liquidity crisis in latest period
  */
 function validateLiquidityCrisis(periodData, periodNumber) {
-  const { closingCash, netCashFlowBeforeFinancing, operatingCashFlow } = periodData;
+  const { closingCash, netCashFlowBeforeFinancing } = periodData;
   
   // Critical: Negative FCL with very low cash
   if (netCashFlowBeforeFinancing < 0 && closingCash < Math.abs(netCashFlowBeforeFinancing * 1.5)) {
@@ -318,21 +472,18 @@ export function validateBalanceSheetConsistency(periodData) {
   return null;
 }
 
-/**
- * Enhanced inventory warning for unrealistic inventory levels
- * @param {import('../types/financial').CalculatedPeriodData} periodData
- * @returns {object|null} Validation result or null if valid
- */
-export function validateInventoryLevels(periodData) {
-  const inventoryDays = periodData.inventoryDaysDerived;
+export function validateCashFlowPatterns(calculatedData) {
+  const negativeCount = calculatedData.filter(p => p.netCashFlowBeforeFinancing < 0).length;
+  const totalPeriods = calculatedData.length;
   
-  if (inventoryDays > 365) {
+  if (negativeCount >= Math.ceil(totalPeriods * 0.6)) {
     return {
-      type: 'warning',
-      category: 'Prazo Médio de Estoques Elevado',
-      message: `PME de ${formatDays(inventoryDays)} indica rotação muito lenta.`,
-      severity: 'medium',
-      suggestion: 'Verificar estoques obsoletos e processos de vendas.'
+      type: 'CASH_FLOW_TREND',
+      category: 'Tendência de Fluxo de Caixa Livre Negativo',
+      message: `FCL negativo em ${negativeCount} de ${totalPeriods} períodos. Padrão preocupante que indica necessidade de financiamento recorrente.`,
+      severity: 'warning',
+      field: 'netCashFlowBeforeFinancing',
+      suggestion: 'Revisar estratégia de CAPEX, gestão de capital de giro e estrutura operacional.'
     };
   }
   

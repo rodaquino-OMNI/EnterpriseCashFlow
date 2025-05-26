@@ -22,8 +22,8 @@ import KpiCards from './KpiCards';
 
 import { PERIOD_TYPES } from '../../utils/constants';
 import { ANALYSIS_TYPES, ANALYSIS_METADATA } from '../../utils/aiAnalysisTypes';
-import { validateFinancialData, ValidationAlerts } from '../../utils/dataValidation';
-import { formatCurrency } from '../../utils/formatters';
+import { runAllValidations, ValidationAlerts } from '../../utils/dataValidation';
+import { formatCurrency, formatDays } from '../../utils/formatters';
 
 /**
  * @param {{
@@ -48,7 +48,7 @@ export default function ReportRenderer({
   // Perform data validation using useMemo to avoid re-calculating on every render
   const validationResults = useMemo(() => {
     if (calculatedData && calculatedData.length > 0) {
-      return validateFinancialData(calculatedData);
+      return runAllValidations(calculatedData);
     }
     return null;
   }, [calculatedData]);
@@ -117,68 +117,48 @@ export default function ReportRenderer({
     // console.log('[ReportRenderer] Received errors:', aiAnalysisErrors);
   });
 
-  // Helper function for formatting days
-  const formatDays = (days) => {
-    if (days === null || days === undefined || isNaN(days)) return 'N/A';
-    return `${days.toFixed(1)} dias`;
-  };
-
+  // Enhanced Debug Section Component
   const DebugSection = () => {
-    if (!calculatedData || calculatedData.length === 0) return null;
-    
+    const isDevelopment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'development';
+    if (!isDevelopment || !calculatedData || calculatedData.length === 0) return null;
     const latestPeriod = calculatedData[calculatedData.length - 1];
+    if (!latestPeriod) return null;
     
     return (
-      <section className="mb-8 p-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
-        <h3 className="text-lg font-bold text-yellow-800 mb-4">
-          🔧 Debug Mode - Latest Period Calculation Details
+      <section className="mb-8 p-6 bg-yellow-100 border-2 border-yellow-400 rounded-lg no-print text-xs">
+        <h3 className="text-md font-bold text-yellow-800 mb-3">
+          🔧 Debug Mode - Detalhes do Cálculo (Último Período)
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-          <div className="bg-white p-3 rounded border">
-            <h4 className="font-semibold text-slate-700 mb-2">Balance Sheet Components</h4>
-            <div className="space-y-1">
-              <div>Total Assets (Final): {formatCurrency(latestPeriod.estimatedTotalAssets)}</div>
-              <div>Total Liabilities (Final): {formatCurrency(latestPeriod.estimatedTotalLiabilities)}</div>
-              <div>Equity (Final): {formatCurrency(latestPeriod.equity)}</div>
-              <div className="font-bold border-t pt-1">
-                BS Difference: {formatCurrency(latestPeriod.balanceSheetDifference)}
-              </div>
-              <div className="text-slate-500">
-                Manual Check: {formatCurrency(latestPeriod.estimatedTotalAssets - (latestPeriod.estimatedTotalLiabilities + latestPeriod.equity))}
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+          <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
+            <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Componentes do Balanço</h4>
+            <div className="space-y-0.5">
+              <div>Total Ativos (Final): {formatCurrency(latestPeriod.estimatedTotalAssets)}</div>
+              <div>Total Passivos (Final): {formatCurrency(latestPeriod.estimatedTotalLiabilities)}</div>
+              <div>Patrimônio Líquido (Final): {formatCurrency(latestPeriod.equity)}</div>
+              <div className="font-bold border-t border-slate-200 pt-1 mt-1">Diferença Balanço: {formatCurrency(latestPeriod.balanceSheetDifference)}</div>
+              <div className="text-slate-500">Checagem: {formatCurrency(latestPeriod.estimatedTotalAssets - (latestPeriod.estimatedTotalLiabilities + latestPeriod.equity))}</div>
             </div>
           </div>
-          
-          <div className="bg-white p-3 rounded border">
-            <h4 className="font-semibold text-slate-700 mb-2">Working Capital Days</h4>
-            <div className="space-y-1">
-              <div>PMR (Derived): {formatDays(latestPeriod.arDaysDerived)}</div>
-              <div>PME (Derived): {formatDays(latestPeriod.inventoryDaysDerived)}</div>
-              <div>PMP (Derived): {formatDays(latestPeriod.apDaysDerived)}</div>
-              <div className="font-bold border-t pt-1">
-                WC Cycle: {formatDays(latestPeriod.wcDays)}
-              </div>
-              <div className="text-slate-500">
-                Manual Check: {formatDays(latestPeriod.arDaysDerived + latestPeriod.inventoryDaysDerived - latestPeriod.apDaysDerived)}
-              </div>
+          <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
+            <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Prazos de Capital de Giro (Derivados)</h4>
+            <div className="space-y-0.5">
+              <div>PMR: {formatDays(latestPeriod.arDaysDerived)} (Valor CR Médio: {formatCurrency(latestPeriod.accountsReceivableValueAvg)})</div>
+              <div>PME: {formatDays(latestPeriod.inventoryDaysDerived)} (Valor Estq. Médio: {formatCurrency(latestPeriod.inventoryValueAvg)})</div>
+              <div>PMP: {formatDays(latestPeriod.apDaysDerived)} (Valor CP Médio: {formatCurrency(latestPeriod.accountsPayableValueAvg)})</div>
+              <div className="font-bold border-t border-slate-200 pt-1 mt-1">Ciclo de Caixa: {formatDays(latestPeriod.wcDays)}</div>
+              <div className="text-slate-500">Checagem Ciclo: {formatDays(latestPeriod.arDaysDerived + latestPeriod.inventoryDaysDerived - latestPeriod.apDaysDerived)}</div>
             </div>
           </div>
-          
-          <div className="bg-white p-3 rounded border">
-            <h4 className="font-semibold text-slate-700 mb-2">Cash Flow Logic</h4>
-            <div className="space-y-1">
+          <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
+            <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Lógica do Fluxo de Caixa</h4>
+            <div className="space-y-0.5">
               <div>FCO: {formatCurrency(latestPeriod.operatingCashFlow)}</div>
-              <div>WC Change: {formatCurrency(latestPeriod.workingCapitalChange)}</div>
+              <div>Variação CG: {formatCurrency(latestPeriod.workingCapitalChange)}</div>
               <div>CAPEX: {formatCurrency(latestPeriod.capitalExpenditures)}</div>
-              <div className="font-bold border-t pt-1">
-                FCL: {formatCurrency(latestPeriod.netCashFlowBeforeFinancing)}
-              </div>
-              <div className="font-bold text-red-600">
-                Funding Gap: {formatCurrency(latestPeriod.fundingGapOrSurplus)}
-              </div>
-              <div className="text-slate-500">
-                Gap = -(FCL): {formatCurrency(-latestPeriod.netCashFlowBeforeFinancing)}
-              </div>
+              <div className="font-bold border-t border-slate-200 pt-1 mt-1">FCL (antes Fin.): {formatCurrency(latestPeriod.netCashFlowBeforeFinancing)}</div>
+              <div className="font-bold text-red-600">Necessidade(+)/Exc.(-): {formatCurrency(latestPeriod.fundingGapOrSurplus)}</div>
+              <div className="text-slate-500">Checagem (Gap = -FCL): {formatCurrency(-latestPeriod.netCashFlowBeforeFinancing)}</div>
             </div>
           </div>
         </div>
