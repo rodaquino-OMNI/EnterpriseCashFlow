@@ -185,7 +185,7 @@ export default function ManualDataEntry({
           <select id="numberOfPeriodsEntry" value={numberOfPeriods} onChange={(e) => onNumberOfPeriodsChange(Number(e.target.value))}
             className="w-full p-2.5 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             {Array.from({ length: MAX_PERIODS - MIN_PERIODS_MANUAL + 1 }, (_, i) => MIN_PERIODS_MANUAL + i).map(n => (
-              <option key={`periods-${n}`} value={n}>{n} Períodos</option>
+              <option key={n} value={n}>{n} Períodos</option>
             ))}
           </select>
         </div>
@@ -217,11 +217,15 @@ export default function ManualDataEntry({
       {renderSectionTable("📋 Dados Principais / Drivers Essenciais", driverFieldKeys)}
       
       {/* Override Sections */}
-      {overrideSections.map(section => renderSectionTable(
-          section.title,
-          getFieldKeys(section.category),
-          true,
-          section.key
+      {overrideSections.map(section => (
+        <div key={section.key}>
+          {renderSectionTable(
+            section.title,
+            getFieldKeys(section.category),
+            true,
+            section.key
+          )}
+        </div>
       ))}
 
       {/* Submit Button */}

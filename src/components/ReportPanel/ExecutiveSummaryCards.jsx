@@ -5,7 +5,7 @@ import { formatCurrency, formatPercentage, getMovementClass, getMovementIndicato
 /**
  * @param {{
  * calculatedData: import('../../types/financial').CalculatedPeriodData[];
- * companyInfo: import('../../types/financial').CompanyInfo;
+ * companyInfo: import('../../types/financial').CompanyInfo; 
  * }} props
  */
 export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
@@ -18,20 +18,17 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
 
   const ProfitStoryCard = () => {
     if (!latestPeriod) return null;
-
     let revenueChange = null, gmPctChange = null, opProfitPctChange = null, netProfitPctChange = null;
     if (previousPeriod) {
-      revenueChange = latestPeriod.revenue - previousPeriod.revenue;
-      gmPctChange = latestPeriod.gmPct - previousPeriod.gmPct;
-      opProfitPctChange = latestPeriod.opProfitPct - previousPeriod.opProfitPct;
-      netProfitPctChange = latestPeriod.netProfitPct - previousPeriod.netProfitPct;
+        revenueChange = (latestPeriod.revenue || 0) - (previousPeriod.revenue || 0);
+        gmPctChange = (latestPeriod.gmPct || 0) - (previousPeriod.gmPct || 0);
+        opProfitPctChange = (latestPeriod.opProfitPct || 0) - (previousPeriod.opProfitPct || 0);
+        netProfitPctChange = (latestPeriod.netProfitPct || 0) - (previousPeriod.netProfitPct || 0);
     }
-
     return (
       <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 p-5 md:p-6 rounded-xl shadow-lg border border-blue-200 print:shadow-none print:border-blue-300">
         <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center print:text-lg">
-          <span className="text-2xl mr-2 print:text-xl">📈</span>
-          Sua História de Resultados (Último Período)
+          <span className="text-2xl mr-2 print:text-xl">📈</span> Sua História de Resultados (Último Período)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-1.5 text-sm md:text-base">
@@ -53,7 +50,7 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
                 <span className="text-slate-600">{item.label}:</span>
                 <div className="text-right">
                   <span className={`font-bold ${item.isPercentContext ? 'text-blue-700' : 'text-slate-800'}`}>{item.isPercentContext ? formatPercentage(item.value) : formatCurrency(item.value)}</span>
-                  {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && (
+                  {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && !isNaN(item.change) && (
                     <span className={`ml-2 text-xs font-medium ${getMovementClass(item.change)}`}>
                       ({getMovementIndicator(item.change)} {formatMovement(Math.abs(item.change), item.movementType, item.isPercentContext)})
                     </span>
@@ -72,12 +69,13 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
 
     let arDaysChange = null, inventoryDaysChange = null, apDaysChange = null, wcDaysChange = null;
     if (previousPeriod) {
-      arDaysChange = latestPeriod.arDaysDerived - previousPeriod.arDaysDerived;
-      inventoryDaysChange = latestPeriod.inventoryDaysDerived - previousPeriod.inventoryDaysDerived; // CORRECTED
-      apDaysChange = latestPeriod.apDaysDerived - previousPeriod.apDaysDerived;
-      wcDaysChange = latestPeriod.wcDays - previousPeriod.wcDays; // wcDays is now derived from all derived days
+        arDaysChange = (latestPeriod.arDaysDerived || 0) - (previousPeriod.arDaysDerived || 0);
+        inventoryDaysChange = (latestPeriod.inventoryDaysDerived || 0) - (previousPeriod.inventoryDaysDerived || 0); // Use DERIVED
+        apDaysChange = (latestPeriod.apDaysDerived || 0) - (previousPeriod.apDaysDerived || 0);
+        wcDaysChange = (latestPeriod.wcDays || 0) - (previousPeriod.wcDays || 0); // wcDays is now from SSOT
     }
 
+    // Use final values directly from latestPeriod (our SSOT)
     const displayAssets = latestPeriod.estimatedTotalAssets;
     const displayLiabilities = latestPeriod.estimatedTotalLiabilities;
     const displayEquity = latestPeriod.equity;
@@ -86,8 +84,7 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
     return (
       <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100 p-5 md:p-6 rounded-xl shadow-lg border border-emerald-200 print:shadow-none print:border-emerald-300">
         <h3 className="text-xl font-bold text-emerald-800 mb-4 flex items-center print:text-lg">
-          <span className="text-2xl mr-2 print:text-xl">⚖️</span>
-          Sua História do Balanço (Último Período)
+            <span className="text-2xl mr-2 print:text-xl">⚖️</span> Sua História do Balanço (Último Período) - SSOT
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-3">
@@ -103,7 +100,7 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
             </div>
             <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center mb-1.5"><span className="text-sm font-medium text-slate-600">Total Passivos</span><span className="text-lg font-bold text-red-600">{formatCurrency(displayLiabilities)}</span></div>
-              <div className="text-xs text-slate-500 space-y-0.5 pl-2">
+               <div className="text-xs text-slate-500 space-y-0.5 pl-2">
                 <div className="flex justify-between"><span>• Contas a Pagar (Médio):</span> <span>{formatCurrency(latestPeriod.accountsPayableValueAvg)}</span></div>
                 <div className="flex justify-between"><span>• Empréstimos Totais:</span> <span>{formatCurrency(latestPeriod.totalBankLoans || 0)}</span></div>
               </div>
@@ -111,10 +108,10 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
             <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center"><span className="text-sm font-medium text-slate-600">Patrimônio Líquido (Calc.)</span><span className="text-lg font-bold text-green-600">{formatCurrency(displayEquity)}</span></div>
             </div>
-            <div className={`p-3 rounded-lg border-2 ${Math.abs(displayBalanceDifference) > 1 ? 'bg-red-50 border-red-400' : 'bg-green-50 border-green-400'}`}>
-              <div className="flex justify-between items-center mb-1"><span className="text-sm font-medium text-slate-700">Verificação do Balanço:</span><span className={`text-sm font-bold ${Math.abs(displayBalanceDifference) > 1 ? 'text-red-700' : 'text-green-700'}`}>{Math.abs(displayBalanceDifference) < 1 ? '✅ Equilibrado' : '⚠️ Revisar Inputs'}</span></div>
-              <div className="flex justify-between text-xs font-bold"><span>Diferença (A - (L+PL)):</span><span className={Math.abs(displayBalanceDifference) > 1 ? 'text-red-700' : 'text-green-700'}>{formatCurrency(displayBalanceDifference)}</span></div>
-              {Math.abs(displayBalanceDifference) > 1 && (<div className="text-xs text-red-700 mt-1">💡 Diferença indica necessidade de revisão dos inputs para consistência.</div>)}
+            <div className={`p-3 rounded-lg border-2 ${Math.abs(displayBalanceDifference) > 1.01 ? 'bg-red-50 border-red-400' : 'bg-green-50 border-green-400'}`}>
+                <div className="flex justify-between items-center mb-1"><span className="text-sm font-medium text-slate-700">Verificação do Balanço:</span><span className={`text-sm font-bold ${Math.abs(displayBalanceDifference) > 1.01 ? 'text-red-700' : 'text-green-700'}`}>{Math.abs(displayBalanceDifference) < 1.01 ? '✅ Equilibrado' : '⚠️ Revisar Inputs'}</span></div>
+                <div className="flex justify-between text-xs font-bold"><span>Diferença (A - (L+PL)):</span><span className={Math.abs(displayBalanceDifference) > 1.01 ? 'text-red-700' : 'text-green-700'}>{formatCurrency(displayBalanceDifference)}</span></div>
+                 {Math.abs(displayBalanceDifference) > 1.01 && (<div className="text-xs text-red-700 mt-1">💡 Diferença significativa indica necessidade de revisão dos inputs para consistência.</div>)}
             </div>
           </div>
           <div className="space-y-3">
@@ -124,13 +121,13 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
                 { label: 'PMR (dias)', value: latestPeriod.arDaysDerived, change: arDaysChange },
                 { label: 'PME (dias)', value: latestPeriod.inventoryDaysDerived, change: inventoryDaysChange }, // CORRECTED
                 { label: 'PMP (dias)', value: latestPeriod.apDaysDerived, change: apDaysChange },
-                { label: 'Ciclo de Caixa (dias)', value: latestPeriod.wcDays, change: wcDaysChange, isBold: true }, // CORRECTED (uses derived days)
+                { label: 'Ciclo de Caixa (dias)', value: latestPeriod.wcDays, change: wcDaysChange, isBold: true }, // CORRECTED
               ].map(item => (
                 <div key={item.label} className={`flex justify-between items-center py-1 border-b border-emerald-100 last:border-b-0 ${item.isBold ? 'font-bold': ''}`}>
                   <span className="text-slate-600">{item.label}:</span>
                   <div className="text-right">
-                    <span className={`font-semibold ${item.isBold && latestPeriod.wcDays < 0 ? 'text-green-600' : item.isBold ? 'text-orange-600' : 'text-slate-800'}`}>{formatDays(item.value)}</span>
-                    {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && (
+                    <span className={`font-semibold ${item.isBold && typeof item.value === 'number' && item.value < 0 ? 'text-green-600' : item.isBold ? 'text-orange-600' : 'text-slate-800'}`}>{formatDays(item.value)}</span>
+                    {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && !isNaN(item.change) && (
                       <span className={`ml-2 text-xs font-medium ${getMovementClass(item.change)}`}>
                         ({getMovementIndicator(item.change)} {formatMovement(Math.abs(item.change), 'days')})
                       </span>
@@ -144,18 +141,17 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
       </div>
     );
   };
-
+  
   const CashFlowStoryCard = () => {
     if (!latestPeriod) return null;
     
     let fcoChange = null, fcfChange = null, fundingGapChange = null, closingCashChange = null;
     if (previousPeriod) {
-      fcoChange = latestPeriod.operatingCashFlow - previousPeriod.operatingCashFlow;
-      fcfChange = latestPeriod.netCashFlowBeforeFinancing - previousPeriod.netCashFlowBeforeFinancing;
-      fundingGapChange = latestPeriod.fundingGapOrSurplus - previousPeriod.fundingGapOrSurplus;
-      closingCashChange = latestPeriod.closingCash - previousPeriod.closingCash;
+      fcoChange = (latestPeriod.operatingCashFlow || 0) - (previousPeriod.operatingCashFlow || 0);
+      fcfChange = (latestPeriod.netCashFlowBeforeFinancing || 0) - (previousPeriod.netCashFlowBeforeFinancing || 0);
+      fundingGapChange = (latestPeriod.fundingGapOrSurplus || 0) - (previousPeriod.fundingGapOrSurplus || 0);
+      closingCashChange = (latestPeriod.closingCash || 0) - (previousPeriod.closingCash || 0);
     }
-
     return (
       <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 p-5 md:p-6 rounded-xl shadow-lg border border-amber-200 print:shadow-none print:border-amber-300 md:col-span-2">
         <h3 className="text-xl font-bold text-amber-800 mb-4 flex items-center print:text-lg">
@@ -182,7 +178,7 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
                 <span className="text-slate-600">{item.label}:</span>
                 <div className="text-right">
                   <span className={`font-semibold ${item.isBold ? 'text-amber-700' : 'text-slate-800'}`}>{formatCurrency(item.value)}</span>
-                  {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && (
+                  {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && !isNaN(item.change) && (
                     <span className={`ml-2 text-xs font-medium ${getMovementClass(item.change)}`}>
                       ({getMovementIndicator(item.change)} {formatMovement(Math.abs(item.change), item.movementType)})
                     </span>

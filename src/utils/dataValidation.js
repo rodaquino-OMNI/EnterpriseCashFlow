@@ -18,55 +18,46 @@ import { formatCurrency, formatPercentage, formatDays } from './formatters';
  * @property {{suspectedIssue?: string, suggestedMultiplier?: number}} [autoFix]
  */
 
-// Enhanced validateBalanceSheetConsistencyInternal (renamed to avoid conflicts)
-export function validateBalanceSheetConsistencyInternal(periodData) {
-  const assets = periodData.estimatedTotalAssets;
-  const liabilities = periodData.estimatedTotalLiabilities;
-  const equity = periodData.equity;
+// Enhanced validateBalanceSheetInternalConsistency - uses SSOT balanceSheetDifference
+export function validateBalanceSheetInternalConsistency(periodData) {
+  const assets = periodData.estimatedTotalAssets; // From SSOT
+  // eslint-disable-next-line no-unused-vars
+  const liabilities = periodData.estimatedTotalLiabilities; // From SSOT
+  // eslint-disable-next-line no-unused-vars
+  const equity = periodData.equity; // From SSOT
   
-  const independentDifference = assets - (liabilities + equity); // A - (L+E)
-  const storedDifference = periodData.balanceSheetDifference;   // Should be A - (L+E)
-  
-  if (Math.abs(independentDifference - storedDifference) > 1) { // Allow small float tolerance up to 1
-    return {
-      type: 'CALCULO_BALANCO_INCONSISTENTE', category: 'Erro Interno de Cálculo do Balanço',
-      message: `Erro de consistência interna no cálculo do balanço. Diferença armazenada (${formatCurrency(storedDifference)}) não confere com o cálculo independente dos totais exibidos (${formatCurrency(independentDifference)}). Isso indica um bug no sistema de cálculo. Contate o suporte.`,
-      severity: 'critical', value: independentDifference - storedDifference, field: 'balanceSheetDifference'
-    };
-  }
+  const storedDifference = periodData.balanceSheetDifference; // From SSOT
   
   const materialThreshold = Math.max(Math.abs(assets * 0.02), 100); // 2% of assets or R$100
   if (Math.abs(storedDifference) > materialThreshold) {
     return {
       type: 'BALANCO_INCONSISTENTE', category: 'Equilíbrio do Balanço Patrimonial',
-      message: `Diferença significativa de ${formatCurrency(storedDifference)} no Balanço Patrimonial. Isso representa ${assets !== 0 ? formatPercentage(Math.abs(storedDifference / assets) * 100) : 'N/A'} dos ativos. Revisar URGENTEMENTE os dados de entrada para garantir a precisão da análise.`,
+      message: `Diferença de balanço significativa: ${formatCurrency(storedDifference)} (${assets !== 0 ? formatPercentage(Math.abs(storedDifference / assets) * 100) : 'N/A'} dos ativos). Sugere forte inconsistência nos inputs ou simplificações do modelo.`,
       severity: 'critical', value: storedDifference, field: 'balanceSheetDifference',
-      suggestion: 'Verifique principalmente: Caixa Inicial (1º per.), PL Inicial (1º per.), Empréstimos Bancários, Imobilizado Líquido, e os valores médios de Contas a Receber, Estoque e Contas a Pagar.'
+      suggestion: 'Revisar TODOS os inputs de balanço (Caixa Inicial, PL Inicial, Ativo Imob., Empréstimos) e valores médios de Capital de Giro (CR, Estoque, CP).'
     };
-  } else if (Math.abs(storedDifference) > 1) { 
+  } else if (Math.abs(storedDifference) > 1.01) { // Minor differences beyond simple rounding
      return {
       type: 'BALANCO_INCONSISTENTE', category: 'Equilíbrio do Balanço Patrimonial',
-      message: `Pequena diferença de ${formatCurrency(storedDifference)} no Balanço. Pode ser devido a arredondamentos, mas idealmente deveria ser zero. Revise os inputs se persistir.`,
+      message: `Pequena diferença de ${formatCurrency(storedDifference)} no Balanço. Pode ser devido a arredondamentos cumulativos. Se persistir, revise os inputs de maior valor.`,
       severity: 'warning', value: storedDifference, field: 'balanceSheetDifference'
     };
   }
   return null;
 }
 
-// Enhanced validateInventoryLevels (including high PME check)
+// Enhanced validateInventoryLevels - uses SSOT inventoryDaysDerived
 export function validateInventoryLevels(periodData) {
-  const inventoryDays = periodData.inventoryDaysDerived;
-  const inventoryValue = periodData.inventoryValueAvg;
-  const revenue = periodData.revenue;
+  const inventoryDays = periodData.inventoryDaysDerived; // USE DERIVED FROM SSOT
+  const inventoryValue = periodData.inventoryValueAvg;   // Use the input value for context
   const cogs = periodData.cogs;
 
-  // Check for extremely high PME (greater than 365 days)
-  if (inventoryDays > 365) {
+  if (inventoryDays > 365) { // Your threshold for extremely high
     return {
       type: 'PME_ALTO_EXTREMO', category: 'Prazo Médio de Estoques (PME)',
-      message: `PME de ${formatDays(inventoryDays)} é irrealisticamente alto (maior que 1 ano). Verifique: (1) Valor médio de estoque (${formatCurrency(inventoryValue)}) está na escala correta (ex: não em milhares se outros valores não estão)? (2) CPV/CSV (${formatCurrency(cogs)}) está anualizado corretamente ou reflete o período?`,
+      message: `PME de ${formatDays(inventoryDays)} é irrealisticamente alto (maior que 1 ano). Isso indica um problema com o Valor Médio de Estoque (${formatCurrency(inventoryValue)}) ou com o CPV/CSV (${formatCurrency(cogs)}) utilizado no cálculo.`,
       severity: 'critical', value: inventoryDays, field: 'inventoryDaysDerived',
-      suggestion: 'Para varejo: PME típico 30-90 dias. Para indústria: 60-180 dias. Se o valor estiver correto, a empresa pode ter sérios problemas de obsolescência ou gestão de estoque.'
+      suggestion: 'Verifique a escala dos inputs (R$ vs R$ mil). PME típico para varejo: 30-90 dias; indústria: 60-180 dias. Pode indicar estoque obsoleto severo se os inputs estiverem corretos.'
     };
   } else if (inventoryDays < 1 && inventoryValue > 0 && cogs > 0) { 
     return {
@@ -76,8 +67,8 @@ export function validateInventoryLevels(periodData) {
     };
   }
   
-  if (revenue > 0 && inventoryValue > 0) {
-    const inventoryToRevenueRatio = (inventoryValue / revenue) * 100;
+  if (periodData.revenue > 0 && inventoryValue > 0) {
+    const inventoryToRevenueRatio = (inventoryValue / periodData.revenue) * 100;
     if (inventoryToRevenueRatio > 75) { 
       return {
         type: 'PME_ALTO_EXTREMO', category: 'Nível de Estoques vs Receita',
@@ -90,8 +81,8 @@ export function validateInventoryLevels(periodData) {
   return null; 
 }
 
-// Enhanced validateRealisticBusinessMetrics
-export function validateRealisticBusinessMetrics(periodData) {
+// Enhanced validateRealisticBusinessMetrics - uses SSOT values
+export function validateRealisticBusinessMetrics(periodData, periodIndex = 0) {
   const issues = [];
   if (!periodData) return issues;
   
@@ -107,7 +98,49 @@ export function validateRealisticBusinessMetrics(periodData) {
   return issues;
 }
 
-// Enhanced runAllValidations to call the new validation functions
+// Enhanced validateCashFlowPatterns - uses SSOT values from calculatedData
+export function validateCashFlowPatterns(calculatedData) {
+  const negativeCount = calculatedData.filter(p => p.netCashFlowBeforeFinancing < 0).length;
+  const totalPeriods = calculatedData.length;
+  
+  if (negativeCount >= Math.ceil(totalPeriods * 0.6)) {
+    return {
+      type: 'CASH_FLOW_TREND',
+      category: 'Tendência de Fluxo de Caixa Livre Negativo',
+      message: `FCL negativo em ${negativeCount} de ${totalPeriods} períodos. Padrão preocupante que indica necessidade de financiamento recorrente.`,
+      severity: 'warning',
+      field: 'netCashFlowBeforeFinancing',
+      suggestion: 'Revisar estratégia de CAPEX, gestão de capital de giro e estrutura operacional.'
+    };
+  }
+  
+  return null;
+}
+
+// Enhanced validateWorkingCapitalEfficiency - uses SSOT wcDays
+export function validateWorkingCapitalEfficiency(periodData, periodLabel) {
+  const wcDays = periodData.wcDays; // Use SSOT wcDays
+  
+  if (wcDays > 120) {
+    return {
+      type: 'CICLO_POSITIVO_ALTO', category: 'Eficiência do Capital de Giro',
+      message: `Ciclo de caixa de ${formatDays(wcDays)} é muito longo. PMR: ${formatDays(periodData.arDaysDerived)}, PME: ${formatDays(periodData.inventoryDaysDerived)}, PMP: ${formatDays(periodData.apDaysDerived)}.`,
+      severity: 'warning', periodLabel,
+      suggestion: 'Oportunidades: (1) Acelerar recebimento de clientes, (2) Otimizar giro de estoques, (3) Negociar prazos com fornecedores.'
+    };
+  }
+  if (wcDays < -30 && wcDays !== 0) { // Allow wcDays to be 0
+    return {
+      type: 'CICLO_NEGATIVO_ALTO', category: 'Eficiência do Capital de Giro',
+      message: `Ciclo de caixa negativo de ${formatDays(Math.abs(wcDays))} é muito favorável - a empresa recebe antes de pagar fornecedores.`,
+      severity: 'success', periodLabel,
+      suggestion: 'Excelente eficiência operacional. Monitorar para garantir sustentabilidade desta condição.'
+    };
+  }
+  return null;
+}
+
+// Enhanced runAllValidations to call the updated validation functions
 export function runAllValidations(calculatedData) {
   if (!calculatedData || calculatedData.length === 0) {
     return { isValidOverall: true, errors: [], warnings: [], infos: [], successes: [] };
@@ -139,13 +172,13 @@ export function runAllValidations(calculatedData) {
   calculatedData.forEach((period, index) => {
     const periodLabel = `Período ${index + 1}`;
     
-    // Call enhanced validation functions
-    addValidationResult({ ...validateBalanceSheetConsistencyInternal(period), periodLabel });
+    // Call enhanced validation functions using SSOT values
+    addValidationResult({ ...validateBalanceSheetInternalConsistency(period), periodLabel });
     addValidationResult({ ...validateInventoryLevels(period), periodLabel });
-    addValidationResult({ ...validateWorkingCapitalEfficiency(period), periodLabel });
+    addValidationResult({ ...validateWorkingCapitalEfficiency(period, periodLabel), periodLabel });
     
     // Call realistic business metrics validation
-    validateRealisticBusinessMetrics(period).forEach(issue => { 
+    validateRealisticBusinessMetrics(period, index).forEach(issue => { 
       addValidationResult({ ...issue, periodLabel }); 
     });
   });
@@ -189,7 +222,7 @@ export function validateFinancialData(calculatedData) {
   
   // === LATEST PERIOD CRITICAL CHECKS ===
   
-  // 1. Balance Sheet Consistency (Latest Period)
+  // 1. Balance Sheet Consistency (Latest Period) - uses SSOT
   const latestBSValidation = validateBalanceSheetConsistency(latestPeriod);
   if (latestBSValidation && latestBSValidation.type === 'error') {
     results.critical.push({
@@ -218,9 +251,9 @@ export function validateFinancialData(calculatedData) {
         ...bsValidation,
         periodLabel: `Período ${index + 1}`,
         values: {
-          difference: period.balanceSheetDifference,
-          assets: period.estimatedTotalAssets,
-          liabilitiesPlusEquity: period.estimatedTotalLiabilities + period.equity
+          difference: period.balanceSheetDifference, // SSOT value
+          assets: period.estimatedTotalAssets,       // SSOT value
+          liabilitiesPlusEquity: period.estimatedTotalLiabilities + period.equity // SSOT values
         }
       });
     }
@@ -231,7 +264,7 @@ export function validateFinancialData(calculatedData) {
     results.warnings.push(consolidated);
   }
   
-  // Inventory Issues (Consolidated)
+  // Inventory Issues (Consolidated) - uses SSOT inventoryDaysDerived
   const inventoryIssues = [];
   calculatedData.forEach((period, index) => {
     const invValidation = validateInventoryLevels(period);
@@ -239,7 +272,7 @@ export function validateFinancialData(calculatedData) {
       inventoryIssues.push({
         ...invValidation,
         periodLabel: `Período ${index + 1}`,
-        values: { days: period.inventoryDaysDerived, value: period.inventoryValueAvg }
+        values: { days: period.inventoryDaysDerived, value: period.inventoryValueAvg } // SSOT derived days
       });
     }
   });
@@ -372,7 +405,7 @@ function analyzeCashFlowTrend(calculatedData) {
 }
 
 function analyzeBalanceSheetTrend(calculatedData) {
-  const differences = calculatedData.map(p => Math.abs(p.balanceSheetDifference));
+  const differences = calculatedData.map(p => Math.abs(p.balanceSheetDifference)); // SSOT values
   const isWorsening = differences.length >= 3 && 
     differences[differences.length - 1] > differences[differences.length - 3];
   
@@ -396,12 +429,12 @@ function analyzeBalanceSheetTrend(calculatedData) {
  * @returns {object|null} Validation result or null if valid
  */
 export function validateBalanceSheetConsistency(periodData) {
-  const assets = periodData.estimatedTotalAssets;
-  const liabilities = periodData.estimatedTotalLiabilities;
-  const equity = periodData.equity;
+  const assets = periodData.estimatedTotalAssets;       // SSOT value
+  const liabilities = periodData.estimatedTotalLiabilities; // SSOT value
+  const equity = periodData.equity;                     // SSOT value
   
   const independentDifference = assets - (liabilities + equity);
-  const storedDifference = periodData.balanceSheetDifference;
+  const storedDifference = periodData.balanceSheetDifference; // SSOT value
   
   const calculationConsistency = Math.abs(independentDifference - storedDifference) < 0.01;
   const materialThreshold = Math.max(assets * 0.01, 1000);
@@ -429,62 +462,12 @@ export function validateBalanceSheetConsistency(periodData) {
   return null;
 }
 
-export function validateCashFlowPatterns(calculatedData) {
-  const negativeCount = calculatedData.filter(p => p.netCashFlowBeforeFinancing < 0).length;
-  const totalPeriods = calculatedData.length;
-  
-  if (negativeCount >= Math.ceil(totalPeriods * 0.6)) {
-    return {
-      type: 'CASH_FLOW_TREND',
-      category: 'Tendência de Fluxo de Caixa Livre Negativo',
-      message: `FCL negativo em ${negativeCount} de ${totalPeriods} períodos. Padrão preocupante que indica necessidade de financiamento recorrente.`,
-      severity: 'warning',
-      field: 'netCashFlowBeforeFinancing',
-      suggestion: 'Revisar estratégia de CAPEX, gestão de capital de giro e estrutura operacional.'
-    };
-  }
-  
-  return null;
-}
-
-/**
- * Validate working capital efficiency
- * @param {import('../types/financial').CalculatedPeriodData} periodData
- * @returns {object|null} Validation result or null if valid
- */
-export function validateWorkingCapitalEfficiency(periodData) {
-  const wcDays = periodData.wcDays;
-  
-  if (wcDays < 0) {
-    return {
-      type: 'success',
-      category: 'Ciclo de Caixa Negativo (Excelente)',
-      message: `Ciclo de caixa negativo de ${formatDays(Math.abs(wcDays))} é muito favorável.`,
-      severity: 'positive',
-      suggestion: 'Manter essa eficiência operacional.'
-    };
-  }
-  
-  if (wcDays > 120) {
-    return {
-      type: 'info',
-      category: 'Ciclo de Caixa Longo',
-      message: `Ciclo de caixa de ${formatDays(wcDays)} oferece oportunidades de otimização.`,
-      severity: 'low',
-      suggestion: 'Acelerar cobrança e negociar prazos maiores com fornecedores.'
-    };
-  }
-  
-  return null;
-}
-
 /**
  * Enhanced ValidationAlerts component with better UX
  */
 export function ValidationAlerts({ validationResults }) {
   const [expandedSections, setExpandedSections] = useState(new Set());
   
-  // Handle both validation result structures
   if (!validationResults) {
     return (
       <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -496,8 +479,6 @@ export function ValidationAlerts({ validationResults }) {
     );
   }
 
-  // Normalize the structure - handle both runAllValidations and validateFinancialData results
-  // Add defensive checks for all properties
   const normalizedResults = {
     critical: validationResults.critical || validationResults.errors || [],
     warnings: validationResults.warnings || [],
@@ -516,7 +497,6 @@ export function ValidationAlerts({ validationResults }) {
 
   const { critical, warnings, trends, infos, successes, summary, latest } = normalizedResults;
 
-  // Check if there are any issues to display
   const totalIssues = critical.length + warnings.length + trends.length;
   if (totalIssues === 0 && successes.length === 0) {
     return (
@@ -580,7 +560,6 @@ export function ValidationAlerts({ validationResults }) {
                   </p>
                 )}
                 
-                {/* Show consolidated details if available */}
                 {alert.isConsolidated && alert.details && expandedSections.has(`${sectionId}-details-${index}`) && (
                   <div className="mt-2 pl-4 border-l-2 border-slate-200">
                     {alert.details.map((detail, detailIndex) => (
