@@ -1,14 +1,35 @@
 // src/utils/formatters.js
-export const formatCurrency = (value, withSymbol = true) => {
+export const formatCurrency = (value, withSymbol = true, options = {}) => {
   if (value === null || typeof value === 'undefined' || isNaN(Number(value))) {
     return 'N/A';
   }
+  
   const val = Number(value);
+  const { abbreviate = true, precision = 2 } = options;
   const symbol = withSymbol ? 'R$ ' : '';
+  
+  // Format very large numbers (trillions+) with abbreviations
+  if (abbreviate && Math.abs(val) >= 1_000_000_000_000) {
+    const trillion = val / 1_000_000_000_000;
+    return `${symbol}${trillion.toFixed(precision)} tri`;
+  }
+  
+  // Format billions
+  if (abbreviate && Math.abs(val) >= 1_000_000_000) {
+    const billion = val / 1_000_000_000;
+    return `${symbol}${billion.toFixed(precision)} bi`;
+  }
+  
+  // Format millions
+  if (abbreviate && Math.abs(val) >= 1_000_000) {
+    const million = val / 1_000_000;
+    return `${symbol}${million.toFixed(precision)} mi`;
+  }
+  
   // Ensure exactly 2 decimal places and grouping
   return symbol + val.toLocaleString('pt-BR', { 
-    minimumFractionDigits: 2, 
-    maximumFractionDigits: 2,
+    minimumFractionDigits: precision, 
+    maximumFractionDigits: precision,
     useGrouping: true 
   });
 };
@@ -71,16 +92,13 @@ export const getMovementIndicator = (value) => {
 
 export const formatMovement = (value, movementType = 'value', isPercentContext = false) => {
   if (value === null || typeof value === 'undefined' || isNaN(Number(value))) return 'N/A';
-
   const numValue = Number(value);
-
   if (movementType === 'percentage_points' || isPercentContext) {
     return numValue.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }) + ' p.p.';
   }
-
   if (movementType === 'days') {
     const rounded = Math.round(numValue * 10) / 10;
     const formatted = rounded.toLocaleString('pt-BR', {
@@ -89,10 +107,8 @@ export const formatMovement = (value, movementType = 'value', isPercentContext =
     });
     return `${formatted}`; // Just the number, "dias" will be in the label context
   }
-
   if (movementType === 'percentage_change') {
     return formatPercentage(numValue);
   }
-
-  return formatCurrency(numValue, false); // Default: currency, always 2 decimal places
+  return formatCurrency(numValue, false, { abbreviate: true }); // Default: currency, always 2 decimal places
 };

@@ -352,7 +352,7 @@ export default function ReportGeneratorApp() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 text-slate-900 p-4 md:p-8 font-sans">
       <header className="text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-bold text-blue-700">
-          Gerador de Relatório Diretoria Multimodal com IA ✨
+          Auditor Financeiro com IA ✨
         </h1>
       </header>
       <AiProviderSelector

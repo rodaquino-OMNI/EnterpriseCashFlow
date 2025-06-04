@@ -1,5 +1,5 @@
 // src/components/ReportPanel/PowerOfOneAnalysis.jsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { formatCurrency, getMovementClass, getMovementIndicator } from '../../utils/formatters';
 import { PERIOD_TYPES } from '../../utils/constants';
 
@@ -10,72 +10,110 @@ import { PERIOD_TYPES } from '../../utils/constants';
  * }} props
  */
 export default function PowerOfOneAnalysis({ calculatedData, periodType }) {
-  if (!calculatedData || calculatedData.length === 0) {
-    return <p className="text-center text-slate-500 py-4">Dados insuficientes para Análise Poder do Um.</p>;
+  // Memoize the power of one calculations to prevent recalculation on each render
+  const powerOfOneData = useMemo(() => {
+    if (!calculatedData?.length) return null;
+
+    const latestPeriod = calculatedData[calculatedData.length - 1];
+    if (!latestPeriod) return null;
+
+    const daysInPeriod = PERIOD_TYPES[periodType]?.daysInPeriod || 365;
+    const currentOperatingProfit = latestPeriod.ebit || 0;
+    const currentCashFlowForPowerOfOne = latestPeriod.operatingCashFlow || 0;
+
+    // Pre-calculate common values to avoid repeated calculations
+    const taxRate = latestPeriod.incomeTaxRatePercentageActual || 0;
+    const afterTaxMultiplier = 1 - taxRate;
+    const dailyRevenue = latestPeriod.revenue / daysInPeriod;
+    const dailyCogs = latestPeriod.cogs / daysInPeriod;
+
+    const powerOfOneScenarios = [
+      {
+        lever: 'Aumento Preço',
+        change: '+1%',
+        operatingProfitImpact: latestPeriod.revenue * 0.01,
+        cashFlowImpact: latestPeriod.revenue * 0.01 * afterTaxMultiplier,
+        color: 'bg-green-50 border-green-400 text-green-700 print:border-green-300'
+      },
+      {
+        lever: 'Aumento de Volume',
+        change: '+1%',
+        operatingProfitImpact: latestPeriod.grossProfit * 0.01,
+        cashFlowImpact: (latestPeriod.grossProfit * 0.01 * afterTaxMultiplier) - 
+          (latestPeriod.wcPer100Revenue * latestPeriod.revenue * 0.0001),
+        color: 'bg-blue-50 border-blue-400 text-blue-700 print:border-blue-300'
+      },
+      {
+        lever: 'Redução Custos Diretos (CPV/CSV)',
+        change: '-1%',
+        operatingProfitImpact: latestPeriod.cogs * 0.01,
+        cashFlowImpact: latestPeriod.cogs * 0.01 * afterTaxMultiplier,
+        color: 'bg-purple-50 border-purple-400 text-purple-700 print:border-purple-300'
+      },
+      {
+        lever: 'Redução Despesas Operacionais',
+        change: '-1%',
+        operatingProfitImpact: latestPeriod.operatingExpenses * 0.01,
+        cashFlowImpact: latestPeriod.operatingExpenses * 0.01 * afterTaxMultiplier,
+        color: 'bg-orange-50 border-orange-400 text-orange-700 print:border-orange-300'
+      },
+      {
+        lever: 'Redução PMR (Dias)',
+        change: '-1 dia',
+        operatingProfitImpact: 0,
+        cashFlowImpact: dailyRevenue,
+        color: 'bg-cyan-50 border-cyan-400 text-cyan-700 print:border-cyan-300'
+      },
+      {
+        lever: 'Redução PME (Dias)',
+        change: '-1 dia',
+        operatingProfitImpact: 0,
+        cashFlowImpact: dailyCogs,
+        color: 'bg-indigo-50 border-indigo-400 text-indigo-700 print:border-indigo-300'
+      },
+      {
+        lever: 'Aumento PMP (Dias)',
+        change: '+1 dia',
+        operatingProfitImpact: 0,
+        cashFlowImpact: dailyCogs,
+        color: 'bg-teal-50 border-teal-400 text-teal-700 print:border-teal-300'
+      }
+    ];
+
+    // Calculate totals once
+    const totalPositiveOperatingImpact = powerOfOneScenarios.reduce(
+      (sum, scenario) => sum + Math.max(0, scenario.operatingProfitImpact || 0), 0
+    );
+    const totalPositiveCashFlowImpact = powerOfOneScenarios.reduce(
+      (sum, scenario) => sum + Math.max(0, scenario.cashFlowImpact || 0), 0
+    );
+
+    return {
+      latestPeriod,
+      currentOperatingProfit,
+      currentCashFlowForPowerOfOne,
+      powerOfOneScenarios,
+      totalPositiveOperatingImpact,
+      totalPositiveCashFlowImpact
+    };
+  }, [calculatedData, periodType]);
+
+  if (!powerOfOneData) {
+    return (
+      <section className="mb-8">
+        <h3 className="report-section-title">🎯 Poder do Um - Análise de Alavancas de Valor</h3>
+        <p className="text-center text-slate-500 py-8">Dados insuficientes para análise do Poder do Um.</p>
+      </section>
+    );
   }
-  const latestPeriod = calculatedData[calculatedData.length - 1];
-  const daysInPeriod = PERIOD_TYPES[periodType]?.days || 365;
 
-  const currentOperatingProfit = latestPeriod.ebit;
-  // Using Cash From Operations After WC as the cash flow metric for Power of One, as it's pre-financing
-  const currentCashFlowForPowerOfOne = latestPeriod.cashFromOpsAfterWC;
-
-  const powerOfOneScenarios = [
-    {
-      lever: 'Aumento de Preço',
-      change: '+1%',
-      operatingProfitImpact: latestPeriod.revenue * 0.01,
-      cashFlowImpact: latestPeriod.revenue * 0.01 * (1 - (latestPeriod.incomeTaxRatePercentageActual || 0)), // After tax on incremental profit
-      color: 'bg-green-50 border-green-400 text-green-700 print:border-green-300'
-    },
-    {
-      lever: 'Aumento de Volume',
-      change: '+1%',
-      operatingProfitImpact: latestPeriod.grossProfit * 0.01, // Impact on Gross Profit (pre-tax)
-      cashFlowImpact: (latestPeriod.grossProfit * 0.01 * (1 - (latestPeriod.incomeTaxRatePercentageActual || 0))) -
-        (latestPeriod.wcPer100Revenue * latestPeriod.revenue * 0.0001), // (WC/Rev%) * (Rev*1%)
-      color: 'bg-blue-50 border-blue-400 text-blue-700 print:border-blue-300'
-    },
-    {
-      lever: 'Redução Custos Diretos (CPV/CSV)',
-      change: '-1%',
-      operatingProfitImpact: latestPeriod.cogs * 0.01,
-      cashFlowImpact: latestPeriod.cogs * 0.01 * (1 - (latestPeriod.incomeTaxRatePercentageActual || 0)),
-      color: 'bg-purple-50 border-purple-400 text-purple-700 print:border-purple-300'
-    },
-    {
-      lever: 'Redução Despesas Operacionais',
-      change: '-1%',
-      operatingProfitImpact: latestPeriod.operatingExpenses * 0.01,
-      cashFlowImpact: latestPeriod.operatingExpenses * 0.01 * (1 - (latestPeriod.incomeTaxRatePercentageActual || 0)),
-      color: 'bg-orange-50 border-orange-400 text-orange-700 print:border-orange-300'
-    },
-    {
-      lever: 'Redução PMR (Dias)',
-      change: '-1 dia',
-      operatingProfitImpact: 0, // No direct P&L impact from AR days change, primarily cash
-      cashFlowImpact: (latestPeriod.revenue / daysInPeriod), // Cash freed from AR
-      color: 'bg-cyan-50 border-cyan-400 text-cyan-700 print:border-cyan-300'
-    },
-    {
-      lever: 'Redução PME (Dias)',
-      change: '-1 dia',
-      operatingProfitImpact: 0,
-      cashFlowImpact: (latestPeriod.cogs / daysInPeriod), // Cash freed from inventory
-      color: 'bg-indigo-50 border-indigo-400 text-indigo-700 print:border-indigo-300'
-    },
-    {
-      lever: 'Aumento PMP (Dias)',
-      change: '+1 dia',
-      operatingProfitImpact: 0,
-      cashFlowImpact: (latestPeriod.cogs / daysInPeriod), // Cash retained by paying slower (positive cash impact)
-      color: 'bg-teal-50 border-teal-400 text-teal-700 print:border-teal-300'
-    }
-  ];
-
-  // Sum of positive impacts only for "total impact" display to represent potential gain
-  const totalPositiveOperatingImpact = powerOfOneScenarios.reduce((sum, scenario) => sum + Math.max(0, scenario.operatingProfitImpact || 0), 0);
-  const totalPositiveCashFlowImpact = powerOfOneScenarios.reduce((sum, scenario) => sum + Math.max(0, scenario.cashFlowImpact || 0), 0);
+  const {
+    currentOperatingProfit,
+    currentCashFlowForPowerOfOne,
+    powerOfOneScenarios,
+    totalPositiveOperatingImpact,
+    totalPositiveCashFlowImpact
+  } = powerOfOneData;
 
   return (
     <section className="mb-8 page-break-after">
@@ -125,31 +163,30 @@ export default function PowerOfOneAnalysis({ calculatedData, periodType }) {
         </table>
       </div>
 
-      <div className="mt-6 bg-yellow-50 p-6 rounded-xl border-l-4 border-yellow-500 shadow print:p-3 print:border-yellow-300">
-        <h4 className="text-lg font-bold text-yellow-800 mb-3 print:text-base">🚀 Impacto Combinado Potencial do Poder do Um</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-2">
-          <div>
-            <div className="text-sm text-slate-600 mb-1">Nova Posição Estimada - Lucro Operacional (EBIT)</div>
-            <div className="text-xl font-bold text-green-700 print:text-lg">
-              {formatCurrency(currentOperatingProfit + totalPositiveOperatingImpact)}
-            </div>
-            <div className={`text-sm font-medium ${getMovementClass(totalPositiveOperatingImpact)}`}>
-              {getMovementIndicator(totalPositiveOperatingImpact)} {formatCurrency(Math.abs(totalPositiveOperatingImpact), false)} vs Posição Atual
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 print:grid-cols-2 print:mt-4">
+        <div className="bg-green-50 p-4 rounded-lg border border-green-200 shadow print:p-3">
+          <div className="text-sm text-slate-600 mb-1">Nova Posição Estimada - Lucro Operacional</div>
+          <div className="text-xl font-bold text-green-700 print:text-lg">
+            {formatCurrency(currentOperatingProfit + totalPositiveOperatingImpact)}
           </div>
-          <div>
-            <div className="text-sm text-slate-600 mb-1">Nova Posição Estimada - Caixa Gerado nas Operações (após CG)</div>
-            <div className="text-xl font-bold text-blue-700 print:text-lg">
-              {formatCurrency(currentCashFlowForPowerOfOne + totalPositiveCashFlowImpact)}
-            </div>
-            <div className={`text-sm font-medium ${getMovementClass(totalPositiveCashFlowImpact)}`}>
-              {getMovementIndicator(totalPositiveCashFlowImpact)} {formatCurrency(Math.abs(totalPositiveCashFlowImpact), false)} vs Posição Atual
-            </div>
+          <div className={`text-sm font-medium ${getMovementClass(totalPositiveOperatingImpact)}`}>
+            {getMovementIndicator(totalPositiveOperatingImpact)} {formatCurrency(Math.abs(totalPositiveOperatingImpact), false)} vs Posição Atual
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-4 print:text-[10px]">
-          * Impacto no caixa considera efeito do IR sobre itens de P&L e o impacto direto no Capital de Giro para os itens de dias e volume. Representa o potencial se todas as alavancas positivas fossem aplicadas.
-        </p>
+        <div>
+          <div className="text-sm text-slate-600 mb-1">Nova Posição Estimada - Caixa Gerado nas Operações (após CG)</div>
+          <div className="text-xl font-bold text-blue-700 print:text-lg">
+            {formatCurrency(currentCashFlowForPowerOfOne + totalPositiveCashFlowImpact)}
+          </div>
+          <div className={`text-sm font-medium ${getMovementClass(totalPositiveCashFlowImpact)}`}>
+            {getMovementIndicator(totalPositiveCashFlowImpact)} {formatCurrency(Math.abs(totalPositiveCashFlowImpact), false)} vs Posição Atual
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 p-3 bg-blue-50 border-l-4 border-blue-400 text-xs text-blue-700 print:mt-3 print:text-[7pt]">
+        <p><strong>Metodologia:</strong> Esta análise aplica mudanças individuais de 1% ou 1 dia aos principais direcionadores de valor para demonstrar o impacto potencial na lucratividade e geração de caixa.</p>
+        <p className="mt-1">* O impacto no caixa considera efeitos tributários e variações do capital de giro quando aplicável.</p>
       </div>
     </section>
   );

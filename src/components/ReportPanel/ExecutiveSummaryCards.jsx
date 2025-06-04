@@ -13,6 +13,11 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
     return <p className="text-center text-slate-500 my-4">Dados insuficientes para o resumo executivo.</p>;
   }
 
+  // Format currency with abbreviation for large values
+  const formatValue = (value) => {
+    return formatCurrency(value, true, { abbreviate: true });
+  };
+
   const latestPeriod = calculatedData[calculatedData.length - 1];
   const previousPeriod = calculatedData.length > 1 ? calculatedData[calculatedData.length - 2] : null;
 
@@ -32,11 +37,11 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-1.5 text-sm md:text-base">
-            <div className="flex justify-between items-center py-1.5"><span className="font-medium text-slate-700">Receita</span><span className="text-lg font-bold text-slate-800">{formatCurrency(latestPeriod.revenue)}</span></div>
-            <div className="flex justify-between items-center py-1.5 border-b border-blue-200"><span className="font-medium text-slate-600">(-) Custos Diretos (CPV/CSV)</span><span className="font-semibold text-slate-700">{formatCurrency(latestPeriod.cogs)}</span></div>
-            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-blue-700">(=) Margem Bruta</span><span className="text-lg text-blue-700">{formatCurrency(latestPeriod.grossProfit)}</span></div>
-            <div className="flex justify-between items-center py-1.5 border-b border-blue-200"><span className="font-medium text-slate-600">(-) Despesas Operacionais</span><span className="font-semibold text-slate-700">{formatCurrency(latestPeriod.operatingExpenses)}</span></div>
-            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-blue-700">(=) Lucro Operacional (EBIT)</span><span className="text-lg text-blue-700">{formatCurrency(latestPeriod.ebit)}</span></div>
+            <div className="flex justify-between items-center py-1.5"><span className="font-medium text-slate-700">Receita</span><span className="text-lg font-bold text-slate-800">{formatValue(latestPeriod.revenue)}</span></div>
+            <div className="flex justify-between items-center py-1.5 border-b border-blue-200"><span className="font-medium text-slate-600">(-) Custos Diretos (CPV/CSV)</span><span className="font-semibold text-slate-700">{formatValue(latestPeriod.cogs)}</span></div>
+            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-blue-700">(=) Margem Bruta</span><span className="text-lg text-blue-700">{formatValue(latestPeriod.grossProfit)}</span></div>
+            <div className="flex justify-between items-center py-1.5 border-b border-blue-200"><span className="font-medium text-slate-600">(-) Despesas Operacionais</span><span className="font-semibold text-slate-700">{formatValue(latestPeriod.operatingExpenses)}</span></div>
+            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-blue-700">(=) Lucro Operacional (EBIT)</span><span className="text-lg text-blue-700">{formatValue(latestPeriod.ebit)}</span></div>
           </div>
           <div className="space-y-1 md:space-y-1.5 text-sm">
             <h4 className="text-sm font-semibold text-slate-700 mb-2 pt-1 md:pt-0">Principais Métricas e Variações (vs Per. Ant.)</h4>
@@ -49,7 +54,7 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
               <div key={item.label} className="flex justify-between items-center py-1 border-b border-blue-100 last:border-b-0">
                 <span className="text-slate-600">{item.label}:</span>
                 <div className="text-right">
-                  <span className={`font-bold ${item.isPercentContext ? 'text-blue-700' : 'text-slate-800'}`}>{item.isPercentContext ? formatPercentage(item.value) : formatCurrency(item.value)}</span>
+                  <span className={`font-bold ${item.isPercentContext ? 'text-blue-700' : 'text-slate-800'}`}>{item.isPercentContext ? formatPercentage(item.value) : formatValue(item.value)}</span>
                   {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && !isNaN(item.change) && (
                     <span className={`ml-2 text-xs font-medium ${getMovementClass(item.change)}`}>
                       ({getMovementIndicator(item.change)} {formatMovement(Math.abs(item.change), item.movementType, item.isPercentContext)})
@@ -90,27 +95,27 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
           <div className="space-y-3">
             <h4 className="text-base font-semibold text-green-700 mb-2">Estrutura Patrimonial Estimada</h4>
             <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-1.5"><span className="text-sm font-medium text-slate-600">Total Ativos</span><span className="text-lg font-bold text-blue-600">{formatCurrency(displayAssets)}</span></div>
+              <div className="flex justify-between items-center mb-1.5"><span className="text-sm font-medium text-slate-600">Total Ativos</span><span className="text-lg font-bold text-blue-600">{formatValue(displayAssets)}</span></div>
               <div className="text-xs text-slate-500 space-y-0.5 pl-2">
-                <div className="flex justify-between"><span>• Caixa Final (Calc.):</span> <span>{formatCurrency(latestPeriod.closingCash)}</span></div>
-                <div className="flex justify-between"><span>• Contas a Receber (Médio):</span> <span>{formatCurrency(latestPeriod.accountsReceivableValueAvg)}</span></div>
-                <div className="flex justify-between"><span>• Estoques (Médio):</span> <span>{formatCurrency(latestPeriod.inventoryValueAvg)}</span></div>
-                <div className="flex justify-between"><span>• Ativo Imobilizado (Líq.):</span> <span>{formatCurrency(latestPeriod.netFixedAssets || 0)}</span></div>
+                <div className="flex justify-between"><span>• Caixa Final (Calc.):</span> <span>{formatValue(latestPeriod.closingCash)}</span></div>
+                <div className="flex justify-between"><span>• Contas a Receber (Médio):</span> <span>{formatValue(latestPeriod.accountsReceivableValueAvg)}</span></div>
+                <div className="flex justify-between"><span>• Estoques (Médio):</span> <span>{formatValue(latestPeriod.inventoryValueAvg)}</span></div>
+                <div className="flex justify-between"><span>• Ativo Imobilizado (Líq.):</span> <span>{formatValue(latestPeriod.netFixedAssets || 0)}</span></div>
               </div>
             </div>
             <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-1.5"><span className="text-sm font-medium text-slate-600">Total Passivos</span><span className="text-lg font-bold text-red-600">{formatCurrency(displayLiabilities)}</span></div>
+              <div className="flex justify-between items-center mb-1.5"><span className="text-sm font-medium text-slate-600">Total Passivos</span><span className="text-lg font-bold text-red-600">{formatValue(displayLiabilities)}</span></div>
                <div className="text-xs text-slate-500 space-y-0.5 pl-2">
-                <div className="flex justify-between"><span>• Contas a Pagar (Médio):</span> <span>{formatCurrency(latestPeriod.accountsPayableValueAvg)}</span></div>
-                <div className="flex justify-between"><span>• Empréstimos Totais:</span> <span>{formatCurrency(latestPeriod.totalBankLoans || 0)}</span></div>
+                <div className="flex justify-between"><span>• Contas a Pagar (Médio):</span> <span>{formatValue(latestPeriod.accountsPayableValueAvg)}</span></div>
+                <div className="flex justify-between"><span>• Empréstimos Totais:</span> <span>{formatValue(latestPeriod.totalBankLoans || 0)}</span></div>
               </div>
             </div>
             <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center"><span className="text-sm font-medium text-slate-600">Patrimônio Líquido (Calc.)</span><span className="text-lg font-bold text-green-600">{formatCurrency(displayEquity)}</span></div>
+              <div className="flex justify-between items-center"><span className="text-sm font-medium text-slate-600">Patrimônio Líquido (Calc.)</span><span className="text-lg font-bold text-green-600">{formatValue(displayEquity)}</span></div>
             </div>
             <div className={`p-3 rounded-lg border-2 ${Math.abs(displayBalanceDifference) > 1.01 ? 'bg-red-50 border-red-400' : 'bg-green-50 border-green-400'}`}>
                 <div className="flex justify-between items-center mb-1"><span className="text-sm font-medium text-slate-700">Verificação do Balanço:</span><span className={`text-sm font-bold ${Math.abs(displayBalanceDifference) > 1.01 ? 'text-red-700' : 'text-green-700'}`}>{Math.abs(displayBalanceDifference) < 1.01 ? '✅ Equilibrado' : '⚠️ Revisar Inputs'}</span></div>
-                <div className="flex justify-between text-xs font-bold"><span>Diferença (A - (L+PL)):</span><span className={Math.abs(displayBalanceDifference) > 1.01 ? 'text-red-700' : 'text-green-700'}>{formatCurrency(displayBalanceDifference)}</span></div>
+                <div className="flex justify-between text-xs font-bold"><span>Diferença (A - (L+PL)):</span><span className={Math.abs(displayBalanceDifference) > 1.01 ? 'text-red-700' : 'text-green-700'}>{formatValue(displayBalanceDifference)}</span></div>
                  {Math.abs(displayBalanceDifference) > 1.01 && (<div className="text-xs text-red-700 mt-1">💡 Diferença significativa indica necessidade de revisão dos inputs para consistência.</div>)}
             </div>
           </div>
@@ -160,11 +165,11 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-2 text-sm md:text-base">
-            <div className="flex justify-between items-center py-1.5"><span className="font-medium text-slate-700">FCO (Operacional)</span><span className="text-lg font-bold text-slate-800">{formatCurrency(latestPeriod.operatingCashFlow)}</span></div>
-            <div className="flex justify-between items-center py-1.5"><span className="font-medium text-slate-600">(-) Invest. Capital de Giro</span><span className="font-semibold text-slate-700">{formatCurrency(latestPeriod.workingCapitalChange)}</span></div>
-            <div className="flex justify-between items-center py-1.5 border-b border-amber-200"><span className="font-medium text-slate-600">(-) CAPEX</span><span className="font-semibold text-slate-700">{formatCurrency(latestPeriod.capitalExpenditures)}</span></div>
-            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-amber-700">(=) FCL (Antes do Financiamento)</span><span className="text-lg text-amber-700">{formatCurrency(latestPeriod.netCashFlowBeforeFinancing)}</span></div>
-            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-amber-700">Necessidade (+)/Excedente (-) de Financiamento</span><span className={`text-lg ${getMovementClass(latestPeriod.fundingGapOrSurplus)}`}>{formatCurrency(latestPeriod.fundingGapOrSurplus)}</span></div>
+            <div className="flex justify-between items-center py-1.5"><span className="font-medium text-slate-700">FCO (Operacional)</span><span className="text-lg font-bold text-slate-800">{formatValue(latestPeriod.operatingCashFlow)}</span></div>
+            <div className="flex justify-between items-center py-1.5"><span className="font-medium text-slate-600">(-) Invest. Capital de Giro</span><span className="font-semibold text-slate-700">{formatValue(latestPeriod.workingCapitalChange)}</span></div>
+            <div className="flex justify-between items-center py-1.5 border-b border-amber-200"><span className="font-medium text-slate-600">(-) CAPEX</span><span className="font-semibold text-slate-700">{formatValue(latestPeriod.capitalExpenditures)}</span></div>
+            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-amber-700">(=) FCL (Antes do Financiamento)</span><span className="text-lg text-amber-700">{formatValue(latestPeriod.netCashFlowBeforeFinancing)}</span></div>
+            <div className="flex justify-between items-center py-1.5 font-bold"><span className="text-amber-700">Necessidade (+)/Excedente (-) de Financiamento</span><span className={`text-lg ${getMovementClass(latestPeriod.fundingGapOrSurplus)}`}>{formatValue(latestPeriod.fundingGapOrSurplus)}</span></div>
           </div>
           <div className="space-y-1 md:space-y-1.5 text-sm">
             <h4 className="text-sm font-semibold text-slate-700 mb-2 pt-1 md:pt-0">Principais Métricas e Variações (vs Per. Ant.)</h4>
@@ -177,7 +182,7 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
               <div key={item.label} className={`flex justify-between items-center py-1 border-b border-amber-100 last:border-b-0 ${item.isBold ? 'font-bold': ''}`}>
                 <span className="text-slate-600">{item.label}:</span>
                 <div className="text-right">
-                  <span className={`font-semibold ${item.isBold ? 'text-amber-700' : 'text-slate-800'}`}>{formatCurrency(item.value)}</span>
+                  <span className={`font-semibold ${item.isBold ? 'text-amber-700' : 'text-slate-800'}`}>{formatValue(item.value)}</span>
                   {previousPeriod && item.change !== null && typeof item.change !== 'undefined' && !isNaN(item.change) && (
                     <span className={`ml-2 text-xs font-medium ${getMovementClass(item.change)}`}>
                       ({getMovementIndicator(item.change)} {formatMovement(Math.abs(item.change), item.movementType)})

@@ -1,53 +1,75 @@
 // src/components/Charts/WorkingCapitalDaysTrendChart.jsx
 import React from 'react';
+import BaseChart from './BaseChart';
 import { PERIOD_TYPES } from '../../utils/constants';
 import { formatDays } from '../../utils/formatters';
 
 export default function WorkingCapitalDaysTrendChart({ calculatedData, periodType }) {
-  if (typeof window.Recharts === 'undefined') { 
-    return <div className="p-4 border rounded-md bg-red-50 text-red-700">Erro: Biblioteca de gráficos (Recharts) não carregada.</div>;
-  }
-  const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } = window.Recharts;
+  
+  const renderChartContent = (isRechartsLoaded) => {
+    if (!isRechartsLoaded || typeof window.Recharts === 'undefined') {
+      return <div className="flex items-center justify-center h-full text-slate-500 text-sm p-4">Aguardando biblioteca de gráficos...</div>;
+    }
+    
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } = window.Recharts;
 
-  if (!calculatedData || calculatedData.length === 0) {
-    return <p className="text-center text-slate-500 py-4">Dados insuficientes para o gráfico de Prazos de Capital de Giro.</p>;
-  }
+    if (!calculatedData || calculatedData.length === 0) {
+      return <p className="text-center text-slate-500 py-4">Dados insuficientes.</p>;
+    }
 
-  const chartData = calculatedData.map((period, index) => ({
-    name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
-    "PMR (Dias)": parseFloat(period.arDays?.toFixed(1)) || 0,       // Uses period.arDays (aliased to arDaysDerived)
-    "PME (Dias)": parseFloat(period.invDays?.toFixed(1)) || 0,      // Uses period.invDays (aliased to inventoryDaysDerived)
-    "PMP (Dias)": parseFloat(period.apDays?.toFixed(1)) || 0,       // Uses period.apDays (aliased to apDaysDerived)
-    "Ciclo Caixa (Dias)": parseFloat(period.wcDays?.toFixed(1)) || 0 // Uses period.wcDays
-  }));
+    const chartData = calculatedData.map((period, index) => ({
+      name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
+      "PMR (Dias)": parseFloat(period.arDays?.toFixed(1)) || 0,
+      "PME (Dias)": parseFloat(period.invDays?.toFixed(1)) || 0,
+      "PMP (Dias)": parseFloat(period.apDays?.toFixed(1)) || 0,
+      "Ciclo Caixa (Dias)": parseFloat(period.wcDays?.toFixed(1)) || 0
+    }));
+
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-lg border border-slate-200 print:shadow-none print:border-slate-300 h-full flex flex-col">
+        <h4 className="text-md font-semibold text-slate-800 mb-3 text-center print:text-sm">
+          Tendência Prazos Capital de Giro (Dias)
+        </h4>
+        <div className="flex-grow w-full min-h-[280px] print:min-h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 25, left: 0, bottom: 35 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 11 }} 
+                interval={0} 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+              />
+              <YAxis tick={{ fontSize: 11 }}>
+                <Label angle={-90} value="Dias" position="insideLeft" style={{ textAnchor: 'middle' }} />
+              </YAxis>
+              <Tooltip 
+                formatter={(value, name) => [formatDays(value), name]}
+                labelFormatter={(label) => `Período: ${label}`}
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e2e8f0', 
+                  borderRadius: '6px',
+                  fontSize: '12px'
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Line type="monotone" dataKey="PMR (Dias)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="PME (Dias)" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="PMP (Dias)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Ciclo Caixa (Dias)" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg border border-slate-200 print:shadow-none print:border-slate-300">
-      <h4 className="text-lg font-semibold text-slate-800 mb-4 text-center print:text-base">
-        Tendência dos Prazos de Capital de Giro (Dias) - SSOT
-      </h4>
-      <div className="w-full h-[300px] md:h-[350px] print:h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 25, left: 0, bottom: 25 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 10 }} className="print:text-[7pt]">
-              <Label value={`Períodos (${PERIOD_TYPES[periodType]?.label || periodType})`} offset={-20} position="insideBottom" style={{ fontSize: 10, fill: '#475569' }} className="print:text-[7pt]"/>
-            </XAxis>
-            <YAxis stroke="#64748b" tick={{ fontSize: 10 }} className="print:text-[7pt]" tickFormatter={(value) => `${value}`}/>
-            <Tooltip 
-              contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: '1px solid #cbd5e1', borderRadius: '0.5rem', fontSize: '12px', boxShadow: '2px 2px 10px rgba(0,0,0,0.1)' }}
-              formatter={(value, name) => [`${Number(value).toFixed(1)} dias`, name]}
-              labelStyle={{ fontSize: 12, fontWeight: 'bold', marginBottom: '4px' }}
-              itemStyle={{ fontSize: 11 }}
-            />
-            <Legend wrapperStyle={{fontSize: "11px", paddingTop: "10px"}} iconSize={10} />
-            <Line type="monotone" dataKey="PMR (Dias)" stroke="#3b82f6" strokeWidth={2.5} activeDot={{ r: 5 }} dot={{ r: 3 }} name="PMR (Recebimento)" />
-            <Line type="monotone" dataKey="PME (Dias)" stroke="#10b981" strokeWidth={2.5} activeDot={{ r: 5 }} dot={{ r: 3 }} name="PME (Estoque)" />
-            <Line type="monotone" dataKey="PMP (Dias)" stroke="#f59e0b" strokeWidth={2.5} activeDot={{ r: 5 }} dot={{ r: 3 }} name="PMP (Pagamento)" />
-            <Line type="monotone" dataKey="Ciclo Caixa (Dias)" stroke="#ef4444" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 4 }} name="Ciclo de Caixa" />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <BaseChart libraryName="Recharts" chartTitle="Tendência Prazos Capital Giro">
+      {renderChartContent}
+    </BaseChart>
   );
 }

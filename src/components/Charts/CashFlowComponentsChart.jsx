@@ -1,69 +1,76 @@
 import React from 'react';
+import BaseChart from './BaseChart';
 import { PERIOD_TYPES } from '../../utils/constants';
 import { formatCurrency } from '../../utils/formatters';
-import { RechartsWrapper, useRecharts } from './RechartsWrapper';
 
 export default function CashFlowComponentsChart({ calculatedData, periodType }) {
+  
+  const renderChartContent = (isRechartsLoaded) => {
+    if (!isRechartsLoaded || typeof window.Recharts === 'undefined') {
+      return <div className="flex items-center justify-center h-full text-slate-500 text-sm p-4">Aguardando biblioteca de gráficos...</div>;
+    }
+    
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } = window.Recharts;
+
+    if (!calculatedData || calculatedData.length === 0) {
+      return <p className="text-center text-slate-500 py-4">Dados insuficientes.</p>;
+    }
+
+    const chartData = calculatedData.map((period, index) => ({
+      name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
+      "FCO": period.operatingCashFlow || 0,
+      "Var. Cap. Giro": -(period.workingCapitalChange || 0), // Negative for cash use
+      "CAPEX": -(period.capitalExpenditures || 0), // Negative for cash use
+      "Fin. Líquido": period.cashFlowFromFinancing || 0,
+      "Var. Caixa": period.netChangeInCash || 0
+    }));
+
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-lg border border-slate-200 print:shadow-none print:border-slate-300 h-full flex flex-col">
+        <h4 className="text-md font-semibold text-slate-800 mb-3 text-center print:text-sm">
+          Componentes do Fluxo de Caixa
+        </h4>
+        <div className="flex-grow w-full min-h-[300px] print:min-h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 5, right: 25, left: 0, bottom: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 11 }} 
+                interval={0} 
+                angle={-45} 
+                textAnchor="end" 
+                height={60}
+              />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => formatCurrency(value, true)}>
+                <Label angle={-90} value="R$" position="insideLeft" style={{ textAnchor: 'middle' }} />
+              </YAxis>
+              <Tooltip 
+                formatter={(value, name) => [formatCurrency(value), name]}
+                labelFormatter={(label) => `Período: ${label}`}
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e2e8f0', 
+                  borderRadius: '6px',
+                  fontSize: '12px'
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              <Bar dataKey="FCO" fill="#10b981" />
+              <Bar dataKey="Var. Cap. Giro" fill="#f59e0b" />
+              <Bar dataKey="CAPEX" fill="#ef4444" />
+              <Bar dataKey="Fin. Líquido" fill="#3b82f6" />
+              <Bar dataKey="Var. Caixa" fill="#8b5cf6" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md border border-slate-200 h-[350px] md:h-[400px] w-full">
-      <h4 className="text-md font-semibold text-slate-700 mb-4 text-center">
-        Principais Componentes do Fluxo de Caixa
-        {calculatedData.length > 0 ? ` (Último Período: ${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${calculatedData.length})` : ''}
-      </h4>
-      
-      <RechartsWrapper>
-        <CashFlowComponentsChartContent calculatedData={calculatedData} periodType={periodType} />
-      </RechartsWrapper>
-    </div>
-  );
-}
-
-function CashFlowComponentsChartContent({ calculatedData, periodType }) {
-  const { 
-    BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, 
-    Tooltip, ReferenceLine, ResponsiveContainer, LabelList 
-  } = useRecharts();
-
-  if (!calculatedData || calculatedData.length === 0) {
-    return <p className="text-center text-slate-500 py-4">Dados insuficientes para o gráfico de Componentes do Fluxo de Caixa.</p>;
-  }
-
-  // Using data from the latest period for this visual
-  const latestPeriod = calculatedData[calculatedData.length - 1];
-
-  // Data for a stacked/grouped bar chart.
-  // Positive values are inflows, negative are outflows.
-  const chartData = [
-    { name: 'FCO', value: latestPeriod.operatingCashFlow, fill: '#22c55e' }, // green-500
-    { name: 'Invest. CG', value: -latestPeriod.workingCapitalChange, fill: '#f97316' }, // orange-500 (negative if investment)
-    { name: 'CAPEX', value: -latestPeriod.capitalExpenditures, fill: '#ef4444' }, // red-500
-    { name: 'Financiamentos', value: latestPeriod.cashFlowFromFinancing, fill: '#3b82f6' }, // blue-500
-    { name: 'Var. Líq. Caixa', value: latestPeriod.netChangeInCash, fill: '#6b7280', isTotal: true }, // gray-500
-  ];
-
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart
-        data={chartData}
-        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-      >
-        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0"/>
-        <XAxis dataKey="name" tick={{ fontSize: 10 }}/>
-        <YAxis tickFormatter={(tick) => formatCurrency(tick, false)} tick={{ fontSize: 10 }}/>
-        <Tooltip formatter={(value) => formatCurrency(value)} />
-        <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="2 2" />
-        <Bar dataKey="value">
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
-          ))}
-          <LabelList
-            dataKey="value"
-            position="top"
-            formatter={(value) => formatCurrency(value, false)}
-            style={{ fontSize: '10px', fill: '#333' }}
-          />
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <BaseChart libraryName="Recharts" chartTitle="Componentes Fluxo de Caixa">
+      {renderChartContent}
+    </BaseChart>
   );
 }

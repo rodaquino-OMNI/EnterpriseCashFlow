@@ -1,91 +1,143 @@
 // src/components/ReportPanel/BalanceSheetEquation.jsx
 import React from 'react';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters'; // Assuming formatters.js is in ../../utils/
 
-/**
- * @param {{ calculatedData: import('../../types/financial').CalculatedPeriodData[] }} props
- */
+// Modular sub-components from your enhanced design
+const ValueCard = ({ title, value, detail, bgColor = "bg-slate-100", borderColor = "border-slate-300", textColor = "text-slate-700", titleColor, valueTextSize = "text-xl lg:text-2xl" }) => (
+  <div className={`${bgColor} p-4 md:p-5 rounded-xl border-2 ${borderColor} min-w-[160px] md:min-w-[180px] shadow-sm transition-all hover:shadow-md text-center print:p-2 print:border print:shadow-none`}>
+    <div className={`text-xs font-medium ${titleColor || textColor} mb-1 uppercase tracking-wider print:text-[8pt]`}>{title}</div>
+    <div className={`${valueTextSize} font-bold ${textColor} print:text-lg`}>{formatCurrency(value)}</div>
+    {detail && <div className="text-xs text-slate-500 mt-0.5 print:text-[7pt]">{detail}</div>}
+  </div>
+);
+
+const BalanceDifferenceIndicator = ({ difference, totalAssets }) => {
+  // Use a small absolute threshold for "Equilibrado" to account for minor float discrepancies.
+  const isEffectivelyZero = Math.abs(difference) < 0.015; // e.g., less than 1.5 cents
+  const diffPercentage = totalAssets !== 0 ? Math.abs(difference / totalAssets * 100) : 0;
+  
+  // Determine severity for styling based on the magnitude of the difference relative to assets
+  let severity = 'ok';
+  let message = '✅ Equilibrado';
+  if (!isEffectivelyZero) {
+    if (diffPercentage > 5) { // More than 5% of assets is critical
+        severity = 'critical';
+        message = `⚠️ ${diffPercentage.toFixed(1)}% dos Ativos (Crítico!)`;
+    } else if (diffPercentage > 1) { // More than 1% is a warning
+        severity = 'warning';
+        message = `⚠️ ${diffPercentage.toFixed(1)}% dos Ativos (Revisar)`;
+    } else { // Small difference, but not zero
+        severity = 'ok'; // Still okay, but not perfectly zero
+        message = `~ ${diffPercentage.toFixed(1)}% dos Ativos (Pequena Diferença)`;
+    }
+  }
+  
+  const severityStyles = {
+    critical: 'bg-red-100 text-red-700 border-red-400 print:bg-red-50 print:border-red-300',
+    warning: 'bg-yellow-100 text-yellow-700 border-yellow-400 print:bg-yellow-50 print:border-yellow-300',
+    ok: 'bg-green-100 text-green-700 border-green-400 print:bg-green-50 print:border-green-300'
+  };
+
+  return (
+    <div className={`inline-flex flex-col items-center font-bold p-3 rounded-md border-2 ${severityStyles[severity]} min-w-[220px] print:p-2`}>
+      <div className="text-lg print:text-base">{formatCurrency(difference)}</div>
+      <div className="text-xs font-normal mt-1 print:text-[7pt]">{message}</div>
+      {severity === 'critical' && (
+        <div className="text-xs mt-2 max-w-xs text-center print:hidden">
+          Diferença crítica detectada - revisar inputs urgentemente!
+        </div>
+      )}
+    </div>
+  );
+};
+
+const NetDebtIndicator = ({ netDebt, totalAssets }) => {
+  const isNetCashPosition = netDebt < 0;
+  const debtToAssetsRatio = totalAssets !== 0 ? Math.abs(netDebt / totalAssets * 100) : 0;
+  
+  return (
+    <div className="flex flex-col items-center">
+      <span className="font-semibold text-slate-700 text-sm mb-1">
+        {isNetCashPosition ? "Posição Líquida de Caixa:" : "Dívida Líquida:"}
+      </span>
+      <span className={`font-bold text-lg ${isNetCashPosition ? 'text-green-600' : 'text-red-600'}`}>
+        {formatCurrency(Math.abs(netDebt))}
+      </span>
+      {totalAssets !== 0 && (
+        <span className="text-xs text-slate-500 mt-0.5">
+          ({debtToAssetsRatio.toFixed(1)}% dos Ativos Totais)
+        </span>
+      )}
+    </div>
+  );
+};
+
 export default function BalanceSheetEquation({ calculatedData }) {
   if (!calculatedData || calculatedData.length === 0) {
-    return <p className="text-center text-slate-500 py-4">Dados insuficientes para a Equação Patrimonial.</p>;
+    return ( <div className="p-8 bg-slate-50 rounded-xl border-2 border-slate-200 text-center"> <p className="text-slate-500">Dados insuficientes para a Equação Patrimonial.</p> </div> );
   }
+
   const latestPeriod = calculatedData[calculatedData.length - 1];
-
-  // Net Debt = Total Bank Loans - Closing Cash
+  
+  // All values sourced directly from the SSOT (latestPeriod object)
+  const totalAssets = latestPeriod.estimatedTotalAssets || 0;
+  const totalLiabilities = latestPeriod.estimatedTotalLiabilities || 0;
+  const equity = latestPeriod.equity || 0;
+  const balanceSheetDifference = latestPeriod.balanceSheetDifference || 0; // This is A - (L+E)
+  
   const netDebt = (latestPeriod.totalBankLoans || 0) - (latestPeriod.closingCash || 0);
-
-  // Other Capital / Assets = Net Fixed Assets (as per benchmark visual and simplification)
-  const otherCapitalValue = (latestPeriod.netFixedAssets || 0);
-
-  const totalFundingSide = (latestPeriod.equity || 0) + netDebt;
-  const totalAssetsSideEquation = (latestPeriod.workingCapitalValue || 0) + otherCapitalValue;
-  const equationDifference = totalFundingSide - totalAssetsSideEquation; // Should be related to balanceSheetDifference but calculated independently here
 
   return (
     <section className="mb-8 page-break-after">
       <h3 className="report-section-title">
-        ⚖️ Sua Equação Patrimonial (Último Período)
+        ⚖️ Equação Patrimonial Fundamental (Último Período)
       </h3>
-
-      <div className="bg-gradient-to-br from-slate-50 via-gray-100 to-slate-200 p-6 md:p-8 rounded-xl shadow-xl border border-slate-300 print:shadow-none print:border-slate-400">
-        {/* Equation Visual */}
-        <div className="flex flex-col lg:flex-row items-center justify-around space-y-6 lg:space-y-0 lg:space-x-4 mb-8">
-          {/* Funding Side: Equity + Net Debt */}
+      <div className="bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200 p-6 md:p-8 rounded-xl shadow-xl border border-slate-300 print:shadow-none print:border-slate-400">
+        
+        <div className="flex flex-col xl:flex-row items-center justify-around space-y-8 xl:space-y-0 xl:space-x-4 mb-8">
+          {/* Assets Side */}
           <div className="flex flex-col items-center text-center">
-            <div className="text-sm font-medium text-slate-600 mb-2">FONTES DE FINANCIAMENTO</div>
-            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
-              <div className="bg-blue-100 p-4 rounded-lg border-2 border-blue-300 min-w-[160px] shadow-sm">
-                <div className="text-xs font-semibold text-blue-700 mb-1">Patrimônio Líquido</div>
-                <div className="text-xl font-bold text-blue-800">{formatCurrency(latestPeriod.equity)}</div>
-              </div>
-              <div className="text-2xl font-bold text-slate-500 mx-1">+</div>
-              <div className="bg-red-100 p-4 rounded-lg border-2 border-red-300 min-w-[160px] shadow-sm">
-                <div className="text-xs font-semibold text-red-700 mb-1">Dívida Líquida</div>
-                <div className="text-xl font-bold text-red-800">{formatCurrency(netDebt)}</div>
-                {netDebt < 0 && <div className="text-xs text-green-600 mt-0.5">(Posição Caixa Líquido)</div>}
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-slate-700 mt-2">{formatCurrency(totalFundingSide)}</div>
+            <h4 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">Total Ativos</h4>
+            <ValueCard title="Ativos Totais (Estimado)" value={totalAssets} 
+              bgColor="bg-sky-100 print:bg-sky-50" borderColor="border-sky-400 print:border-sky-300" textColor="text-sky-700" titleColor="text-sky-600"/>
           </div>
 
-          <div className="flex items-center justify-center my-3 lg:my-0">
-            <div className="bg-slate-700 text-white p-3 rounded-full shadow-md">
-              <div className="text-2xl font-bold">=</div>
+          <div className="flex items-center justify-center my-3 xl:my-0">
+            <div className="bg-slate-700 text-white p-3 md:p-4 rounded-full shadow-lg transform transition-transform hover:scale-105 print:bg-slate-800">
+              <div className="text-2xl md:text-3xl font-bold">=</div>
             </div>
           </div>
 
-          {/* Net Operating Assets Side: Working Capital + Other Capital (Fixed Assets) */}
+          {/* Liabilities + Equity Side */}
           <div className="flex flex-col items-center text-center">
-            <div className="text-sm font-medium text-slate-600 mb-2">ATIVOS OPERACIONAIS LÍQUIDOS</div>
+            <h4 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">Total Passivos + Patrimônio Líquido</h4>
             <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
-              <div className="bg-green-100 p-4 rounded-lg border-2 border-green-300 min-w-[160px] shadow-sm">
-                <div className="text-xs font-semibold text-green-700 mb-1">Capital de Giro</div>
-                <div className="text-xl font-bold text-green-800">{formatCurrency(latestPeriod.workingCapitalValue)}</div>
-              </div>
-              <div className="text-2xl font-bold text-slate-500 mx-1">+</div>
-              <div className="bg-purple-100 p-4 rounded-lg border-2 border-purple-300 min-w-[160px] shadow-sm">
-                <div className="text-xs font-semibold text-purple-700 mb-1">Outros Ativos (Imobilizado)</div>
-                <div className="text-xl font-bold text-purple-800">{formatCurrency(otherCapitalValue)}</div>
-              </div>
+              <ValueCard title="Total Passivos (Estimado)" value={totalLiabilities} 
+                bgColor="bg-rose-100 print:bg-rose-50" borderColor="border-rose-400 print:border-rose-300" textColor="text-rose-700" titleColor="text-rose-600"/>
+              <div className="text-2xl font-bold text-slate-500 mx-1 my-2 sm:my-0">+</div>
+              <ValueCard title="Patrimônio Líquido (Final)" value={equity} 
+                bgColor="bg-emerald-100 print:bg-emerald-50" borderColor="border-emerald-400 print:border-emerald-300" textColor="text-emerald-700" titleColor="text-emerald-600"/>
             </div>
-            <div className="text-2xl font-bold text-slate-700 mt-2">{formatCurrency(totalAssetsSideEquation)}</div>
+            <div className="text-2xl font-bold text-slate-800 mt-3 border-t-2 border-slate-400 pt-2 w-full max-w-sm text-center">
+                {formatCurrency(totalLiabilities + equity)}
+            </div>
           </div>
         </div>
-
-        {/* Reconciliation Note & Overall Balance Sheet Difference */}
-        <div className="mt-6 pt-4 border-t border-slate-300 text-center">
-            <p className="text-xs text-slate-600 mb-2">
-              Esta equação simplifica a estrutura de financiamento e investimento. A "Diferença de Balanço" abaixo reflete a consistência do balanço patrimonial completo estimado.
+        
+        <div className="mt-6 pt-6 border-t-2 border-dashed border-slate-300 text-center">
+            <p className="text-sm text-slate-600 mb-2 font-medium">
+                Verificação da Equação (Ativos - (Passivos + PL)):
             </p>
-            <div className="inline-flex items-center bg-white p-3 rounded-lg border border-slate-300 shadow-sm">
-              <span className="text-sm font-medium text-slate-700 mr-2">Diferença de Balanço (Geral):</span>
-              <span className={`text-md font-bold ${Math.abs(latestPeriod.balanceSheetDifference) > 1 ? 'text-red-600' : 'text-green-600'}`}>
-                {formatCurrency(latestPeriod.balanceSheetDifference)}
-              </span>
-              <span className={`ml-2 text-xs ${Math.abs(latestPeriod.balanceSheetDifference) > 1 ? 'text-red-500' : 'text-green-500'}`}>
-                {Math.abs(latestPeriod.balanceSheetDifference) < 1 ? '(Equilibrado)' : '(Revisar Inputs)'}
-              </span>
-            </div>
+            <BalanceDifferenceIndicator difference={balanceSheetDifference} totalAssets={totalAssets} />
+             {Math.abs(balanceSheetDifference) > 1.01 && ( // Using same threshold as indicator
+                <p className="text-xs text-red-600 mt-3 max-w-md mx-auto">
+                    Uma "Diferença de Balanço" indica que os valores de Ativos, Passivos e PL fornecidos ou calculados não se igualam perfeitamente. Isso geralmente requer revisão dos inputs para maior precisão.
+                </p>
+            )}
+        </div>
+        
+        <div className="mt-6 pt-4 border-t border-slate-300 text-center">
+            <NetDebtIndicator netDebt={netDebt} totalAssets={totalAssets} />
         </div>
       </div>
     </section>

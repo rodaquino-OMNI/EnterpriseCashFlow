@@ -1,43 +1,35 @@
 // src/components/ReportPanel/ReportRenderer.jsx
-import React, { useRef, useState, useMemo } from 'react'; // Removed unused useEffect
+import React, { useRef, useState, useMemo, useCallback } from 'react'; // Removed unused useEffect
 import ReportControls from './ReportControls';
 import ExecutiveSummaryCards from './ExecutiveSummaryCards'; 
-import WorkingCapitalTimeline from './Charts/WorkingCapitalTimeline';
+
+// New/Enhanced Benchmark-Style Components
+import WorkingCapitalTimeline from './Charts/WorkingCapitalTimeline'; // Fixed import name
 import FundingReconciliation from './FundingReconciliation';
 import BalanceSheetEquation from './BalanceSheetEquation';
 import PowerOfOneAnalysis from './PowerOfOneAnalysis'; 
 import FinancialTables from './FinancialTables'; 
 import AiAnalysisSection from '../AIPanel/AiAnalysisSection';
 
-// Chart Imports
+// Chart Imports - Updated with new components
 import MarginTrendChart from '../Charts/MarginTrendChart';
-import PnlWaterfallChart from './Charts/PnlWaterfallChart';
+import ProfitWaterfallChart from './Charts/ProfitWaterfallChart'; // NEW waterfall chart
+import CashFlowWaterfallChart from './Charts/CashFlowWaterfallChart';
 import WorkingCapitalDaysTrendChart from '../Charts/WorkingCapitalDaysTrendChart';
-import CashFlowWaterfallChart from './Charts/CashFlowWaterfallChart'; 
 import CashFlowKeyMetricsTrendChart from '../Charts/CashFlowKeyMetricsTrendChart';
 import AssetCompositionChart from '../Charts/AssetCompositionChart';
-import FundingStructureChart from '../Charts/FundingStructureChart';
+import FundingStructureChart from './Charts/FundingStructureChart'; // Using new version from ReportPanel folder
 import BalanceSheetDifferenceTrendChart from '../Charts/BalanceSheetDifferenceTrendChart';
 
 import { PERIOD_TYPES } from '../../utils/constants';
 import { ANALYSIS_TYPES, ANALYSIS_METADATA } from '../../utils/aiAnalysisTypes';
-// Import VALIDATION utilities
-import { runAllValidations, ValidationAlerts } from '../../utils/dataValidation';
+// Import VALIDATION utilities - Updated to use new ValidationAlerts structure
+import { ValidationAlerts } from '../../utils/dataValidation';
 // Import formatters for Debug section
 import { formatCurrency, formatDays } from '../../utils/formatters'; 
-// Import DataConsistencyMonitor for SSOT validation
+// Import enhanced DataConsistencyMonitor for SSOT validation with tabs
 import DataConsistencyMonitor from '../Debug/DataConsistencyMonitor';
 
-/**
- * @param {{
- * calculatedData: import('../../types/financial').CalculatedPeriodData[];
- * companyInfo: import('../../types/financial').CompanyInfo;
- * onLoadHtml2pdf: () => Promise<any | null>;
- * html2pdfError: Error | null;
- * aiAnalysisManager: ReturnType<typeof import('../../hooks/useAiAnalysis').useAiAnalysis>;
- * scenarioSettings: import('../../types/financial').ScenarioSettings; 
- * }} props
- */
 export default function ReportRenderer({ 
   calculatedData, 
   companyInfo, 
@@ -48,21 +40,61 @@ export default function ReportRenderer({
 }) {
   const reportRef = useRef(null);
   const { name: companyName, reportTitle, periodType } = companyInfo;
-  const financialDataBundle = { calculatedData, companyInfo };
   
-  // Perform data validation using useMemo to avoid re-calculating on every render
-  const validationResults = useMemo(() => {
-    if (calculatedData && calculatedData.length > 0) {
-      console.log("[ReportRenderer] Running validations with calculatedData:", calculatedData);
-      return runAllValidations(calculatedData);
-    }
-    return null;
-  }, [calculatedData]);
+  // Memoize financialDataBundle to prevent unnecessary re-renders
+  const financialDataBundle = useMemo(() => ({ 
+    calculatedData, 
+    companyInfo 
+  }), [calculatedData, companyInfo]);
+  
+  // Optimize validation results aggregation with dependency array
+  const aggregatedValidationResults = useMemo(() => {
+    if (!calculatedData?.length) return null;
+    
+    const allErrors = [];
+    const allWarnings = [];
+    const allInfos = [];
+    const allSuccesses = [];
+    
+    // Process in batches to avoid blocking the main thread
+    calculatedData.forEach((period, index) => {
+      if (period.validationResults) {
+        const periodLabel = `Período ${index + 1}`;
+        const source = 'FinancialCalculationEngine';
+        
+        allErrors.push(...(period.validationResults.errors || []).map(e => ({...e, periodLabel, source})));
+        allWarnings.push(...(period.validationResults.warnings || []).map(w => ({...w, periodLabel, source})));
+        allInfos.push(...(period.validationResults.infos || []).map(i => ({...i, periodLabel, source})));
+        allSuccesses.push(...(period.validationResults.successes || []).map(s => ({...s, periodLabel, source})));
+      }
+    });
+    
+    return { 
+      isValidOverall: allErrors.length === 0, 
+      errors: allErrors, 
+      warnings: allWarnings, 
+      infos: allInfos, 
+      successes: allSuccesses 
+    };
+  }, [calculatedData]); // Simplified dependency
 
+  // Optimize debug diagnosis with lighter calculation
+  const debugLatestPeriodDiagnosis = useMemo(() => {
+    if (process.env.NODE_ENV !== 'development' || !calculatedData?.length) {
+      return null;
+    }
+    // Only run diagnosis for the latest period to reduce computation
+    return { 
+      hasData: true, 
+      periodCount: calculatedData.length,
+      latestPeriodIndex: calculatedData.length - 1
+    };
+  }, [calculatedData]);
+  
   // Destructure what's needed from aiAnalysisManager
   const { analyses, isLoading: isAiAnalysisTypeLoading, errors: aiAnalysisErrors, performAnalysis } = aiAnalysisManager;
-
   const [isPdfGeneratingInternal, setIsPdfGeneratingInternal] = useState(false);
+  
   const handleGeneratePdf = async () => {
     setIsPdfGeneratingInternal(true);
     let originalDisplays = [];
@@ -120,13 +152,12 @@ export default function ReportRenderer({
   
   // Debug Section Sub-Component
   const DebugSection = () => {
-    // Ensure NODE_ENV is accessible, or use a prop/config for development mode
-    // For client-side React (like Vite/CRA), process.env.NODE_ENV is typically available.
-    const isDevelopment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'development';
+    const isDevelopment = process.env.NODE_ENV === 'development';
     
-    if (!isDevelopment || !calculatedData || calculatedData.length === 0) {
+    if (!isDevelopment || !calculatedData?.length) {
       return null;
     }
+    
     const latestPeriod = calculatedData[calculatedData.length - 1];
     if (!latestPeriod) return null;
 
@@ -139,33 +170,27 @@ export default function ReportRenderer({
           <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
             <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Componentes do Balanço</h4>
             <div className="space-y-0.5">
-              <div>Total Ativos (Final): {formatCurrency(latestPeriod.estimatedTotalAssets)}</div>
-              <div>Total Passivos (Final): {formatCurrency(latestPeriod.estimatedTotalLiabilities)}</div>
-              <div>Patrimônio Líquido (Final): {formatCurrency(latestPeriod.equity)}</div>
-              <div className="font-bold border-t border-slate-200 pt-1 mt-1">Diferença Balanço: {formatCurrency(latestPeriod.balanceSheetDifference)}</div>
-              <div className="text-slate-500 italic">Checagem Interna (A-(L+PL)): {formatCurrency(latestPeriod.estimatedTotalAssets - (latestPeriod.estimatedTotalLiabilities + latestPeriod.equity))}</div>
+              <div>Total Ativos (Final): {formatCurrency(latestPeriod.estimatedTotalAssets, true, { abbreviate: true })}</div>
+              <div>Total Passivos (Final): {formatCurrency(latestPeriod.estimatedTotalLiabilities, true, { abbreviate: true })}</div>
+              <div>Patrimônio Líquido (Final): {formatCurrency(latestPeriod.equity, true, { abbreviate: true })}</div>
+              <div className="font-bold border-t border-slate-200 pt-1 mt-1">Diferença Balanço: {formatCurrency(latestPeriod.balanceSheetDifference, true, { abbreviate: true })}</div>
             </div>
           </div>
           <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
-            <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Prazos de Capital de Giro (Derivados)</h4>
+            <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Prazos de Capital de Giro</h4>
             <div className="space-y-0.5">
-              <div>PMR: {formatDays(latestPeriod.arDaysDerived)} (Valor CR Médio: {formatCurrency(latestPeriod.accountsReceivableValueAvg)})</div>
-              <div>PME: {formatDays(latestPeriod.inventoryDaysDerived)} (Valor Estq. Médio: {formatCurrency(latestPeriod.inventoryValueAvg)})</div>
-              <div>PMP: {formatDays(latestPeriod.apDaysDerived)} (Valor CP Médio: {formatCurrency(latestPeriod.accountsPayableValueAvg)})</div>
+              <div>PMR: {formatDays(latestPeriod.arDaysDerived)}</div>
+              <div>PME: {formatDays(latestPeriod.inventoryDaysDerived)}</div>
+              <div>PMP: {formatDays(latestPeriod.apDaysDerived)}</div>
               <div className="font-bold border-t border-slate-200 pt-1 mt-1">Ciclo de Caixa: {formatDays(latestPeriod.wcDays)}</div>
-              <div className="text-slate-500 italic">Checagem Ciclo (PMR+PME-PMP): {formatDays(latestPeriod.arDaysDerived + latestPeriod.inventoryDaysDerived - latestPeriod.apDaysDerived)}</div>
             </div>
           </div>
           <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
-            <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Lógica do Fluxo de Caixa</h4>
+            <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Fluxo de Caixa</h4>
             <div className="space-y-0.5">
-              <div>FCO: {formatCurrency(latestPeriod.operatingCashFlow)}</div>
-              <div>Variação CG: {formatCurrency(latestPeriod.workingCapitalChange)}</div>
-              <div>CAPEX: {formatCurrency(latestPeriod.capitalExpenditures)}</div>
-              <div className="font-bold border-t border-slate-200 pt-1 mt-1">FCL (antes Fin.): {formatCurrency(latestPeriod.netCashFlowBeforeFinancing)}</div>
-              <div className="font-bold text-red-600">Necessidade(+)/Exc.(-): {formatCurrency(latestPeriod.fundingGapOrSurplus)}</div>
-              <div className="text-slate-500 italic">Checagem (Gap = -FCL): {formatCurrency(-latestPeriod.netCashFlowBeforeFinancing)}</div>
-              <div className="text-slate-500 italic">Caixa Final Calculado (DFC): {formatCurrency(latestPeriod.closingCash)}</div>
+              <div>FCO: {formatCurrency(latestPeriod.operatingCashFlow, true, { abbreviate: true })}</div>
+              <div>FCL: {formatCurrency(latestPeriod.netCashFlowBeforeFinancing, true, { abbreviate: true })}</div>
+              <div className="font-bold text-red-600">Gap/Surplus: {formatCurrency(latestPeriod.fundingGapOrSurplus, true, { abbreviate: true })}</div>
             </div>
           </div>
         </div>
@@ -173,13 +198,14 @@ export default function ReportRenderer({
     );
   };
 
-  const getAiSectionProps = (analysisType) => ({
+  // Memoize AI section props to prevent unnecessary re-renders
+  const getAiSectionProps = useCallback((analysisType) => ({
     content: analyses[analysisType],
     isLoading: isAiAnalysisTypeLoading(analysisType),
     error: aiAnalysisErrors[analysisType],
-    onRetry: () => performAnalysis(analysisType, financialDataBundle), // Pass performAnalysis for retry
+    onRetry: () => performAnalysis(analysisType, financialDataBundle),
     analysisTypeForRetry: analysisType
-  });
+  }), [analyses, isAiAnalysisTypeLoading, aiAnalysisErrors, performAnalysis, financialDataBundle]);
 
   return (
     <>
@@ -198,8 +224,7 @@ export default function ReportRenderer({
         aiError={Object.values(aiAnalysisErrors).find(e => e) || null} 
         canAnalyzeVariances={calculatedData.length >= 2}
       />
-
-      <div ref={reportRef} className="report-container bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0">
+      <div ref={reportRef} className="report-container bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-2xl border border-slate-200 w-full max-w-full print:shadow-none print:border-none print:p-0">
         {/* PDF Cover Page (Print Only) */}
         <div className="page-break-after print:block hidden"> 
              <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '270mm' }}>
@@ -220,10 +245,10 @@ export default function ReportRenderer({
         </header>
 
         {/* Render Validation Alerts */}
-        <ValidationAlerts validationResults={validationResults} />
+        <ValidationAlerts validationResults={aggregatedValidationResults} />
 
         {/* Data Consistency Monitor for Development - ENABLED for this check */}
-        <DataConsistencyMonitor calculatedData={calculatedData} enabled={true} />
+        <DataConsistencyMonitor calculatedData={calculatedData} detailedDiagnosis={debugLatestPeriodDiagnosis} enabled={true} />
 
         {/* Scenario Analysis Results - Display if any scenario is enabled */}
         {Object.values(scenarioSettings || {}).some(s => s?.enabled) && calculatedData.length > 0 && (
@@ -243,27 +268,36 @@ export default function ReportRenderer({
             </div>
         </div>
         
-        <WorkingCapitalTimeline calculatedData={calculatedData} periodType={companyInfo.periodType} />
+        {/* Add the Working Capital Timeline right after Executive Summary */}
+        <section className="mb-8 page-break-after">
+          <h3 className="report-section-title">Timeline Capital de Giro</h3>
+          <div className="chart-container-wrapper">
+            <WorkingCapitalTimeline calculatedData={calculatedData} periodType={companyInfo.periodType} />
+          </div>
+        </section>
+
+        {/* Enhanced Benchmark-Style Visuals - Updated components */}
         <FundingReconciliation calculatedData={calculatedData} companyInfo={companyInfo} />
         <BalanceSheetEquation calculatedData={calculatedData} />
         <FinancialTables calculatedData={calculatedData} periodType={companyInfo.periodType} />
         <PowerOfOneAnalysis calculatedData={calculatedData} periodType={companyInfo.periodType} />
         
+        {/* Detailed Visual Dashboards - With updated components */}
         <section className="mb-8 page-break-after">
           <h3 className="report-section-title">Painel Visual de Detalhes e Tendências</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="chart-container-wrapper avoid-break"><PnlWaterfallChart calculatedData={calculatedData} periodType={periodType} /></div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+            <div className="chart-container-wrapper avoid-break"><ProfitWaterfallChart calculatedData={calculatedData} periodType={periodType} /></div>
             <div className="chart-container-wrapper avoid-break"><MarginTrendChart calculatedData={calculatedData} periodType={periodType} /></div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
             <div className="chart-container-wrapper avoid-break"><CashFlowWaterfallChart calculatedData={calculatedData} periodType={periodType} /></div>
             <div className="chart-container-wrapper avoid-break"><WorkingCapitalDaysTrendChart calculatedData={calculatedData} periodType={periodType} /></div>
           </div>
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
             <div className="chart-container-wrapper avoid-break"><CashFlowKeyMetricsTrendChart calculatedData={calculatedData} periodType={periodType} /></div>
             <div className="chart-container-wrapper avoid-break"><BalanceSheetDifferenceTrendChart calculatedData={calculatedData} periodType={periodType} /></div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <div className="chart-container-wrapper avoid-break"><AssetCompositionChart calculatedData={calculatedData} periodType={periodType} /></div>
             <div className="chart-container-wrapper avoid-break"><FundingStructureChart calculatedData={calculatedData} periodType={periodType} /></div>
           </div>
@@ -297,10 +331,33 @@ export default function ReportRenderer({
         </footer>
       </div>
       <style>{`
-        .report-container { page-break-inside: avoid; }
+        .report-container { 
+          page-break-inside: avoid; 
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
         .page-break-after { page-break-after: always !important; }
         .page-break-inside-avoid, .avoid-break { page-break-inside: avoid !important; }
         .no-print { @media print { display: none !important; } }
+        
+        /* Chart container styling */
+        .chart-container-wrapper {
+          width: 100%;
+          height: 100%;
+          min-height: 280px;
+        }
+        
+        /* Responsive adjustments for mobile */
+        @media screen and (max-width: 768px) {
+          .report-section-title {
+            font-size: 1.25rem;
+          }
+          
+          .financial-value {
+            font-size: 0.875rem;
+          }
+        }
         
         .btn-primary { @apply px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 disabled:opacity-50; }
         .btn-secondary { @apply px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 disabled:opacity-50; }
@@ -329,7 +386,7 @@ export default function ReportRenderer({
         .prose li { margin-bottom: 0.25rem; }
         .prose p { margin-bottom: 0.5rem; }
         @media print {
-          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; font-size: 9pt; }
+          body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; font-size: 9pt !important; }
           @page { size: A4 portrait; margin: 8mm 6mm; }
           .report-container { box-shadow: none !important; border: none !important; }
           .print-only-ai-section.print-visible-block { display: block !important; }

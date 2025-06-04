@@ -1,71 +1,73 @@
 import React from 'react';
-import { PERIOD_TYPES } from '../../utils/constants';
+import BaseChart from './BaseChart';
 import { formatCurrency } from '../../utils/formatters';
-import { RechartsWrapper, useRecharts } from './RechartsWrapper';
 
-export default function FundingStructureChart({ calculatedData, periodType }) {
+export default function FundingStructureChart({ calculatedData, periodIndex = -1 }) {
+  
+  const renderChartContent = (isRechartsLoaded) => {
+    if (!isRechartsLoaded || typeof window.Recharts === 'undefined') {
+      return <div className="flex items-center justify-center h-full text-slate-500 text-sm p-4">Aguardando biblioteca de gráficos...</div>;
+    }
+    
+    const { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } = window.Recharts;
+
+    if (!calculatedData || calculatedData.length === 0) {
+      return <p className="text-center text-slate-500 py-4">Dados insuficientes.</p>;
+    }
+
+    const period = periodIndex === -1 ? calculatedData[calculatedData.length - 1] : calculatedData[periodIndex];
+    if (!period) {
+      return <p className="text-center text-slate-500 py-4">Período não encontrado.</p>;
+    }
+
+    const pieData = [
+      { name: 'Fornecedores', value: period.accountsPayableValueAvg || 0, color: '#ef4444' },
+      { name: 'Empréstimos Bancários', value: period.totalBankLoans || 0, color: '#f59e0b' },
+      { name: 'Outros Passivos', value: Math.max(0, (period.estimatedTotalLiabilities || 0) - (period.accountsPayableValueAvg || 0) - (period.totalBankLoans || 0)), color: '#8b5cf6' },
+      { name: 'Capital Próprio', value: period.equity || 0, color: '#10b981' }
+    ].filter(item => item.value > 0);
+
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-lg border border-slate-200 print:shadow-none print:border-slate-300 h-full flex flex-col">
+        <h4 className="text-md font-semibold text-slate-800 mb-3 text-center print:text-sm">
+          Estrutura de Financiamento - Período {periodIndex === -1 ? calculatedData.length : periodIndex + 1}
+        </h4>
+        <div className="flex-grow w-full min-h-[300px] print:min-h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                labelLine={false}
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value) => [formatCurrency(value), 'Valor']}
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e2e8f0', 
+                  borderRadius: '6px',
+                  fontSize: '12px'
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md border border-slate-200 h-[350px] md:h-[400px] w-full">
-      <h4 className="text-md font-semibold text-slate-700 mb-4 text-center">
-        Estrutura de Financiamento
-        {calculatedData.length > 0 ? ` (Último Período: ${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${calculatedData.length})` : ''}
-      </h4>
-      
-      <RechartsWrapper>
-        <FundingStructureChartContent calculatedData={calculatedData} periodType={periodType} />
-      </RechartsWrapper>
-    </div>
-  );
-}
-
-function FundingStructureChartContent({ calculatedData, periodType }) {
-  const { 
-    PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer 
-  } = useRecharts();
-
-  if (!calculatedData || calculatedData.length === 0) {
-    return <p className="text-center text-slate-500 py-4">Dados insuficientes para o gráfico de Estrutura de Financiamento.</p>;
-  }
-
-  const latestPeriod = calculatedData[calculatedData.length - 1];
-  const data = [
-    // Using estimated liabilities as a proxy. Could be refined if more detailed liability inputs are added.
-    { name: 'Contas a Pagar (Médio)', value: Math.max(0, latestPeriod.accountsPayableValueAvg || 0) },
-    { name: 'Empréstimos Bancários', value: Math.max(0, latestPeriod.totalBankLoans || 0) },
-    { name: 'Patrimônio Líquido', value: Math.max(0, latestPeriod.equity || 0) },
-    // Add "Outros Passivos" if it were calculated or input
-  ].filter(item => item.value > 0);
-
-  const COLORS = ['#ef4444', '#f97316', '#22c55e']; // red, orange, green
-
-  return (
-    <>
-      {data.length > 0 ? (
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-              outerRadius={Math.min(120, window.innerWidth / 4 - 60)}
-              fill="#8884d8"
-              dataKey="value"
-              paddingAngle={1}
-              minAngle={1}
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip formatter={(value) => formatCurrency(value)} />
-            <Legend wrapperStyle={{fontSize: "12px", paddingTop: "10px"}}/>
-          </PieChart>
-        </ResponsiveContainer>
-      ) : (
-        <p className="text-center text-slate-500 flex items-center justify-center h-full">Sem dados de financiamento para exibir.</p>
-      )}
-    </>
+    <BaseChart libraryName="Recharts" chartTitle="Estrutura de Financiamento">
+      {renderChartContent}
+    </BaseChart>
   );
 }
