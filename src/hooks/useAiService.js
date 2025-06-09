@@ -99,10 +99,12 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
       
       const enhancedOptions = enhanceOptionsForProvider(options, currentProviderConfig, analysisType);
       
-      // Additional debug information
-      console.log(`[${callId}] Provider config:`, currentProviderConfig?.name);
-      console.log(`[${callId}] Has API key:`, !!(currentApiKey && currentApiKey.trim()));
-      console.log(`[${callId}] Prompt length:`, standardizedPrompt.length);
+      // Additional debug information (development only)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[${callId}] Provider config:`, currentProviderConfig?.name);
+        console.log(`[${callId}] Prompt length:`, standardizedPrompt.length);
+        // Never log API key presence in any environment for security
+      }
       
       // This call might return a string (success) or throw an error / return an error string.
       const rawResponseOrErrorString = await currentProviderConfig.callFunction(
@@ -144,9 +146,19 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
       return finalStandardizedResponse.content;
       
     } catch (err) { // This catches errors thrown by callFunction or subsequent processing
-      console.error(`[${callId}] ERROR during analysis ${analysisType} with ${currentProviderConfig.name}:`, err);
-      setError(err); // Set the Error object
-      throw err; // Re-throw the error object
+      // Log detailed error for development only, generic message for production
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[${callId}] ERROR during analysis ${analysisType} with ${currentProviderConfig.name}:`, err);
+      } else {
+        console.error(`[${callId}] Analysis failed for ${analysisType}`);
+      }
+      
+      // Create user-friendly error message without exposing system internals
+      const userFriendlyError = new Error(
+        `Falha na análise ${analysisType}. Por favor, verifique sua conexão e tente novamente.`
+      );
+      setError(userFriendlyError);
+      throw userFriendlyError;
     } finally {
       setIsLoading(false);
     }

@@ -58,9 +58,13 @@ async function callGemini(config, prompt, apiKey, options) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
     
-    // Log the API endpoint being called
+    // Construct API URL and log safely (without exposing API key)
     const apiUrl = `${config.apiUrl}/${model}:generateContent?key=${apiKey}`;
-    console.log("Calling Gemini endpoint:", apiUrl);
+    
+    // Log endpoint without exposing sensitive API key
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Calling Gemini endpoint:", `${config.apiUrl}/${model}:generateContent`);
+    }
     
     const response = await fetch(apiUrl, {
       method: 'POST',
