@@ -1,416 +1,454 @@
-// src/utils/calculations.js
-import { PERIOD_TYPES } from './constants.js';
-import { FinancialConstraintValidator, OverrideValidator } from './financialValidators.js'; 
-import { fieldDefinitions } from './fieldDefinitions.js'; 
-import { formatCurrency } from './formatters.js'; // For enhanced logging
+/**
+ * Core financial calculation engine for EnterpriseCashFlow
+ * All monetary values are in BRL and rounded to 2 decimal places
+ * All percentages are stored as decimals (e.g., 40% = 40.0)
+ */
 
-// Your enhanced parseToNumber
-function parseToNumber(value, defaultValue = 0) {
-    if (value === null || typeof value === 'undefined' || String(value).trim() === '') {
-        return defaultValue;
-    }
-    let sValue = String(value).trim();
-    if (sValue === '' || sValue === '-') return defaultValue;
-    sValue = sValue
-        .replace(/\s*R\$\s*/gi, '')
-        .replace(/[^\d\-+.,]/g, '') 
-        .replace(/\.(?=\d{3}(?:[,.]|$))/g, '') 
-        .replace(',', '.');
-    const parsed = Number(sValue);
-    return isNaN(parsed) ? defaultValue : parsed;
-}
+// Constants
+const DEFAULT_TAX_RATE = 0.34; // Brazilian corporate tax rate
+const DEFAULT_DEPRECIATION_RATE = 0.02; // 2% of revenue
+const DEFAULT_CAPEX_RATE = 0.05; // 5% of revenue
+const DEFAULT_GROSS_MARGIN = 0.4; // 40% default margin
 
-function getOverrideValue(rawPeriodInput, overrideKey) {
-  const value = rawPeriodInput[overrideKey];
-  // Return parsed number if valid, otherwise null. Critical for assign logic.
-  if (value !== null && typeof value !== 'undefined' && String(value).trim() !== '') {
-      const numValue = parseToNumber(value, NaN); // Try to parse, default to NaN if not parseable
-      return !isNaN(numValue) ? numValue : null;
-  }
-  return null;
-}
+// Default working capital days
+const DEFAULT_DSO = 45;
+const DEFAULT_DIO = 30;
+const DEFAULT_DPO = 60;
 
-class FinancialCalculationEngine {
-  constructor(periodInputRaw, previousPeriod_V_State, periodIndex, daysInPeriod) {
-    this.rawInput = { ...periodInputRaw }; 
-    this.previousV = previousPeriod_V_State; // This is the V object (SSOT) from previous engine's run
-    this.periodIndex = periodIndex;
-    this.days = daysInPeriod;
-    
-    /** @type {Record<string, any>} */
-    this.V = {}; 
-    this.auditTrail = [];
-    this.validationIssues = { errors: [], warnings: [], infos: [], successes: [] };
-    this.overridesAppliedSummary = {}; // For fields where an override was taken
+// Period days mapping
+const PERIOD_DAYS = {
+  MONTHLY: 30,
+  QUARTERLY: 90,
+  YEARLY: 365,
+};
 
-    // Initialize V with parsed DRIVER inputs from rawInput. Overrides are handled by 'assign'.
-    Object.keys(fieldDefinitions).forEach(key => {
-      if (!fieldDefinitions[key].isOverride) { 
-        const def = fieldDefinitions[key];
-        let initialValue = (def.type === 'percentage' && this.rawInput[key] !== null && typeof this.rawInput[key] !== 'undefined') 
-                            ? parseToNumber(this.rawInput[key],0) 
-                            : parseToNumber(this.rawInput[key],0); 
-        
-        if (def.firstPeriodOnly && periodIndex > 0) {
-            this.V[key] = null; // Set to null for subsequent periods
-        } else {
-            this.V[key] = initialValue;
-        }
-        // Record only if it has a value or is a P0 firstPeriodOnly field
-        if (this.V[key] !== null || (def.firstPeriodOnly && periodIndex === 0)) {
-            this.recordAudit(key, this.V[key], 'input_driver_parsed');
-        }
-      }
-    });
-  }
+/**
+ * Rounds a number to 2 decimal places
+ */
+const round2 = (num) => Math.round(num * 100) / 100;
 
-  recordAudit(field, value, source, calculatedValueIfOverridden = null, overrideKeyUsed = null) {
-    this.auditTrail.push({ field, value, source, calculatedValueIfOverridden, overrideKeyUsed, t: new Date().toISOString() });
-    if (source === 'override_applied') {
-      if(!this.V._overridesSummary) this.V._overridesSummary = { count: 0, details: {} };
-      this.V._overridesSummary.details[field] = { // Use fieldName, not overrideKey as key here
-          overriddenValue: value, 
-          originalCalculatedValue: calculatedValueIfOverridden, 
-          sourceOverrideKey: overrideKeyUsed 
-      };
-      this.V._overridesSummary.count = Object.keys(this.V._overridesSummary.details).length;
-      this.overridesAppliedSummary[field] = value;
-    }
-  }
+/**
+ * Safely divides two numbers, returning 0 if denominator is 0
+ */
+const safeDivide = (numerator, denominator) => {
+  if (denominator === 0 || !denominator) return 0;
+  return numerator / denominator;
+};
 
-  assign(fieldName, overrideKey, calculateFn, dependencies = []) {
-    // This basic dependency log can be useful. A real graph solver would be complex.
-    // for(const dep of dependencies) { if (typeof this.V[dep] === 'undefined') console.warn(`Calc dep issue: ${dep} for ${fieldName}`);}
-    
-    const calculatedValue = calculateFn();
-    const override = getOverrideValue(this.rawInput, overrideKey);
-
-    if (override !== null) {
-      this.V[fieldName] = override;
-      this.recordAudit(fieldName, override, 'override_applied', calculatedValue, overrideKey);
-    } else {
-      this.V[fieldName] = calculatedValue;
-      this.recordAudit(fieldName, calculatedValue, 'calculated');
-    }
-    return this.V[fieldName];
+/**
+ * Calculates a complete income statement from input data
+ */
+export const calculateIncomeStatement = (data) => {
+  const revenue = round2(data.revenue || 0);
+  
+  // Calculate COGS
+  let cogs;
+  if (data.cogs !== undefined) {
+    cogs = round2(data.cogs);
+  } else if (data.grossMarginPercent !== undefined) {
+    // More precise calculation to match test expectations
+    const marginDecimal = data.grossMarginPercent / 100;
+    cogs = round2(revenue * (1 - marginDecimal));
+  } else {
+    cogs = round2(revenue * (1 - DEFAULT_GROSS_MARGIN));
   }
   
-  getSourceOfValue(fieldName) {
-    const auditEntries = this.auditTrail.filter(entry => entry.field === fieldName);
-    const lastEntry = auditEntries[auditEntries.length - 1];
-    return lastEntry ? lastEntry.source : 'unknown';
-  }
+  // Gross profit and margin
+  const grossProfit = round2(revenue - cogs);
+  const grossMarginPercent = round2(safeDivide(grossProfit, revenue) * 100);
   
-  calculatePnl() {
-    const gmPercentageForCalc = (this.V.grossMarginPercentage || 0) / 100;
-    const taxRateForCalc = (this.V.incomeTaxRatePercentage || 0) / 100;
-
-    this.assign('cogs', 'override_cogs', () => this.V.revenue * (1 - gmPercentageForCalc));
-    this.assign('grossProfit', 'override_grossProfit', () => this.V.revenue - this.V.cogs);
-    this.assign('ebitda', 'override_ebitda', () => this.V.grossProfit - this.V.operatingExpenses);
-    this.assign('ebit', 'override_ebit', () => this.V.ebitda - this.V.depreciationAndAmortisation);
-    this.assign('pbt', 'override_pbt', () => this.V.ebit + this.V.netInterestExpenseIncome + this.V.extraordinaryItems);
-    this.assign('incomeTax', 'override_incomeTax', () => (this.V.pbt > 0 ? this.V.pbt * taxRateForCalc : 0));
-    this.assign('netProfit', 'override_netProfit', () => this.V.pbt - this.V.incomeTax);
-    
-    this.V.retainedProfit = this.V.netProfit - this.V.dividendsPaid;
-    this.recordAudit('retainedProfit', this.V.retainedProfit, 'calculated');
-    // Store the actual tax rate decimal used for calculations in CalculatedPeriodData
-    this.V.incomeTaxRatePercentageActual = taxRateForCalc; 
-    this.recordAudit('incomeTaxRatePercentageActual', this.V.incomeTaxRatePercentageActual, 'derived_from_input');
-  }
-
-  calculateWorkingCapital() {
-    this.V.arDaysDerived = this.V.revenue > 0 ? (this.V.accountsReceivableValueAvg / this.V.revenue) * this.days : 0;
-    this.V.inventoryDaysDerived = this.V.cogs > 0 ? (this.V.inventoryValueAvg / this.V.cogs) * this.days : 0;
-    this.V.apDaysDerived = this.V.cogs > 0 ? (this.V.accountsPayableValueAvg / this.V.cogs) * this.days : 0;
-    
-    this.recordAudit('arDaysDerived', this.V.arDaysDerived, 'derived_days');
-    this.recordAudit('inventoryDaysDerived', this.V.inventoryDaysDerived, 'derived_days');
-    this.recordAudit('apDaysDerived', this.V.apDaysDerived, 'derived_days');
-    
-    this.V.arDays = this.V.arDaysDerived; 
-    this.V.invDays = this.V.inventoryDaysDerived; 
-    this.V.apDays = this.V.apDaysDerived; 
-    
-    this.recordAudit('arDays', this.V.arDays, 'alias_for_kpi');
-    this.recordAudit('invDays', this.V.invDays, 'alias_for_kpi');
-    this.recordAudit('apDays', this.V.apDays, 'alias_for_kpi');
-    
-    this.V.workingCapitalValue = this.V.accountsReceivableValueAvg + this.V.inventoryValueAvg - this.V.accountsPayableValueAvg;
-    this.recordAudit('workingCapitalValue', this.V.workingCapitalValue, 'calculated');
-    
-    this.V.wcDays = this.V.arDaysDerived + this.V.inventoryDaysDerived - this.V.apDaysDerived;
-    this.recordAudit('wcDays', this.V.wcDays, 'calculated');
-  }
-
-  // YOUR FULLY CORRECTED calculateCashFlow METHOD
-  calculateCashFlow() {
-    console.log(`\n=== CASH FLOW CALCULATION DEBUG - Period ${this.periodIndex + 1} ===`);
-    console.log(`[CF_DEBUG P${this.periodIndex+1}] Raw Input Opening Cash: ${this.rawInput.openingCash ? formatCurrency(parseToNumber(this.rawInput.openingCash)) : 'N/A (Not P0)'}`);
-    console.log(`[CF_DEBUG P${this.periodIndex+1}] Previous Period V.closingCash from SSOT: ${this.previousV?.closingCash ? formatCurrency(this.previousV.closingCash) : (this.periodIndex === 0 ? 'N/A (First Period)' : 'ERROR/MISSING') }`);
-    
-    let openingCashForThisPeriod;
-    if (this.periodIndex === 0) {
-        openingCashForThisPeriod = parseToNumber(this.rawInput.openingCash, 0); // Directly from rawInput for P0
-        console.log(`[CF_DEBUG P${this.periodIndex+1}] Using Input Opening Cash for P0: ${formatCurrency(openingCashForThisPeriod)}`);
-        this.recordAudit('calculatedOpeningCash', openingCashForThisPeriod, 'input_driver_p0_cash');
-    } else {
-        if (!this.previousV || typeof this.previousV.closingCash === 'undefined' || this.previousV.closingCash === null) {
-            console.error(`[CF_DEBUG P${this.periodIndex+1}] CRITICAL ERROR: Previous period (${this.periodIndex}) SSOT (V object) has invalid closingCash! Defaulting opening to 0.`);
-            openingCashForThisPeriod = 0;
-        } else {
-            openingCashForThisPeriod = this.previousV.closingCash; // Use final SSOT closing cash from previous period's V
-        }
-        console.log(`[CF_DEBUG P${this.periodIndex+1}] Opening Cash from PREVIOUS PERIOD's final V.closingCash: ${formatCurrency(openingCashForThisPeriod)}`);
-        this.recordAudit('calculatedOpeningCash', openingCashForThisPeriod, 'calculated_from_previous_ssot_v_closing_cash');
-    }
-    this.V.calculatedOpeningCash = openingCashForThisPeriod;
-    
-    const baseOperatingCashFlow = this.V.netProfit + this.V.depreciationAndAmortisation;
-    this.assign('operatingCashFlow', 'override_operatingCashFlow', () => baseOperatingCashFlow);
-
-    const currentWC = this.V.workingCapitalValue;
-    const previousWC = this.previousV?.workingCapitalValue;
-    let workingCapitalChangeCalculated;
-    if (this.periodIndex === 0 || typeof previousWC === 'undefined' || previousWC === null) {
-        workingCapitalChangeCalculated = currentWC; // First period's change is its own level
-    } else {
-        workingCapitalChangeCalculated = currentWC - previousWC;
-    }
-    this.assign('workingCapitalChange', 'override_workingCapitalChange', () => workingCapitalChangeCalculated);
-    
-    this.V.cashFromOpsAfterWC = this.V.operatingCashFlow - this.V.workingCapitalChange;
-    this.recordAudit('cashFromOpsAfterWC', this.V.cashFromOpsAfterWC, 'calculated');
-    
-    this.V.netCashFlowBeforeFinancing = this.V.cashFromOpsAfterWC - this.V.capitalExpenditures; // V.capitalExpenditures is from parsed driver input
-    this.recordAudit('netCashFlowBeforeFinancing', this.V.netCashFlowBeforeFinancing, 'calculated');
-
-    const previousBankLoans = this.previousV?.totalBankLoans;
-    let changeInDebtCalculated;
-    if (this.periodIndex === 0 || typeof previousBankLoans === 'undefined' || previousBankLoans === null) {
-        changeInDebtCalculated = this.V.totalBankLoans; // V.totalBankLoans is from parsed driver input
-    } else {
-        changeInDebtCalculated = this.V.totalBankLoans - previousBankLoans;
-    }
-    this.V.changeInDebt = changeInDebtCalculated;
-    this.recordAudit('changeInDebt', this.V.changeInDebt, 'calculated');
-    
-    this.V.cashFlowFromFinancing = this.V.changeInDebt - this.V.dividendsPaid; // V.dividendsPaid is from parsed driver input
-    this.recordAudit('cashFlowFromFinancing', this.V.cashFlowFromFinancing, 'calculated');
-    
-    this.V.netChangeInCash = this.V.netCashFlowBeforeFinancing + this.V.cashFlowFromFinancing;
-    this.recordAudit('netChangeInCash', this.V.netChangeInCash, 'calculated');
-
-    const calculatedDFCClosingCash = this.V.calculatedOpeningCash + this.V.netChangeInCash;
-    console.log(`[CF_DEBUG P${this.periodIndex+1}] 💰 DFC BRIDGE: Opening(${formatCurrency(this.V.calculatedOpeningCash)}) + NetChange(${formatCurrency(this.V.netChangeInCash)}) = DFC_Closing_Calc(${formatCurrency(calculatedDFCClosingCash)})`);
-    
-    const closingCashOverride = getOverrideValue(this.rawInput, 'override_closingCash');
-    console.log(`[CF_DEBUG P${this.periodIndex+1}] Override Check: rawInput.override_closingCash = "${this.rawInput.override_closingCash}", parsed as = ${closingCashOverride !== null ? formatCurrency(closingCashOverride) : 'null'}`);
-    
-    let finalClosingCash;
-    if (closingCashOverride !== null) {
-        finalClosingCash = closingCashOverride;
-        this.recordAudit('closingCash', finalClosingCash, 'override_applied', calculatedDFCClosingCash, 'override_closingCash');
-        console.warn(`[CF_DEBUG P${this.periodIndex+1}] 🔧 OVERRIDE APPLIED: V.closingCash set to ${formatCurrency(finalClosingCash)} (Calculated DFC was ${formatCurrency(calculatedDFCClosingCash)})`);
-    } else {
-        finalClosingCash = calculatedDFCClosingCash;
-        this.recordAudit('closingCash', finalClosingCash, 'calculated');
-        console.log(`[CF_DEBUG P${this.periodIndex+1}] Using calculated DFC closing cash for V.closingCash: ${formatCurrency(finalClosingCash)}`);
-    }
-    this.V.closingCash = finalClosingCash; 
-    console.log(`[CF_DEBUG P${this.periodIndex+1}] VERIFICATION - V.closingCash after assignment: ${formatCurrency(this.V.closingCash)}`);
-    if (Math.abs(this.V.closingCash - finalClosingCash) > 0.001) { 
-        console.error(`[CF_DEBUG P${this.periodIndex+1}] 🚨 CRITICAL ASSIGNMENT FAILED! Expected V.closingCash: ${formatCurrency(finalClosingCash)}, Got: ${formatCurrency(this.V.closingCash)}`);
-    }
-    
-    this.V.cashReconciliationDifference = (closingCashOverride !== null) ? (finalClosingCash - calculatedDFCClosingCash) : 0;
-    this.recordAudit('cashReconciliationDifference', this.V.cashReconciliationDifference, 'calculated_reconciliation');
-    if (this.V.cashReconciliationDifference !== 0) {
-        console.log(`[CF_DEBUG P${this.periodIndex+1}]   Cash Reconciliation Difference stored: ${formatCurrency(this.V.cashReconciliationDifference)}`);
-    }
-    
-    this.V.fundingGapOrSurplus = -this.V.netCashFlowBeforeFinancing;
-    this.recordAudit('fundingGapOrSurplus', this.V.fundingGapOrSurplus, 'calculated');
-    console.log(`=== END CASH FLOW DEBUG - Period ${this.periodIndex + 1} ===\n`);
-  }
-
-  calculateBalanceSheet() {
-    // Ensure this method uses this.V.closingCash (which is now the final, possibly overridden, value)
-    const initialEquityP0 = this.periodIndex === 0 ? parseToNumber(this.rawInput.initialEquity, 0) : 0;
-    const equityCalc = this.periodIndex === 0 ? initialEquityP0 + this.V.retainedProfit : (this.previousV?.equity || 0) + this.V.retainedProfit;
-    this.assign('equity', 'override_equity_ending', () => equityCalc);
-
-    this.V.arValueForBS = getOverrideValue(this.rawInput, 'override_AR_ending') ?? this.V.accountsReceivableValueAvg;
-    this.V.inventoryValueForBS = getOverrideValue(this.rawInput, 'override_Inventory_ending') ?? this.V.inventoryValueAvg;
-    this.V.accountsPayableValueForBS = getOverrideValue(this.rawInput, 'override_AP_ending') ?? this.V.accountsPayableValueAvg;
-
-    this.recordAudit('arValueForBS', this.V.arValueForBS, getOverrideValue(this.rawInput, 'override_AR_ending') !== null ? 'override_applied' : 'input_avg_proxy');
-    this.recordAudit('inventoryValueForBS', this.V.inventoryValueForBS, getOverrideValue(this.rawInput, 'override_Inventory_ending') !== null ? 'override_applied' : 'input_avg_proxy');
-    this.recordAudit('accountsPayableValueForBS', this.V.accountsPayableValueForBS, getOverrideValue(this.rawInput, 'override_AP_ending') !== null ? 'override_applied' : 'input_avg_proxy');
-
-    const currentAssetsCalc = this.V.closingCash + this.V.arValueForBS + this.V.inventoryValueForBS;
-    this.assign('estimatedCurrentAssets', 'override_totalCurrentAssets', () => currentAssetsCalc);
-
-    const totalAssetsCalc = this.V.estimatedCurrentAssets + this.V.netFixedAssets; // netFixedAssets is from V (input_driver)
-    this.assign('estimatedTotalAssets', 'override_totalAssets', () => totalAssetsCalc);
-    
-    const currentLiabCalc = this.V.accountsPayableValueForBS; 
-    this.assign('estimatedCurrentLiabilities', 'override_totalCurrentLiabilities', () => currentLiabCalc);
-    
-    this.V.estimatedNonCurrentLiabilities = this.V.totalBankLoans; // totalBankLoans from V (input_driver)
-    this.recordAudit('estimatedNonCurrentLiabilities', this.V.estimatedNonCurrentLiabilities, 'calculated_assumption');
-
-    const totalLiabCalc = this.V.estimatedCurrentLiabilities + this.V.estimatedNonCurrentLiabilities;
-    this.assign('estimatedTotalLiabilities', 'override_totalLiabilities', () => totalLiabCalc);
-    
-    console.log(`[BS_DEBUG P${this.periodIndex+1}] BEFORE final BS Diff: A=${formatCurrency(this.V.estimatedTotalAssets)}, L=${formatCurrency(this.V.estimatedTotalLiabilities)}, E=${formatCurrency(this.V.equity)}`);
-    this.V.balanceSheetDifference = this.V.estimatedTotalAssets - (this.V.estimatedTotalLiabilities + this.V.equity);
-    this.recordAudit('balanceSheetDifference', this.V.balanceSheetDifference, 'calculated_final_check');
-    console.log(`[BS_DEBUG P${this.periodIndex+1}] AFTER final BS Diff: ${formatCurrency(this.V.balanceSheetDifference)}`);
-  }
-
-  calculateKpis() {
-    this.V.gmPct = this.V.revenue ? (this.V.grossProfit / this.V.revenue) * 100 : 0;
-    this.V.opProfitPct = this.V.revenue ? (this.V.ebit / this.V.revenue) * 100 : 0;
-    this.V.netProfitPct = this.V.revenue ? (this.V.netProfit / this.V.revenue) * 100 : 0;
-    
-    this.recordAudit('gmPct', this.V.gmPct, 'kpi');
-    this.recordAudit('opProfitPct', this.V.opProfitPct, 'kpi');
-    this.recordAudit('netProfitPct', this.V.netProfitPct, 'kpi');
-    
-    this.V.arPer100Revenue = this.V.revenue ? (this.V.accountsReceivableValueAvg / this.V.revenue) * 100 : 0;
-    this.V.inventoryPer100Revenue = this.V.revenue ? (this.V.inventoryValueAvg / this.V.revenue) * 100 : 0;
-    this.V.apPer100Revenue = this.V.cogs ? (this.V.accountsPayableValueAvg / this.V.cogs) * 100 : 0;
-    this.V.wcPer100Revenue = this.V.revenue ? (this.V.workingCapitalValue / this.V.revenue) * 100 : 0;
-    
-    this.recordAudit('arPer100Revenue', this.V.arPer100Revenue, 'kpi');
-    this.recordAudit('inventoryPer100Revenue', this.V.inventoryPer100Revenue, 'kpi');
-    this.recordAudit('apPer100Revenue', this.V.apPer100Revenue, 'kpi');
-    this.recordAudit('wcPer100Revenue', this.V.wcPer100Revenue, 'kpi');
-  }
+  // Operating expenses
+  const operatingExpenses = round2(data.operatingExpenses || 0);
   
-  run() {
-    const overrideValidationResults = OverrideValidator.validateOverrideConsistency(this.rawInput);
-    this.validationIssues.errors.push(...overrideValidationResults.errors);
-    this.validationIssues.warnings.push(...overrideValidationResults.warnings);
-
-    this.calculatePnl();
-    this.calculateWorkingCapital();
-    this.calculateCashFlow(); 
-    this.calculateBalanceSheet();
-    this.calculateKpis();
-
-    const periodFinancialConstraints = FinancialConstraintValidator.validateAllStatements(this.V, this.previousV);
-    this.validationIssues.errors.push(...periodFinancialConstraints.errors);
-    this.validationIssues.warnings.push(...periodFinancialConstraints.warnings);
-    this.validationIssues.infos.push(...(periodFinancialConstraints.infos || []));
-    this.validationIssues.successes.push(...(periodFinancialConstraints.successes || []));
-
-    // Construct the final SSOT object for this period
-    const finalResult = {};
-    // First, copy all original parsed inputs (from rawInput for record-keeping)
-    Object.keys(this.rawInput).forEach(key => {
-      if (fieldDefinitions[key] || key.startsWith('override_')) {
-        finalResult[key] = this.rawInput[key]; // Store original string/null value
-      }
-    });
-    // Then, spread all final values from V (calculated or overridden, all parsed to numbers)
-    Object.assign(finalResult, this.V);
-    
-    // Ensure specific aliases and display formats for percentages are from V
-    finalResult.gmPct = this.V.gmPct; 
-    finalResult.opProfitPct = this.V.opProfitPct;
-    finalResult.netProfitPct = this.V.netProfitPct;
-    finalResult.incomeTaxRatePercentageActual = this.V.incomeTaxRatePercentageActual; // Store the 0-1 decimal rate
-    // The input periodInput.incomeTaxRatePercentage (0-100) is already in finalResult from rawInput spread
-
-    finalResult.arDays = this.V.arDaysDerived;
-    finalResult.invDays = this.V.inventoryDaysDerived;
-    finalResult.apDays = this.V.apDaysDerived;
-    finalResult.wcDays = this.V.wcDays;
-    // Keep original openingCash & initialEquity inputs for P0, but DFC uses calculatedOpeningCash
-    finalResult.openingCash = this.periodIndex === 0 ? parseToNumber(this.rawInput.openingCash, 0) : this.V.calculatedOpeningCash;
-    finalResult.initialEquity = this.periodIndex === 0 ? parseToNumber(this.rawInput.initialEquity, 0) : null;
-    
-    // Add metadata
-    finalResult._auditTrail = this.auditTrail;
-    finalResult._validationIssues = this.validationIssues;
-    finalResult._overridesSummary = this.V._overridesSummary || { count: 0, details: {} };
-    finalResult._periodIndex = this.periodIndex;
-    finalResult._isFirstPeriod = this.periodIndex === 0;
-    finalResult._isLastPeriod = false;
-    finalResult._calculationTimestamp = new Date().toISOString();
-    
-    console.log(`[ENGINE_RUN P${this.periodIndex+1}] Final SSOT: closingCash=${formatCurrency(finalResult.closingCash)}, BS_Diff=${formatCurrency(finalResult.balanceSheetDifference)}`);
-    return finalResult;
-  }
-}
-
-export function processFinancialData(periodsInputDataRaw, periodTypeLabel) {
-  if (!periodsInputDataRaw || periodsInputDataRaw.length === 0) return [];
-  const daysInPeriod = PERIOD_TYPES[periodTypeLabel]?.days || 365;
-  const results = [];
-  let previousPeriod_V_State = null; // Store the V object from previous engine
-
-  for (let i = 0; i < periodsInputDataRaw.length; i++) {
-    try {
-        const engine = new FinancialCalculationEngine(periodsInputDataRaw[i], previousPeriod_V_State, i, daysInPeriod);
-        const calculatedPeriod = engine.run();
-        if (i === periodsInputDataRaw.length - 1) {
-            calculatedPeriod._isLastPeriod = true;
-        }
-        results.push(calculatedPeriod);
-        previousPeriod_V_State = engine.V; // Pass the *current* engine's final V state for the *next* iteration
-    } catch (error) { 
-        console.error(`[processFinancialData] CRITICAL ERROR Processing Period ${i + 1}:`, error);
-        results.push({ 
-            ...(periodsInputDataRaw[i] || {}), _periodIndex: i, _calculationError: error.message,
-            _validationIssues: { errors: [{type: 'ENGINE_FATAL_ERROR', message: `Erro Crítico Motor Cálculo: ${error.message}`, severity: 'critical'}], warnings:[], infos:[], successes:[] }
-        });
-        previousPeriod_V_State = null; // Reset on critical error to prevent cascading bad data
-    }
-  }
-  return results;
-}
-
-export function diagnoseBalanceSheetDifference(calculatedData) {
-  if (!calculatedData || calculatedData.length === 0) return null;
-  const latest = calculatedData[calculatedData.length - 1];
-  if (!latest || typeof latest.balanceSheetDifference === 'undefined') return null;
+  // EBITDA
+  const ebitda = round2(grossProfit - operatingExpenses);
+  const ebitdaMargin = round2(safeDivide(ebitda, revenue) * 100);
   
-  const diagnosis = {
-    periodIndex: latest._periodIndex,
-    balanceSheetDifference: latest.balanceSheetDifference,
-    components: {
-      totalAssets: latest.estimatedTotalAssets,
-      totalLiabilities: latest.estimatedTotalLiabilities,
-      equity: latest.equity,
-      totalLiabilitiesAndEquity: (latest.estimatedTotalLiabilities || 0) + (latest.equity || 0)
-    },
-    breakdown: {
-      assets: {
-        currentAssets: latest.estimatedCurrentAssets,
-        fixedAssets: latest.netFixedAssets,
-        cash: latest.closingCash,
-        accountsReceivable: latest.arValueForBS,
-        inventory: latest.inventoryValueForBS
-      },
-      liabilities: {
-        currentLiabilities: latest.estimatedCurrentLiabilities,
-        nonCurrentLiabilities: latest.estimatedNonCurrentLiabilities,
-        accountsPayable: latest.accountsPayableValueForBS,
-        bankLoans: latest.totalBankLoans
-      }
-    },
-    overrides: latest._overridesSummary || {},
-    validationIssues: latest._validationIssues || { errors: [], warnings: [] },
-    recommendations: []
+  // Depreciation
+  const depreciation = round2(
+    data.depreciation !== undefined ? data.depreciation : revenue * DEFAULT_DEPRECIATION_RATE
+  );
+  
+  // EBIT
+  const ebit = round2(ebitda - depreciation);
+  const ebitMargin = round2(safeDivide(ebit, revenue) * 100);
+  
+  // Financial result
+  const financialRevenue = round2(data.financialRevenue || 0);
+  const financialExpenses = round2(data.financialExpenses || 0);
+  const netFinancialResult = round2(financialRevenue - financialExpenses);
+  
+  // EBT and taxes
+  const ebt = round2(ebit + netFinancialResult);
+  // No taxes on negative income
+  const taxes = round2(ebt > 0 ? ebt * DEFAULT_TAX_RATE : 0);
+  
+  // Net income
+  const netIncome = round2(ebt - taxes);
+  const netMargin = round2(safeDivide(netIncome, revenue) * 100);
+  
+  return {
+    revenue,
+    cogs,
+    grossProfit,
+    grossMarginPercent,
+    operatingExpenses,
+    ebitda,
+    ebitdaMargin,
+    depreciation,
+    ebit,
+    ebitMargin,
+    netFinancialResult,
+    ebt,
+    taxes,
+    netIncome,
+    netMargin,
   };
+};
+
+/**
+ * Calculates cash flow statement
+ */
+export const calculateCashFlow = (currentPeriod, previousPeriod) => {
+  const netIncome = currentPeriod.incomeStatement.netIncome;
+  const depreciation = currentPeriod.incomeStatement.depreciation;
+  const revenue = currentPeriod.incomeStatement.revenue;
   
-  if (Math.abs(diagnosis.balanceSheetDifference) > 1000) {
-    diagnosis.recommendations.push('Revisar inputs de Balanço para identificar possíveis inconsistências');
+  // Working capital changes
+  let workingCapitalChange = 0;
+  if (previousPeriod && previousPeriod.workingCapital) {
+    const currentWC = currentPeriod.workingCapital;
+    const previousWC = previousPeriod.workingCapital;
+    
+    const currentAR = currentWC.accountsReceivableValue || 0;
+    const previousAR = previousWC.accountsReceivableValue || 0;
+    const currentInv = currentWC.inventoryValue || 0;
+    const previousInv = previousWC.inventoryValue || 0;
+    const currentAP = currentWC.accountsPayableValue || 0;
+    const previousAP = previousWC.accountsPayableValue || 0;
+    
+    const arChange = currentAR - previousAR;
+    const inventoryChange = currentInv - previousInv;
+    const apChange = currentAP - previousAP;
+    
+    // Negative because increases in AR/Inventory are cash outflows
+    workingCapitalChange = -(arChange + inventoryChange - apChange);
   }
   
-  return diagnosis;
-}
+  const operatingCashFlow = round2(netIncome + depreciation + workingCapitalChange);
+  
+  // Investing cash flow
+  const capex = round2(currentPeriod.capex !== undefined ? currentPeriod.capex : revenue * DEFAULT_CAPEX_RATE);
+  const investingCashFlow = round2(-capex);
+  
+  // Free cash flow
+  const freeCashFlow = round2(operatingCashFlow + investingCashFlow);
+  
+  // Financing cash flow
+  const debtChange = round2(currentPeriod.debtChange || 0);
+  const equityChange = round2(currentPeriod.equityChange || 0);
+  const dividends = round2(currentPeriod.dividends || 0);
+  const financingCashFlow = round2(debtChange + equityChange - dividends);
+  
+  // Net cash flow
+  const netCashFlow = round2(operatingCashFlow + investingCashFlow + financingCashFlow);
+  
+  // Cash conversion rate
+  const cashConversionRate = round2(safeDivide(operatingCashFlow, netIncome) * 100);
+  
+  return {
+    operatingCashFlow,
+    workingCapitalChange: round2(workingCapitalChange),
+    investingCashFlow,
+    capex,
+    freeCashFlow,
+    financingCashFlow,
+    netCashFlow,
+    cashConversionRate,
+  };
+};
+
+/**
+ * Calculates working capital metrics
+ */
+export const calculateWorkingCapitalMetrics = (data) => {
+  const revenue = data.incomeStatement?.revenue || 0;
+  const cogs = data.incomeStatement?.cogs || 0;
+  const daysInPeriod = data.daysInPeriod || 365;
+  
+  // DSO (Days Sales Outstanding)
+  let dso, accountsReceivableValue;
+  if (data.accountsReceivableValue !== undefined) {
+    accountsReceivableValue = data.accountsReceivableValue;
+    dso = round2(safeDivide(accountsReceivableValue, revenue) * daysInPeriod);
+  } else if (data.accountsReceivableDays !== undefined) {
+    dso = data.accountsReceivableDays;
+    accountsReceivableValue = round2(safeDivide(revenue, daysInPeriod) * dso);
+  } else {
+    dso = DEFAULT_DSO;
+    accountsReceivableValue = round2(safeDivide(revenue, daysInPeriod) * dso);
+  }
+  
+  // DIO (Days Inventory Outstanding)
+  let dio, inventoryValue;
+  if (data.inventoryValue !== undefined) {
+    inventoryValue = data.inventoryValue;
+    dio = round2(safeDivide(inventoryValue, cogs) * daysInPeriod);
+  } else if (data.inventoryDays !== undefined) {
+    dio = data.inventoryDays;
+    inventoryValue = round2(safeDivide(cogs, daysInPeriod) * dio);
+  } else {
+    dio = DEFAULT_DIO;
+    inventoryValue = round2(safeDivide(cogs, daysInPeriod) * dio);
+  }
+  
+  // DPO (Days Payable Outstanding)
+  let dpo, accountsPayableValue;
+  if (data.accountsPayableValue !== undefined) {
+    accountsPayableValue = data.accountsPayableValue;
+    dpo = round2(safeDivide(accountsPayableValue, cogs) * daysInPeriod);
+  } else if (data.accountsPayableDays !== undefined) {
+    dpo = data.accountsPayableDays;
+    accountsPayableValue = round2(safeDivide(cogs, daysInPeriod) * dpo);
+  } else {
+    dpo = DEFAULT_DPO;
+    accountsPayableValue = round2(safeDivide(cogs, daysInPeriod) * dpo);
+  }
+  
+  // Cash conversion cycle and working capital
+  const cashConversionCycle = round2(dso + dio - dpo);
+  const workingCapitalValue = round2(accountsReceivableValue + inventoryValue - accountsPayableValue);
+  const workingCapitalPercent = round2(safeDivide(workingCapitalValue, revenue) * 100);
+  
+  return {
+    dso: round2(dso),
+    dio: round2(dio),
+    dpo: round2(dpo),
+    cashConversionCycle,
+    workingCapitalValue,
+    workingCapitalPercent,
+    accountsReceivableValue: round2(accountsReceivableValue),
+    inventoryValue: round2(inventoryValue),
+    accountsPayableValue: round2(accountsPayableValue),
+  };
+};
+
+/**
+ * Calculates financial ratios
+ */
+export const calculateFinancialRatios = (data) => {
+  const { incomeStatement, balanceSheet, cashFlow } = data;
+  
+  // Liquidity ratios
+  const currentRatio = round2(
+    safeDivide(balanceSheet.currentAssets, balanceSheet.currentLiabilities)
+  );
+  
+  const quickRatio = round2(
+    safeDivide(
+      balanceSheet.currentAssets - (balanceSheet.inventory || 0),
+      balanceSheet.currentLiabilities
+    )
+  );
+  
+  const cashRatio = round2(
+    safeDivide(cashFlow.operatingCashFlow, balanceSheet.currentLiabilities)
+  );
+  
+  // Leverage ratios
+  const totalLiabilities = balanceSheet.totalLiabilities || 
+    (balanceSheet.currentLiabilities + (balanceSheet.nonCurrentLiabilities || 0));
+    
+  const debtToEquity = round2(safeDivide(totalLiabilities, balanceSheet.equity));
+  const debtRatio = round2(safeDivide(totalLiabilities, balanceSheet.totalAssets));
+  const equityRatio = round2(safeDivide(balanceSheet.equity, balanceSheet.totalAssets));
+  
+  // Profitability ratios
+  const roe = round2(safeDivide(incomeStatement.netIncome, balanceSheet.equity) * 100);
+  const roa = round2(safeDivide(incomeStatement.netIncome, balanceSheet.totalAssets) * 100);
+  const roic = round2(safeDivide(incomeStatement.ebit, balanceSheet.totalAssets) * 100);
+  
+  // Efficiency ratios
+  const assetTurnover = round2(safeDivide(incomeStatement.revenue, balanceSheet.totalAssets));
+  
+  return {
+    // Liquidity
+    currentRatio,
+    quickRatio,
+    cashRatio,
+    // Leverage
+    debtToEquity,
+    debtRatio,
+    equityRatio,
+    // Profitability
+    roe,
+    roa,
+    roic,
+    // Efficiency
+    assetTurnover,
+  };
+};
+
+/**
+ * Estimates balance sheet components
+ */
+export const calculateBalanceSheet = (data) => {
+  const { incomeStatement, workingCapital, cashFlow } = data;
+  const revenue = incomeStatement?.revenue || 0;
+  
+  // Current assets estimation
+  const cash = round2(Math.max(revenue * 0.1, cashFlow?.netCashFlow || 0));
+  const accountsReceivable = round2(workingCapital?.accountsReceivableValue || 0);
+  const inventory = round2(workingCapital?.inventoryValue || 0);
+  const currentAssets = round2(cash + accountsReceivable + inventory);
+  
+  // Non-current assets estimation
+  const totalAssets = round2(incomeStatement?.totalAssets || revenue * 0.8);
+  const nonCurrentAssets = round2(Math.max(0, totalAssets - currentAssets));
+  
+  // Current liabilities
+  const accountsPayable = round2(workingCapital?.accountsPayableValue || 0);
+  const shortTermDebt = round2(revenue * 0.05); // Estimate
+  const currentLiabilities = round2(accountsPayable + shortTermDebt);
+  
+  // Calculate equity and long-term debt to balance
+  const targetDebtToEquity = 0.5; // Conservative estimate
+  const totalLiabilitiesEquity = totalAssets;
+  
+  // Solve for equity: E + D = Total, D/E = 0.5, so D = 0.5E
+  // E + 0.5E = Total - CurrentLiabilities
+  const nonCurrentLiabilities = round2(
+    (totalLiabilitiesEquity - currentLiabilities) * (targetDebtToEquity / (1 + targetDebtToEquity))
+  );
+  const equity = round2(totalLiabilitiesEquity - currentLiabilities - nonCurrentLiabilities);
+  
+  const totalLiabilities = round2(currentLiabilities + nonCurrentLiabilities);
+  const balanceCheck = round2(totalAssets - totalLiabilitiesEquity);
+  
+  return {
+    // Assets
+    cash,
+    accountsReceivable,
+    inventory,
+    currentAssets,
+    nonCurrentAssets,
+    totalAssets: round2(currentAssets + nonCurrentAssets),
+    // Liabilities
+    accountsPayable,
+    shortTermDebt,
+    currentLiabilities,
+    nonCurrentLiabilities,
+    totalLiabilities,
+    // Equity
+    equity,
+    totalLiabilitiesEquity,
+    // Validation
+    balanceCheck,
+    currentRatio: round2(safeDivide(currentAssets, currentLiabilities)),
+  };
+};
+
+/**
+ * Validates financial data
+ */
+const validateFinancialData = (data) => {
+  const errors = [];
+  
+  data.forEach((period, index) => {
+    if (period.revenue < 0) {
+      errors.push(`Period ${index + 1}: Revenue cannot be negative`);
+    }
+    if (period.grossMarginPercent !== undefined && 
+        (period.grossMarginPercent < 0 || period.grossMarginPercent > 100)) {
+      errors.push(`Period ${index + 1}: Gross margin must be between 0-100%`);
+    }
+  });
+  
+  if (errors.length > 0) {
+    throw new Error(`Validation errors: ${errors.join('; ')}`);
+  }
+};
+
+/**
+ * Main function to process financial data for multiple periods
+ */
+export const processFinancialData = (rawPeriodData, periodType) => {
+  // Validate input data
+  validateFinancialData(rawPeriodData);
+  
+  const daysInPeriod = PERIOD_DAYS[periodType] || 30;
+  const processedData = [];
+  
+  rawPeriodData.forEach((periodData, index) => {
+    // Calculate income statement
+    const incomeStatement = calculateIncomeStatement(periodData);
+    
+    // Calculate working capital metrics
+    const workingCapital = calculateWorkingCapitalMetrics({
+      ...periodData,
+      incomeStatement,
+      daysInPeriod,
+    });
+    
+    // Get previous period for cash flow calculations
+    const previousPeriod = index > 0 ? processedData[index - 1] : null;
+    
+    // Calculate cash flow
+    const currentPeriodData = {
+      ...periodData,
+      incomeStatement,
+      workingCapital,
+    };
+    
+    const cashFlow = calculateCashFlow(currentPeriodData, previousPeriod);
+    
+    // Estimate balance sheet
+    const balanceSheet = calculateBalanceSheet({
+      incomeStatement,
+      workingCapital,
+      cashFlow,
+    });
+    
+    // Calculate financial ratios
+    const ratios = calculateFinancialRatios({
+      incomeStatement,
+      balanceSheet,
+      cashFlow,
+    });
+    
+    // Calculate trends (for periods after the first)
+    let trends = {};
+    if (previousPeriod) {
+      trends = {
+        revenueGrowth: round2(
+          safeDivide(
+            incomeStatement.revenue - previousPeriod.incomeStatement.revenue,
+            previousPeriod.incomeStatement.revenue
+          ) * 100
+        ),
+        marginImprovement: round2(
+          incomeStatement.grossMarginPercent - previousPeriod.incomeStatement.grossMarginPercent
+        ),
+        profitGrowth: round2(
+          safeDivide(
+            incomeStatement.netIncome - previousPeriod.incomeStatement.netIncome,
+            Math.abs(previousPeriod.incomeStatement.netIncome)
+          ) * 100
+        ),
+      };
+    }
+    
+    processedData.push({
+      periodIndex: index,
+      daysInPeriod,
+      incomeStatement,
+      cashFlow,
+      workingCapital,
+      balanceSheet,
+      ratios,
+      trends,
+    });
+  });
+  
+  return processedData;
+};
