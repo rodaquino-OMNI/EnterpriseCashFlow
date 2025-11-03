@@ -171,3 +171,18 @@ export default function AiAnalysisSection({
     </section>
   );
 }
+// PropTypes validation
+import PropTypes from 'prop-types';
+
+AiAnalysisSection.propTypes = {
+  analysisType: PropTypes.string.isRequired,
+  analysis: PropTypes.string,
+  isLoading: PropTypes.bool,
+  error: PropTypes.object,
+  onGenerate: PropTypes.func.isRequired,
+  metadata: PropTypes.shape({
+    title: PropTypes.string,
+    description: PropTypes.string,
+    icon: PropTypes.string
+  })
+};

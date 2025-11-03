@@ -399,3 +399,24 @@ export default function ReportRenderer({
     </>
   );
 }
+// PropTypes validation
+import PropTypes from 'prop-types';
+
+ReportRenderer.propTypes = {
+  calculatedData: PropTypes.arrayOf(PropTypes.object).isRequired,
+  companyInfo: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    reportTitle: PropTypes.string,
+    periodType: PropTypes.oneOf(['anos', 'trimestres', 'meses']).isRequired,
+    numberOfPeriods: PropTypes.number
+  }).isRequired,
+  onLoadHtml2pdf: PropTypes.func.isRequired,
+  html2pdfError: PropTypes.object,
+  aiAnalysisManager: PropTypes.shape({
+    analyses: PropTypes.object.isRequired,
+    isLoading: PropTypes.func.isRequired,
+    errors: PropTypes.object.isRequired,
+    performAnalysis: PropTypes.func.isRequired
+  }).isRequired,
+  scenarioSettings: PropTypes.object
+};

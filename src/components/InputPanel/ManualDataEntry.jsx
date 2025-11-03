@@ -246,3 +246,18 @@ export default function ManualDataEntry({
     </section>
   );
 }
+// PropTypes validation
+import PropTypes from 'prop-types';
+
+ManualDataEntry.propTypes = {
+  numberOfPeriods: PropTypes.number.isRequired,
+  periodType: PropTypes.oneOf(['anos', 'trimestres', 'meses']).isRequired,
+  inputData: PropTypes.array.isRequired,
+  onInputChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  onNumberOfPeriodsChange: PropTypes.func.isRequired,
+  onPeriodTypeChange: PropTypes.func.isRequired,
+  isCalculating: PropTypes.bool,
+  calculationError: PropTypes.object,
+  validationErrors: PropTypes.object
+};

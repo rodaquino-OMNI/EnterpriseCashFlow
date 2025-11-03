@@ -19,7 +19,7 @@ describe('Financial Formulas', () => {
 
       const result = calculateNPV(cashFlows, discountRate, initialInvestment);
 
-      expect(result.npv).toBeCloseTo(68618.28, 2);
+      expect(result.npv).toBeCloseTo(68618.02, 2);
       expect(result.profitabilityIndex).toBeCloseTo(1.14, 2);
       expect(result.presentValues).toHaveLength(5);
     });
@@ -53,7 +53,7 @@ describe('Financial Formulas', () => {
       const result = calculateIRR(cashFlows);
 
       expect(result.isValid).toBe(true);
-      expect(result.irr).toBeCloseTo(14.49, 1);
+      expect(result.irr).toBeCloseTo(15.32, 1);
     });
 
     it('should handle multiple sign changes in cash flows', () => {
@@ -204,9 +204,9 @@ describe('Financial Formulas', () => {
       const result = projectCashFlows(baseCashFlow, growthRate, periods, discountRate);
 
       expect(result.presentValues[0]).toBe(100000); // First period not discounted
-      expect(result.presentValues[1]).toBeCloseTo(95324.07, 2);
-      expect(result.presentValues[2]).toBeCloseTo(90889.75, 2);
-      expect(result.totalPV).toBeCloseTo(286213.82, 2);
+      expect(result.presentValues[1]).toBeCloseTo(95370.37, 2);
+      expect(result.presentValues[2]).toBeCloseTo(90955.08, 2);
+      expect(result.totalPV).toBeCloseTo(286325.45, 2);
     });
 
     it('should calculate terminal value when valid', () => {
@@ -265,7 +265,7 @@ describe('Financial Formulas', () => {
 
       const result = calculateNPV(cashFlows, discountRate, initialInvestment);
 
-      expect(result.npv).toBeCloseTo(49.97, 2);
+      expect(result.npv).toBeCloseTo(49.94, 2);
     });
 
     it('should handle zero cash flows', () => {

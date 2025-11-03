@@ -87,3 +87,18 @@ export default function ExcelUploader({
     </section>
   );
 }
+// PropTypes validation  
+import PropTypes from 'prop-types';
+
+ExcelUploader.propTypes = {
+  onFileUpload: PropTypes.func.isRequired,
+  ExcelJS: PropTypes.object,
+  isLoading: PropTypes.bool,
+  uploadError: PropTypes.object,
+  progress: PropTypes.number,
+  currentStep: PropTypes.string,
+  numberOfPeriods: PropTypes.number,
+  periodType: PropTypes.string,
+  onNumberOfPeriodsChange: PropTypes.func,
+  onDownloadTemplate: PropTypes.func
+};

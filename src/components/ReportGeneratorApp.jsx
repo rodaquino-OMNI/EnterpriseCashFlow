@@ -10,6 +10,7 @@ import AiProviderSelector from './InputPanel/AiProviderSelector';
 import PeriodTypeConfirmation from './InputPanel/PeriodTypeConfirmation';
 import ExcelUploadProgress from './InputPanel/ExcelUploadProgress';
 import ReportRenderer from './ReportPanel/ReportRenderer';
+import SessionRecovery from './SessionRecovery';
 
 // Hooks
 import { useLibrary } from '../hooks/useLibrary';
@@ -19,6 +20,7 @@ import { usePdfParser } from '../hooks/usePdfParser';
 import { useAiService } from '../hooks/useAiService';
 import { useAiAnalysis } from '../hooks/useAiAnalysis';
 import { useAiDataExtraction } from '../hooks/useAiDataExtraction';
+import { useStorage } from '../context/StorageContext';
 
 // Utils
 import { fieldDefinitions, getFieldKeys, validateAllFields } from '../utils/fieldDefinitions';
@@ -40,10 +42,11 @@ export default function ReportGeneratorApp() {
   const [currentInputData, setCurrentInputData] = useState([]);
   const [calculatedData, setCalculatedData] = useState([]);
 
+  // Scenario settings for what-if analysis (initially null, can be set via UI)
+  const [scenarioSettings, setScenarioSettings] = useState(null);
+
   const [selectedAiProviderKey, setSelectedAiProviderKey] = useState(DEFAULT_AI_PROVIDER);
-  const [apiKeys, setApiKeys] = useState(() => {
-    try { const saved = localStorage.getItem('aiApiKeys_ReportGen_v3'); return saved ? JSON.parse(saved) : {}; } catch (e) { return {}; }
-  });
+  const [apiKeys, setApiKeys] = useState({});
   const [extractionProgress, setExtractionProgress] = useState(null);
   const [appError, setAppError] = useState(null);
   const [validationErrorDetails, setValidationErrorDetails] = useState(null);
@@ -51,6 +54,10 @@ export default function ReportGeneratorApp() {
   // New state for Excel upload flow
   const [pendingExcelParseResult, setPendingExcelParseResult] = useState(null);
   const [showPeriodTypeConfirmation, setShowPeriodTypeConfirmation] = useState(false);
+
+  // Session recovery state
+  const [showSessionRecovery, setShowSessionRecovery] = useState(false);
+  const [recoveredSession, setRecoveredSession] = useState(null);
 
   // --- Initialize Hooks --- with fallbacks for test environment
   const excelLibResult = useLibrary('ExcelJS') || {};
@@ -108,6 +115,141 @@ export default function ReportGeneratorApp() {
   const isAiExtracting = aiExtractResult.isExtracting || false;
   const aiExtractionErrorHook = aiExtractResult.extractionError;
   const clearAiExtractionError = aiExtractResult.setExtractionError || (() => {});
+
+  // Storage context for auto-save functionality
+  const { registerAutoSave, loadAutoSaved, isInitialized: storageInitialized } = useStorage();
+
+  // Auto-save registration for currentInputData
+  useEffect(() => {
+    if (!storageInitialized) return;
+
+    const unregister = registerAutoSave(
+      'currentInputData',
+      () => currentInputData,
+      { debounceDelay: 1000 }
+    );
+
+    return () => unregister();
+  }, [currentInputData, registerAutoSave, storageInitialized]);
+
+  // Auto-save registration for calculatedData
+  useEffect(() => {
+    if (!storageInitialized) return;
+
+    const unregister = registerAutoSave(
+      'calculatedData',
+      () => calculatedData,
+      { debounceDelay: 1000 }
+    );
+
+    return () => unregister();
+  }, [calculatedData, registerAutoSave, storageInitialized]);
+
+  // Auto-save registration for companyInfo
+  useEffect(() => {
+    if (!storageInitialized) return;
+
+    const companyInfo = {
+      companyName,
+      reportTitle,
+      periodType,
+      numberOfPeriods
+    };
+
+    const unregister = registerAutoSave(
+      'companyInfo',
+      () => companyInfo,
+      { debounceDelay: 1000 }
+    );
+
+    return () => unregister();
+  }, [companyName, reportTitle, periodType, numberOfPeriods, registerAutoSave, storageInitialized]);
+
+  // Session recovery: Check for saved session on mount
+  useEffect(() => {
+    if (!storageInitialized || !loadAutoSaved) return;
+
+    const checkForSavedSession = async () => {
+      try {
+        // Load all saved data
+        const [savedInputData, savedCalculatedData, savedCompanyInfo] = await Promise.all([
+          loadAutoSaved('currentInputData'),
+          loadAutoSaved('calculatedData'),
+          loadAutoSaved('companyInfo')
+        ]);
+
+        // Check if we have any data worth recovering
+        const hasData =
+          (savedInputData && savedInputData.length > 0) ||
+          (savedCalculatedData && savedCalculatedData.length > 0) ||
+          (savedCompanyInfo && savedCompanyInfo.companyName);
+
+        if (hasData) {
+          // Prepare session data for recovery prompt
+          const sessionData = {
+            currentInputData: savedInputData || [],
+            calculatedData: savedCalculatedData || [],
+            companyInfo: savedCompanyInfo || null,
+            lastSaved: Date.now() // This will be replaced with actual timestamp in production
+          };
+
+          setRecoveredSession(sessionData);
+          setShowSessionRecovery(true);
+        }
+      } catch (error) {
+        console.error('Failed to check for saved session:', error);
+      }
+    };
+
+    checkForSavedSession();
+  }, [storageInitialized, loadAutoSaved]);
+
+  // Session recovery handlers
+  const handleRecoverSession = useCallback(() => {
+    if (!recoveredSession) return;
+
+    try {
+      // Restore company info
+      if (recoveredSession.companyInfo) {
+        if (recoveredSession.companyInfo.companyName) {
+          setCompanyName(recoveredSession.companyInfo.companyName);
+        }
+        if (recoveredSession.companyInfo.reportTitle) {
+          setReportTitle(recoveredSession.companyInfo.reportTitle);
+        }
+        if (recoveredSession.companyInfo.periodType) {
+          setPeriodType(recoveredSession.companyInfo.periodType);
+        }
+        if (recoveredSession.companyInfo.numberOfPeriods) {
+          setNumberOfPeriods(recoveredSession.companyInfo.numberOfPeriods);
+        }
+      }
+
+      // Restore input data
+      if (recoveredSession.currentInputData && recoveredSession.currentInputData.length > 0) {
+        setCurrentInputData(recoveredSession.currentInputData);
+      }
+
+      // Restore calculated data
+      if (recoveredSession.calculatedData && recoveredSession.calculatedData.length > 0) {
+        setCalculatedData(recoveredSession.calculatedData);
+      }
+
+      console.log('Session recovered successfully');
+      setShowSessionRecovery(false);
+      setRecoveredSession(null);
+    } catch (error) {
+      console.error('Failed to recover session:', error);
+      setAppError(new Error('Failed to recover session. Please try again.'));
+      setShowSessionRecovery(false);
+    }
+  }, [recoveredSession]);
+
+  const handleDiscardSession = useCallback(() => {
+    setShowSessionRecovery(false);
+    setRecoveredSession(null);
+    console.log('Session discarded');
+  }, []);
 
   // Initialize/reset currentInputData when numberOfPeriods changes
   useEffect(() => {
@@ -384,6 +526,15 @@ export default function ReportGeneratorApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-indigo-100 text-slate-900 p-4 md:p-8 font-sans">
+      {/* Session Recovery Modal */}
+      {showSessionRecovery && recoveredSession && (
+        <SessionRecovery
+          sessionData={recoveredSession}
+          onRecover={handleRecoverSession}
+          onDiscard={handleDiscardSession}
+        />
+      )}
+
       <header className="text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-bold text-blue-700">
           Auditor Financeiro com IA ✨
@@ -481,6 +632,7 @@ export default function ReportGeneratorApp() {
           onLoadHtml2pdf={loadHtml2pdf}
           html2pdfError={html2pdfErrorHook}
           aiAnalysisManager={aiAnalysisManager}
+          scenarioSettings={scenarioSettings}
         />
       )}
     </div>
