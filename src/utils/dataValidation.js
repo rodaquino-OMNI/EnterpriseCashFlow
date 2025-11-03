@@ -129,7 +129,7 @@ export function validateWorkingCapitalEfficiency(periodData, periodLabel) {
       suggestion: 'Oportunidades: (1) Acelerar recebimento de clientes, (2) Otimizar giro de estoques, (3) Negociar prazos com fornecedores.'
     };
   }
-  if (wcDays < -30 && wcDays !== 0) { // Allow wcDays to be 0
+  if (wcDays < -30) { // Negative cash conversion cycle is actually positive
     return {
       type: 'CICLO_NEGATIVO_ALTO', category: 'Eficiência do Capital de Giro',
       message: `Ciclo de caixa negativo de ${formatDays(Math.abs(wcDays))} é muito favorável - a empresa recebe antes de pagar fornecedores.`,

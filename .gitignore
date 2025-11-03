@@ -1,24 +1,96 @@
-# Dependencies
+# ============================================
+# DEPENDENCIES
+# ============================================
 node_modules/
 /.pnp
 .pnp.js
+.yarn/
+.yarn-integrity
+.npm
+bower_components/
 
-# Production builds
+# ============================================
+# PRODUCTION BUILDS & DISTRIBUTION
+# ============================================
 /build
 /dist
+/out
+.next
+.nuxt
 
-# Environment variables
+# ============================================
+# ENVIRONMENT VARIABLES & SECRETS
+# ============================================
+# Never commit environment files with secrets
 .env
+.env.*
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
 
-# Logs
+# Configuration files that may contain secrets
+config/secrets.js
+config/secrets.json
+secrets.yaml
+credentials.json
+*.key
+*.pem
+*.cert
+
+# ============================================
+# SWARM COORDINATION & AI TOOLING
+# ============================================
+# Claude-Flow swarm coordination
+.claude-flow/
+.swarm/
+.hive-mind/
+
+# Swarm database files
+*.db
+*.db-shm
+*.db-wal
+
+# AI coordination sessions
+sessions/
+memory/
+metrics/
+
+# ============================================
+# TESTING & COVERAGE
+# ============================================
+# Test coverage reports
+coverage/
+.nyc_output
+*.lcov
+
+# Test mock directories (keep test files, ignore mock artifacts)
+src/__mocks__/
+__mocks__/
+
+# Cypress artifacts
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
+# Jest cache
+.jest-cache/
+
+# ============================================
+# LOGS & RUNTIME DATA
+# ============================================
+# Log files
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+pnpm-debug.log*
+local.log
+*.log.*
 
 # Runtime data
 pids
@@ -26,73 +98,116 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# ESLint cache
+# ============================================
+# CACHE & TEMPORARY FILES
+# ============================================
+# Build tool caches
+.cache
+.parcel-cache
 .eslintcache
-
-# Microbundle cache
+.stylelintcache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
 
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Storybook build outputs
-.out
-.storybook-out
-
 # Temporary folders
 tmp/
 temp/
+.tmp/
+*.tmp
 
-# Editor directories and files
+# Node REPL history
+.node_repl_history
+
+# NPM/Yarn package outputs
+*.tgz
+*.tar.gz
+
+# ============================================
+# IDE & EDITOR FILES
+# ============================================
+# VSCode
 .vscode/
+*.code-workspace
+
+# WebStorm / IntelliJ IDEA
 .idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
 *~
+.*.sw[a-z]
 
-# OS generated files
+# Emacs
+\#*\#
+.\#*
+
+# ============================================
+# OPERATING SYSTEM FILES
+# ============================================
+# macOS
 .DS_Store
 .DS_Store?
 ._*
+.AppleDouble
+.LSOverride
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.fseventsd
 
-# Backup files
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# BACKUP & VERSION FILES
+# ============================================
 *.backup
 *.bak
+*.old
+*.orig
+*~
 package.json.backup
+package-lock.json.backup
+
+# ============================================
+# STORYBOOK & DOCUMENTATION
+# ============================================
+.storybook-out
+.docusaurus
+.cache-loader
+
+# ============================================
+# MISCELLANEOUS
+# ============================================
+# Optional: Uncomment if needed
+# .vercel
+# .netlify
+# .serverless
+# .fusebox
+# .dynamodb
+# .tern-port
+# .vuepress/dist
+# .temp
+# .rpt2_cache

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from '@jest/globals';
 
 // Import the calculation functions directly from the worker
 // In a real scenario, these would be imported from a separate module

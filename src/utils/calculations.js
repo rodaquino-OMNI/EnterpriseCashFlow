@@ -258,8 +258,24 @@ export const calculateFinancialRatios = (data) => {
   // Leverage ratios
   const totalLiabilities = balanceSheet.totalLiabilities || 
     (balanceSheet.currentLiabilities + (balanceSheet.nonCurrentLiabilities || 0));
-    
-  const debtToEquity = round2(safeDivide(totalLiabilities, balanceSheet.equity));
+  
+  // Handle edge cases for debt-to-equity ratio
+  const equity = balanceSheet.equity || 0;
+  let debtToEquity;
+  
+  if (equity <= 0 && totalLiabilities > 0) {
+    // If equity is negative or zero but there is debt, indicate a problematic ratio
+    debtToEquity = 99.99; // Use a high capped value to indicate extremely high leverage
+  } else if (equity <= 0 && totalLiabilities <= 0) {
+    // Both negative/zero - problematic company, use 0
+    debtToEquity = 0;
+  } else {
+    // Normal case - positive equity
+    debtToEquity = round2(safeDivide(totalLiabilities, equity));
+    // Cap at a reasonable maximum for display purposes
+    if (debtToEquity > 99.99) debtToEquity = 99.99;
+  }
+  
   const debtRatio = round2(safeDivide(totalLiabilities, balanceSheet.totalAssets));
   const equityRatio = round2(safeDivide(balanceSheet.equity, balanceSheet.totalAssets));
   
@@ -432,7 +448,7 @@ export const processFinancialData = (rawPeriodData, periodType) => {
         profitGrowth: round2(
           safeDivide(
             incomeStatement.netIncome - previousPeriod.incomeStatement.netIncome,
-            Math.abs(previousPeriod.incomeStatement.netIncome)
+            Math.abs(previousPeriod.incomeStatement.netIncome || 0.01)
           ) * 100
         ),
       };

@@ -12,14 +12,54 @@ import ReportGeneratorApp from '../../components/ReportGeneratorApp';
 // Mock external dependencies
 jest.mock('../../hooks/useLibrary', () => ({
   __esModule: true,
-  useLibrary: jest.fn(() => ({
-    library: null,
-    loadLibrary: jest.fn().mockResolvedValue(undefined),
-    isLoading: false,
-    error: null,
-    reset: jest.fn(),
-    isAvailable: false
-  }))
+  useLibrary: jest.fn((libraryName) => {
+    // Mock library objects for different libraries
+    const mockExcelJS = {
+      Workbook: class {
+        constructor() {}
+        addWorksheet() { return { cell: () => ({ value: '' }) }; }
+        
+        get xlsx() { 
+          return { 
+            writeBuffer: async () => new ArrayBuffer(0) 
+          };
+        }
+      }
+    };
+
+    const mockHtml2pdf = () => ({
+      from: () => ({
+        save: () => Promise.resolve()
+      })
+    });
+
+    const mockPdfjsLib = {
+      getDocument: () => ({
+        promise: Promise.resolve({
+          numPages: 1,
+          getPage: () => Promise.resolve({
+            getTextContent: () => Promise.resolve({ items: [] })
+          })
+        })
+      })
+    };
+
+    // Return appropriate mock based on library name
+    let library;
+    if (libraryName === 'ExcelJS') library = mockExcelJS;
+    else if (libraryName === 'html2pdf') library = mockHtml2pdf;
+    else if (libraryName === 'pdfjsLib') library = mockPdfjsLib;
+    else library = {};
+
+    return {
+      library,
+      loadLibrary: jest.fn().mockResolvedValue(library),
+      isLoading: false,
+      error: null,
+      reset: jest.fn(),
+      isAvailable: true
+    };
+  })
 }));
 
 jest.mock('../../hooks/useFinancialCalculator', () => ({
@@ -287,7 +327,7 @@ describe('Phase 2 Components Integration Tests', () => {
       render(<ReportGeneratorApp />);
       
       expect(screen.getByText('Auditor Financeiro com IA ✨')).toBeInTheDocument();
-      expect(screen.getByText('Entrada Manual')).toBeInTheDocument();
+      expect(screen.getByText('Entrada Manual de Dados')).toBeInTheDocument();
     });
 
     test('App switches between input methods correctly', () => {
@@ -296,11 +336,13 @@ describe('Phase 2 Components Integration Tests', () => {
       // Test manual input method (default)
       expect(screen.getByText('Entrada Manual de Dados - Modo Adaptativo')).toBeInTheDocument();
       
-      // Switch to Excel method
-      const excelButton = screen.getByText('Upload Excel');
-      fireEvent.click(excelButton);
+      // Switch to Excel method - need to interact with the select element
+      const selectElement = screen.getByLabelText('Método de Entrada:');
+      fireEvent.change(selectElement, { target: { value: 'excel' } });
       
-      expect(screen.getByText(/template/i)).toBeInTheDocument();
+      // Should show Excel uploader content instead - be more specific about which template text to look for
+      expect(screen.getByText('Entrada de Dados via Excel (Upload Adaptativo)')).toBeInTheDocument();
+      expect(screen.getByText('Escolha o Tipo de Template Excel para Baixar')).toBeInTheDocument();
     });
 
     test('App maintains state consistency across method switches', () => {
@@ -310,12 +352,11 @@ describe('Phase 2 Components Integration Tests', () => {
       const companyInput = screen.getByDisplayValue('Empresa Exemplo S.A.');
       fireEvent.change(companyInput, { target: { value: 'Test Company' } });
       
-      // Switch input methods
-      const excelButton = screen.getByText('Upload Excel');
-      fireEvent.click(excelButton);
+      // Switch input methods using the select element
+      const selectElement = screen.getByLabelText('Método de Entrada:');
+      fireEvent.change(selectElement, { target: { value: 'excel' } });
       
-      const manualButton = screen.getByText('Entrada Manual');
-      fireEvent.click(manualButton);
+      fireEvent.change(selectElement, { target: { value: 'manual' } });
       
       // Company name should be preserved
       expect(screen.getByDisplayValue('Test Company')).toBeInTheDocument();

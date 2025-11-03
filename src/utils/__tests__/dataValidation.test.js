@@ -364,22 +364,40 @@ describe('Data Validation Utilities', () => {
     it('should categorize by severity correctly', () => {
       const calculatedData = [
         {
-          // Data that triggers different severity levels
+          // Data that triggers critical errors
           estimatedTotalAssets: 1000000,
           estimatedTotalLiabilities: 400000,
-          equity: 599990,
-          balanceSheetDifference: 10, // Warning
-          inventoryDaysDerived: 400, // Critical
+          equity: 500000, // This creates A != L + E (critical)
+          balanceSheetDifference: 100000, // Large difference (critical)
+          inventoryDaysDerived: 400, // Very high inventory days (critical)
           inventoryValueAvg: 200000,
           cogs: 182500,
           revenue: 1000000,
-          wcDays: -45, // Success
+          wcDays: 150, // High working capital (warning)
+          arDaysDerived: 90,
+          inventoryDaysDerived: 80,
+          apDaysDerived: 20,
+          closingCash: -50000, // Negative cash + negative EBIT = insolvency (critical)
+          ebit: -100000,
+          netCashFlowBeforeFinancing: -80000
+        },
+        {
+          // Data that triggers success
+          estimatedTotalAssets: 1100000,
+          estimatedTotalLiabilities: 450000,
+          equity: 650000,
+          balanceSheetDifference: 0,
+          inventoryDaysDerived: 30,
+          inventoryValueAvg: 100000,
+          cogs: 600000,
+          revenue: 1000000,
+          wcDays: -45, // Excellent working capital (success)
           arDaysDerived: 30,
           inventoryDaysDerived: 15,
           apDaysDerived: 90,
           closingCash: 100000,
           ebit: 50000,
-          netCashFlowBeforeFinancing: 100000
+          netCashFlowBeforeFinancing: 80000
         }
       ];
 

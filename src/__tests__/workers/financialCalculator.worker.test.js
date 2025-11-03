@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 
 // Mock the worker environment
-const mockPostMessage = vi.fn();
+const mockPostMessage = jest.fn();
 const mockWorkerScope = {
   postMessage: mockPostMessage,
   onmessage: null,
 };
 
 // Mock the calculations module
-vi.mock('../../utils/calculations.js', () => ({
-  processFinancialData: vi.fn(),
+jest.mock('../../utils/calculations.js', () => ({
+  processFinancialData: jest.fn(),
 }));
 
 describe('Financial Calculator Worker', () => {
@@ -21,7 +21,7 @@ describe('Financial Calculator Worker', () => {
     // Set up worker mock
     global.self = mockWorkerScope;
     mockPostMessage.mockClear();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {

@@ -52,28 +52,62 @@ export default function ReportGeneratorApp() {
   const [pendingExcelParseResult, setPendingExcelParseResult] = useState(null);
   const [showPeriodTypeConfirmation, setShowPeriodTypeConfirmation] = useState(false);
 
-  // --- Initialize Hooks ---
-  const { library: ExcelJS, loadLibrary: loadExcelJS, isLoading: isLoadingExcelJS, error: excelJsErrorHook } = useLibrary('ExcelJS');
-  const { loadLibrary: loadHtml2pdf, isLoading: isLoadingHtml2pdf, error: html2pdfErrorHook } = useLibrary('html2pdf');
-  const { library: pdfjsLibInstance, loadLibrary: loadPdfjsLib, isLoading: isLoadingPdfjs, error: pdfjsErrorHook } = useLibrary('pdfjsLib');
+  // --- Initialize Hooks --- with fallbacks for test environment
+  const excelLibResult = useLibrary('ExcelJS') || {};
+  const html2pdfResult = useLibrary('html2pdf') || {};
+  const pdfjsLibResult = useLibrary('pdfjsLib') || {};
 
-  const { calculate, isCalculating, calculationError: calcErrorHook } = useFinancialCalculator();
-  const { 
-    parseFile: parseSmartExcelFile, 
-    isParsing: isExcelParsing, 
-    error: excelParsingErrorHook,
-    progress: excelParsingProgress,
-    currentStep: excelParsingCurrentStep,
-    resetParser: resetExcelParser
-  } = useSmartExcelParser(ExcelJS);
+  const ExcelJS = excelLibResult.library;
+  const loadExcelJS = excelLibResult.loadLibrary || (() => Promise.resolve(null));
+  const isLoadingExcelJS = excelLibResult.isLoading || false;
+  const excelJsErrorHook = excelLibResult.error;
 
-  // Main AI service hook (for making calls)
-  const aiService = useAiService(selectedAiProviderKey);
-  // Centralized AI analysis state hook (for storing results, loading, errors of specific analyses)
-  const aiAnalysisManager = useAiAnalysis(aiService, apiKeys, selectedAiProviderKey);
+  const loadHtml2pdf = html2pdfResult.loadLibrary || (() => Promise.resolve(null));
+  const isLoadingHtml2pdf = html2pdfResult.isLoading || false;
+  const html2pdfErrorHook = html2pdfResult.error;
 
-  const { extractTextFromPdf, isParsing: isPdfTextParsing, parsingError: pdfTextParsingErrorHook, setParsingError: clearPdfTextParsingError } = usePdfParser();
-  const { extractFinancialData, isExtracting: isAiExtracting, extractionError: aiExtractionErrorHook, setExtractionError: clearAiExtractionError } = useAiDataExtraction(aiService);
+  const pdfjsLibInstance = pdfjsLibResult.library;
+  const loadPdfjsLib = pdfjsLibResult.loadLibrary || (() => Promise.resolve(null));
+  const isLoadingPdfjs = pdfjsLibResult.isLoading || false;
+  const pdfjsErrorHook = pdfjsLibResult.error;
+
+  const financialCalcResult = useFinancialCalculator() || {};
+  const calculate = financialCalcResult.calculate || (() => Promise.resolve([]));
+  const isCalculating = financialCalcResult.isCalculating || false;
+  const calcErrorHook = financialCalcResult.calculationError;
+
+  const excelParserResult = useSmartExcelParser(ExcelJS) || {};
+  const parseSmartExcelFile = excelParserResult.parseFile || (() => Promise.resolve({ data: [], detectedPeriods: 0 }));
+  const isExcelParsing = excelParserResult.isParsing || false;
+  const excelParsingErrorHook = excelParserResult.error;
+  const excelParsingProgress = excelParserResult.progress || 0;
+  const excelParsingCurrentStep = excelParserResult.currentStep || '';
+  const resetExcelParser = excelParserResult.resetParser || (() => {});
+
+  const pdfParserResult = usePdfParser() || {};
+  const extractTextFromPdf = pdfParserResult.extractTextFromPdf || (() => Promise.resolve(''));
+  const isPdfTextParsing = pdfParserResult.isParsing || false;
+  const pdfTextParsingErrorHook = pdfParserResult.parsingError;
+  const clearPdfTextParsingError = pdfParserResult.setParsingError || (() => {});
+
+  const aiService = useAiService(selectedAiProviderKey) || { 
+    isLoading: false, 
+    error: null, 
+    currentProviderConfig: {},
+    setSelectedProviderKey: () => {}
+  };
+
+  const aiAnalysisManager = useAiAnalysis(aiService, apiKeys, selectedAiProviderKey) || {
+    isLoading: () => false,
+    errors: {},
+    clearAllAnalyses: () => {}
+  };
+
+  const aiExtractResult = useAiDataExtraction(aiService) || {};
+  const extractFinancialData = aiExtractResult.extractFinancialData || (() => Promise.resolve([]));
+  const isAiExtracting = aiExtractResult.isExtracting || false;
+  const aiExtractionErrorHook = aiExtractResult.extractionError;
+  const clearAiExtractionError = aiExtractResult.setExtractionError || (() => {});
 
   // Initialize/reset currentInputData when numberOfPeriods changes
   useEffect(() => {
@@ -108,7 +142,7 @@ export default function ReportGeneratorApp() {
       excelJsErrorHook, html2pdfErrorHook, pdfjsErrorHook,
       excelParsingErrorHook, pdfTextParsingErrorHook,
       calcErrorHook, aiExtractionErrorHook, aiService.error,
-      ...Object.values(aiAnalysisManager.errors).filter(Boolean)
+      ...Object.values(aiAnalysisManager.errors || {}).filter(Boolean)
     ].filter(Boolean);
 
     if (hookErrors.length > 0) {

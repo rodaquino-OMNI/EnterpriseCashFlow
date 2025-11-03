@@ -10,6 +10,9 @@ import { TextEncoder, TextDecoder } from 'util';
 // Import custom financial matchers
 import './__tests__/utils/customMatchers';
 
+// Mock the useLibrary hook for tests
+jest.mock('./hooks/useLibrary', () => require('./__mocks__/hooks/useLibrary'));
+
 // Polyfills for Node environment
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
