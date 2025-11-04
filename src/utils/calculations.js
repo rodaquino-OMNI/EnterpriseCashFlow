@@ -590,6 +590,10 @@ export const calculateBalanceSheet = (data) => {
 
   const nonCurrentAssets = round2(Math.max(fixedAssetsNet, 0));
 
+  // Recalculate total assets to ensure balance sheet equation holds
+  // Total Assets must equal Current Assets + Non-Current Assets
+  const actualTotalAssets = round2(currentAssets + nonCurrentAssets);
+
   // Current liabilities
   const accountsPayable = round2(workingCapital?.accountsPayableValue || 0);
   const shortTermDebt = round2(revenue * 0.05); // 5% estimate
@@ -599,23 +603,23 @@ export const calculateBalanceSheet = (data) => {
   // Long-term liabilities
   // Use target debt-to-equity ratio to estimate
   const targetDebtToEquity = data.targetDebtToEquity || 0.5; // 50% conservative
-  const totalLiabilitiesEquity = totalAssets;
+  const totalLiabilitiesEquity = actualTotalAssets;
 
   // Solve for equity: Total = E + L, where L = CurrentLiab + NonCurrentLiab
   // And we want: (CurrentLiab + NonCurrentLiab) / E = targetDebtToEquity
   // So: L = targetDebtToEquity * E
   // Total = E + targetDebtToEquity * E = E(1 + targetDebtToEquity)
   // E = Total / (1 + targetDebtToEquity)
-  const equity = round2(totalAssets / (1 + targetDebtToEquity));
-  const totalLiabilities = round2(totalAssets - equity);
+  const equity = round2(actualTotalAssets / (1 + targetDebtToEquity));
+  const totalLiabilities = round2(actualTotalAssets - equity);
   const nonCurrentLiabilities = round2(Math.max(0, totalLiabilities - currentLiabilities));
 
   // Validation: Check balance sheet equation A = L + E
-  const balanceCheck = round2(totalAssets - (totalLiabilities + equity));
+  const balanceCheck = round2(actualTotalAssets - (totalLiabilities + equity));
 
   if (Math.abs(balanceCheck) > BALANCE_TOLERANCE) {
     console.warn(
-      `Balance sheet equation violated: Assets (${totalAssets}) != Liabilities (${totalLiabilities}) + Equity (${equity}). Difference: ${balanceCheck}`
+      `Balance sheet equation violated: Assets (${actualTotalAssets}) != Liabilities (${totalLiabilities}) + Equity (${equity}). Difference: ${balanceCheck}`
     );
   }
 
@@ -628,7 +632,7 @@ export const calculateBalanceSheet = (data) => {
     currentAssets,
     fixedAssetsNet,
     nonCurrentAssets,
-    totalAssets,
+    totalAssets: actualTotalAssets,
 
     // Liabilities
     accountsPayable,
@@ -640,6 +644,7 @@ export const calculateBalanceSheet = (data) => {
 
     // Equity
     equity,
+    totalLiabilitiesEquity: round2(totalLiabilities + equity),
 
     // Validation
     balanceCheck,

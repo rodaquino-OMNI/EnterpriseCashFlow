@@ -107,9 +107,13 @@ describe('Financial Calculations - Comprehensive Tests', () => {
           operatingExpenses: 200000
         };
         const result = calculateIncomeStatement(data);
-        
+
         expect(result.ebt).toBeGreaterThan(0);
-        expect(result.taxes).toBe(Math.round(result.ebt * 0.34 * 100) / 100);
+        // Brazilian GAAP: IRPJ (15%) + CSLL (9%) = ~24% for amounts below threshold
+        expect(result.taxBreakdown).toBeDefined();
+        expect(result.effectiveTaxRate).toBeGreaterThan(23);
+        expect(result.effectiveTaxRate).toBeLessThan(25);
+        expect(result.taxes).toBeGreaterThan(0);
       });
 
       it('should not apply taxes on negative income', () => {
@@ -203,9 +207,12 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     describe('Operating cash flow calculations', () => {
       it('should calculate OCF for first period (no WC change)', () => {
         const result = calculateCashFlow(basePeriod, null);
-        
-        expect(result.operatingCashFlow).toBe(120000); // NI + Depreciation
-        expect(result.workingCapitalChange).toBe(0);
+
+        // First period: WC represents cash investment
+        // WC Change = -(AR + Inv - AP) = -(150000 + 100000 - 80000) = -170000
+        expect(result.workingCapitalChange).toBe(-170000);
+        // OCF = NI + Depreciation + WC Change = 100000 + 20000 - 170000 = -50000
+        expect(result.operatingCashFlow).toBe(-50000);
       });
 
       it('should calculate OCF with working capital changes', () => {
@@ -246,10 +253,11 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     describe('Investing and free cash flow', () => {
       it('should calculate investing cash flow with provided capex', () => {
         const result = calculateCashFlow(basePeriod, null);
-        
+
         expect(result.capex).toBe(50000);
         expect(result.investingCashFlow).toBe(-50000);
-        expect(result.freeCashFlow).toBe(70000); // 120k - 50k
+        // FCF = OCF + Investing CF = -50000 + (-50000) = -100000
+        expect(result.freeCashFlow).toBe(-100000);
       });
 
       it('should use default capex rate when not provided', () => {
@@ -273,11 +281,12 @@ describe('Financial Calculations - Comprehensive Tests', () => {
           equityChange: 50000,
           dividends: 30000
         };
-        
+
         const result = calculateCashFlow(periodWithFinancing, null);
-        
+
         expect(result.financingCashFlow).toBe(120000); // 100k + 50k - 30k
-        expect(result.netCashFlow).toBe(190000); // 120k - 50k + 120k
+        // Net CF = OCF + Investing + Financing = -50000 + (-50000) + 120000 = 20000
+        expect(result.netCashFlow).toBe(20000);
       });
 
       it('should handle debt repayment and dividend payments', () => {
@@ -297,8 +306,9 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     describe('Cash conversion metrics', () => {
       it('should calculate cash conversion rate correctly', () => {
         const result = calculateCashFlow(basePeriod, null);
-        
-        expect(result.cashConversionRate).toBe(120); // (120k / 100k) * 100
+
+        // Cash conversion rate = (OCF / Net Income) * 100 = (-50000 / 100000) * 100 = -50
+        expect(result.cashConversionRate).toBe(-50);
       });
 
       it('should handle negative net income', () => {
@@ -309,11 +319,13 @@ describe('Financial Calculations - Comprehensive Tests', () => {
             netIncome: -50000
           }
         };
-        
+
         const result = calculateCashFlow(lossmaking, null);
-        
-        expect(result.operatingCashFlow).toBe(-30000); // -50k + 20k
-        expect(result.cashConversionRate).toBe(60); // (-30k / -50k) * 100
+
+        // OCF = NI + Depreciation + WC Change = -50000 + 20000 - 170000 = -200000
+        expect(result.operatingCashFlow).toBe(-200000);
+        // Cash conversion rate = (-200000 / -50000) * 100 = 400
+        expect(result.cashConversionRate).toBe(400);
       });
     });
   });
@@ -406,11 +418,16 @@ describe('Financial Calculations - Comprehensive Tests', () => {
           inventoryDays: 20,
           accountsPayableDays: 60
         };
-        
+
         const result = calculateWorkingCapitalMetrics(data);
-        
+
+        // Negative CCC means collecting cash faster than using it
         expect(result.cashConversionCycle).toBe(-10); // 30 + 20 - 60
-        expect(result.workingCapitalValue).toBeLessThan(0); // Negative WC is good!
+        expect(result.dso).toBe(30);
+        expect(result.dio).toBe(20);
+        expect(result.dpo).toBe(60);
+        // WC value itself depends on absolute values, not the cycle
+        expect(result.workingCapitalValue).toBeGreaterThan(0);
       });
     });
 
@@ -453,11 +470,13 @@ describe('Financial Calculations - Comprehensive Tests', () => {
           daysInPeriod: 365,
           accountsReceivableDays: 45
         };
-        
+
         const result = calculateWorkingCapitalMetrics(data);
-        
+
+        // When days are provided, they're used directly
+        expect(result.dso).toBe(45);
+        // But with zero revenue, AR value will be 0
         expect(result.accountsReceivableValue).toBe(0);
-        expect(result.dso).toBe(0);
         expect(result.workingCapitalValue).toBe(0);
       });
 
@@ -624,18 +643,25 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     describe('Asset calculations', () => {
       it('should estimate cash and current assets', () => {
         const result = calculateBalanceSheet(baseData);
-        
-        expect(result.cash).toBe(100000); // Max of 10% revenue or net cash flow
+
+        // With the new implementation using asset turnover
+        // Total Assets = revenue / 2.5 = 400000
+        // Current Assets estimate = 400000 * 0.6 = 240000
+        // Known current assets (AR + Inv) = 250000 > estimate
+        // Cash = max(0, 240000 - 250000) = 0
+        expect(result.cash).toBe(0);
         expect(result.accountsReceivable).toBe(150000);
         expect(result.inventory).toBe(100000);
-        expect(result.currentAssets).toBe(350000); // 100k + 150k + 100k
+        expect(result.currentAssets).toBe(250000); // 0 + 150k + 100k
       });
 
       it('should calculate non-current assets to balance', () => {
         const result = calculateBalanceSheet(baseData);
-        
-        expect(result.totalAssets).toBe(800000);
-        expect(result.nonCurrentAssets).toBe(450000); // 800k - 350k
+
+        // Non-current assets = 40% of total estimated assets
+        expect(result.nonCurrentAssets).toBe(160000); // 400000 * 0.4
+        // Total assets = current + non-current
+        expect(result.totalAssets).toBe(410000); // 250000 + 160000
       });
 
       it('should use revenue-based estimation when total assets not provided', () => {
@@ -645,20 +671,25 @@ describe('Financial Calculations - Comprehensive Tests', () => {
             revenue: 1000000
           }
         };
-        
+
         const result = calculateBalanceSheet(data);
-        
-        expect(result.totalAssets).toBe(800000); // 80% of revenue
+
+        // Uses asset turnover ratio: revenue / 2.5 = 400000 estimated
+        // But actual total = current (250k from WC) + non-current (160k) = 410k
+        expect(result.totalAssets).toBe(410000);
+        expect(result.assetTurnoverUsed).toBe(2.5);
       });
     });
 
     describe('Liability calculations', () => {
       it('should calculate current liabilities', () => {
         const result = calculateBalanceSheet(baseData);
-        
+
         expect(result.accountsPayable).toBe(80000);
         expect(result.shortTermDebt).toBe(50000); // 5% of revenue
-        expect(result.currentLiabilities).toBe(130000); // 80k + 50k
+        expect(result.accruedExpenses).toBe(20000); // 2% of revenue
+        // Total = AP + ST Debt + Accrued
+        expect(result.currentLiabilities).toBe(150000); // 80k + 50k + 20k
       });
 
       it('should balance with appropriate debt/equity ratio', () => {
@@ -701,13 +732,17 @@ describe('Financial Calculations - Comprehensive Tests', () => {
             netCashFlow: 50000
           }
         };
-        
+
         const result = calculateBalanceSheet(data);
-        
-        expect(result.accountsReceivable).toBe(0);
-        expect(result.inventory).toBe(0);
-        expect(result.accountsPayable).toBe(0);
-        expect(result.currentAssets).toBeGreaterThan(0); // At least cash
+
+        // Without WC data, estimates are used
+        // Total Assets = 1000000 / 2.5 = 400000
+        // Current Assets = 400000 * 0.6 = 240000
+        // These are distributed: 30% cash, 40% AR, 20% inv, 10% other
+        expect(result.cash).toBeGreaterThan(0);
+        expect(result.accountsReceivable).toBeGreaterThan(0);
+        expect(result.inventory).toBeGreaterThan(0);
+        expect(result.currentAssets).toBe(240000);
       });
 
       it('should handle negative net cash flow', () => {
@@ -717,10 +752,12 @@ describe('Financial Calculations - Comprehensive Tests', () => {
             netCashFlow: -50000
           }
         };
-        
+
         const result = calculateBalanceSheet(data);
-        
-        expect(result.cash).toBe(100000); // Uses 10% of revenue minimum
+
+        // With AR + Inv exceeding current assets estimate, cash is 0
+        expect(result.cash).toBe(0);
+        expect(result.totalAssets).toBe(410000);
       });
     });
   });

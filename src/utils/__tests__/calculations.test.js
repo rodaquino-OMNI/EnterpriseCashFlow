@@ -24,23 +24,37 @@ describe('Financial Calculations Engine', () => {
 
       const result = calculateIncomeStatement(input);
 
-      expect(result).toEqual({
-        revenue: 1000000,
-        cogs: 600000,
-        grossProfit: 400000,
-        grossMarginPercent: 40.0,
-        operatingExpenses: 200000,
-        ebitda: 200000,
-        ebitdaMargin: 20.0,
-        depreciation: 50000,
-        ebit: 150000,
-        ebitMargin: 15.0,
-        netFinancialResult: -20000,
-        ebt: 130000,
-        taxes: 44200, // 34% Brazilian corporate tax
-        netIncome: 85800,
-        netMargin: 8.58,
-      });
+      // Verify core financial metrics
+      expect(result.revenue).toBe(1000000);
+      expect(result.cogs).toBe(600000);
+      expect(result.grossProfit).toBe(400000);
+      expect(result.grossMarginPercent).toBe(40.0);
+      expect(result.operatingExpenses).toBe(200000);
+      expect(result.ebitda).toBe(200000);
+      expect(result.ebitdaMargin).toBe(20.0);
+      expect(result.depreciation).toBe(50000);
+      expect(result.ebit).toBe(150000);
+      expect(result.ebitMargin).toBe(15.0);
+      expect(result.netFinancialResult).toBe(-20000);
+      expect(result.ebt).toBe(130000);
+
+      // Brazilian GAAP taxes (IRPJ 15% + CSLL 9% = 24% for amounts below threshold)
+      expect(result.taxes).toBe(31200); // IRPJ: 19500 + CSLL: 11700
+      expect(result.netIncome).toBe(98800);
+      expect(result.netMargin).toBe(9.88);
+      expect(result.effectiveTaxRate).toBe(24);
+
+      // Verify tax breakdown
+      expect(result.taxBreakdown).toBeDefined();
+      expect(result.taxBreakdown.irpj).toBe(19500);
+      expect(result.taxBreakdown.irpjBase).toBe(19500);
+      expect(result.taxBreakdown.irpjSurtax).toBe(0); // Below threshold
+      expect(result.taxBreakdown.csll).toBe(11700);
+
+      // Verify audit trail exists
+      expect(result.auditTrail).toBeDefined();
+      expect(result.auditTrail.calculationSteps).toBeDefined();
+      expect(result.auditTrail.calculationSteps.length).toBeGreaterThan(0);
     });
 
     it('should calculate COGS from gross margin percentage', () => {
@@ -135,8 +149,13 @@ describe('Financial Calculations Engine', () => {
     it('should handle first period without previous data', () => {
       const result = calculateCashFlow(currentPeriod, null);
 
-      expect(result.operatingCashFlow).toBe(120000); // Net income + depreciation
-      expect(result.workingCapitalChange).toBe(0);
+      // For first period, working capital represents cash investment
+      // WC Change = -(AR + Inv - AP) = -(150000 + 100000 - 80000) = -170000
+      expect(result.workingCapitalChange).toBe(-170000);
+
+      // OCF = Net Income + Depreciation + WC Change
+      // = 100000 + 20000 + (-170000) = -50000
+      expect(result.operatingCashFlow).toBe(-50000);
     });
 
     it('should calculate free cash flow with default capex', () => {
@@ -358,7 +377,11 @@ describe('Financial Calculations Engine', () => {
       expect(result.currentAssets).toBeGreaterThan(0);
       expect(result.nonCurrentAssets).toBeGreaterThan(0);
       expect(result.totalAssets).toBe(result.currentAssets + result.nonCurrentAssets);
-      expect(result.currentLiabilities).toBe(130000); // AP (80000) + Short-term debt (50000)
+
+      // Current Liabilities = AP (80000) + Short-term debt (50000) + Accrued expenses (20000)
+      // Short-term debt = revenue * 0.05 = 1000000 * 0.05 = 50000
+      // Accrued expenses = revenue * 0.02 = 1000000 * 0.02 = 20000
+      expect(result.currentLiabilities).toBe(150000);
       expect(result.totalLiabilitiesEquity).toBe(result.totalAssets);
     });
 
