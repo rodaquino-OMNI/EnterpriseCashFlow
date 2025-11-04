@@ -279,15 +279,41 @@ export class AIService {
    * @private
    */
   categorizeInsight(text) {
-    const categories = {
-      risk: ['risk', 'risco', 'threat', 'ameaça'],
-      opportunity: ['opportunity', 'oportunidade', 'potential', 'potencial'],
-      efficiency: ['efficiency', 'eficiência', 'optimize', 'otimizar'],
-      growth: ['growth', 'crescimento', 'expansion', 'expansão'],
-      cost: ['cost', 'custo', 'expense', 'despesa']
+    const lowerText = text.toLowerCase();
+
+    // Check for specific compound phrases first (most specific to least specific)
+    // These override general keyword matching
+    const compoundPhrases = {
+      growth: [
+        'oportunidade de crescimento',  // Portuguese: opportunity OF growth → main topic is growth
+        'oportunidades de crescimento',
+        'growth potential',  // growth is the subject, potential is the modifier
+        'potencial de crescimento',
+        'potencial para crescimento'
+      ],
+      opportunity: [
+        'opportunity for',  // opportunity FOR something → opportunity is the subject
+        'oportunidade para'  // opportunity FOR something → opportunity is the subject
+      ]
     };
 
-    const lowerText = text.toLowerCase();
+    // Check compound phrases first
+    for (const [category, phrases] of Object.entries(compoundPhrases)) {
+      if (phrases.some(phrase => lowerText.includes(phrase))) {
+        return category;
+      }
+    }
+
+    // Fall back to general keyword matching
+    // Order matters: more specific categories should be checked first
+    const categories = {
+      risk: ['risk', 'risco', 'threat', 'ameaça'],
+      growth: ['growth', 'crescimento', 'expansion', 'expansão'],
+      cost: ['cost', 'custo', 'expense', 'despesa'],
+      efficiency: ['efficiency', 'eficiência', 'optimize', 'otimizar'],
+      opportunity: ['opportunity', 'oportunidade', 'potential', 'potencial']
+    };
+
     for (const [category, keywords] of Object.entries(categories)) {
       if (keywords.some(keyword => lowerText.includes(keyword))) {
         return category;
@@ -302,19 +328,27 @@ export class AIService {
    * @private
    */
   prioritizeInsight(text) {
-    const highPriorityKeywords = ['critical', 'crítico', 'urgent', 'urgente', 'immediate', 'imediato'];
-    const mediumPriorityKeywords = ['important', 'importante', 'significant', 'significativo'];
-    
+    // Include Portuguese gender/number variations (masculine/feminine, singular/plural)
+    const highPriorityKeywords = [
+      'critical', 'crítico', 'crítica', 'críticos', 'críticas',
+      'urgent', 'urgente', 'urgentes',
+      'immediate', 'imediato', 'imediata', 'imediatos', 'imediatas'
+    ];
+    const mediumPriorityKeywords = [
+      'important', 'importante', 'importantes',
+      'significant', 'significativo', 'significativa', 'significativos', 'significativas'
+    ];
+
     const lowerText = text.toLowerCase();
-    
+
     if (highPriorityKeywords.some(keyword => lowerText.includes(keyword))) {
       return 'high';
     }
-    
+
     if (mediumPriorityKeywords.some(keyword => lowerText.includes(keyword))) {
       return 'medium';
     }
-    
+
     return 'low';
   }
 

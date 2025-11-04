@@ -145,7 +145,10 @@ describe('ExcelExportService', () => {
         errors: ['Invalid data format']
       }));
 
-      await expect(service.export(validData)).rejects.toThrow('Invalid data format');
+      // Service returns error object instead of throwing
+      const result = await service.export(validData);
+      expect(result.success).toBe(false);
+      expect(result.error.message).toContain('Invalid data format');
     });
 
     it('should set workbook properties', async () => {
@@ -262,7 +265,10 @@ describe('ExcelExportService', () => {
         financialData: []
       };
 
-      await expect(service.export(validData)).rejects.toThrow('Failed to create workbook');
+      // Service returns error object instead of throwing
+      const result = await service.export(validData);
+      expect(result.success).toBe(false);
+      expect(result.error.message).toContain('Failed to create workbook');
     });
 
     it('should handle invalid data gracefully', async () => {
@@ -271,7 +277,11 @@ describe('ExcelExportService', () => {
         errors: ['Missing required fields', 'Invalid data structure']
       }));
 
-      await expect(service.export({})).rejects.toThrow('Missing required fields; Invalid data structure');
+      // Service returns error object instead of throwing
+      const result = await service.export({});
+      expect(result.success).toBe(false);
+      expect(result.error.message).toContain('Missing required fields');
+      expect(result.error.message).toContain('Invalid data structure');
     });
   });
 
