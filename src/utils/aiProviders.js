@@ -27,6 +27,79 @@
  * @property {any} [extraParams] - Provider-specific additional parameters
  */
 
+// --- Retry Logic Helper ---
+
+/**
+ * Determines if an error is retryable
+ * @param {Error} error - The error to check
+ * @returns {boolean} - True if the error is retryable
+ */
+function isRetryableError(error) {
+  // Retry on timeout
+  if (error.name === 'AbortError') return true;
+
+  // Retry on rate limit errors (429)
+  if (error.message.includes('429') || error.message.includes('Limite de taxa')) return true;
+
+  // Retry on server errors (500, 503)
+  if (error.message.includes('500') || error.message.includes('503') || error.message.includes('Erro no servidor')) return true;
+
+  // Retry on network errors
+  if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED')) return true;
+
+  // Don't retry on authentication errors (401, 403) or bad requests (400)
+  if (error.message.includes('401') || error.message.includes('403') ||
+      error.message.includes('400') || error.message.includes('inválida')) return false;
+
+  return false;
+}
+
+/**
+ * Calls a provider function with retry logic and exponential backoff
+ * @param {Function} providerFunc - The provider function to call
+ * @param {number} maxRetries - Maximum number of retry attempts (default: 3)
+ * @returns {Promise<string>} - The result from the provider
+ */
+async function callWithRetry(providerFunc, maxRetries = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await providerFunc();
+
+      // Success - log retry info if this wasn't the first attempt
+      if (attempt > 1) {
+        console.log(`Requisição bem-sucedida na tentativa ${attempt}/${maxRetries}`);
+      }
+
+      return result;
+    } catch (error) {
+      lastError = error;
+
+      // Check if we should retry
+      if (attempt < maxRetries && isRetryableError(error)) {
+        // Exponential backoff: 1s, 2s, 4s
+        const backoffTime = Math.pow(2, attempt - 1) * 1000;
+        console.warn(`Tentativa ${attempt}/${maxRetries} falhou: ${error.message}. Tentando novamente em ${backoffTime}ms...`);
+
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+      } else {
+        // Don't retry - either max attempts reached or non-retryable error
+        if (attempt >= maxRetries) {
+          console.error(`Todas as ${maxRetries} tentativas falharam. Último erro: ${error.message}`);
+        } else {
+          console.error(`Erro não recuperável: ${error.message}`);
+        }
+        throw error;
+      }
+    }
+  }
+
+  // This should never be reached, but just in case
+  throw lastError;
+}
+
 // --- Individual API Call Implementations ---
 
 /**
@@ -177,11 +250,17 @@ async function callGemini(config, prompt, apiKey, options) {
 }
 
 /**
- * Call the OpenAI API
+ * Call the OpenAI API with timeout and enhanced error handling
  */
 async function callOpenAI(config, prompt, apiKey, options) {
-  if (!apiKey) throw new Error(`API Key para ${config.name} é necessária.`);
-  
+  if (!apiKey) {
+    console.error("OpenAI API call failed: No API key provided");
+    throw new Error(`Erro: API Key para ${config.name} é necessária. Configure sua chave API nas configurações.`);
+  }
+
+  console.log("Calling OpenAI API with model:", options.model || config.defaultRequestConfig.model);
+  console.log("Prompt length:", prompt.length, "characters");
+
   const requestBody = {
     model: options.model || config.defaultRequestConfig.model,
     messages: [
@@ -192,30 +271,70 @@ async function callOpenAI(config, prompt, apiKey, options) {
     max_tokens: options.maxTokens || config.defaultRequestConfig.max_tokens,
     top_p: options.top_p || config.defaultRequestConfig.top_p
   };
-  
-  const response = await fetch(config.apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(requestBody)
-  });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new Error(`API OpenAI (${response.status}): ${errorData.error?.message || errorData.message || response.statusText}`);
+  // Add timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+  try {
+    const response = await fetch(config.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    console.log("OpenAI API response status:", response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      console.error("OpenAI API error:", errorData);
+
+      // Handle specific error cases with Portuguese messages
+      if (response.status === 429) {
+        throw new Error(`Erro: API OpenAI - Limite de taxa excedido. Tente novamente em alguns minutos.`);
+      } else if (response.status === 401 || response.status === 403) {
+        throw new Error(`Erro: API OpenAI - Chave API inválida ou sem permissão. Verifique sua configuração.`);
+      } else if (response.status === 400) {
+        throw new Error(`Erro: API OpenAI - Requisição inválida: ${errorData.error?.message || response.statusText}`);
+      } else if (response.status >= 500) {
+        throw new Error(`Erro: API OpenAI - Erro no servidor (${response.status}). Tente novamente mais tarde.`);
+      }
+
+      throw new Error(`Erro: API OpenAI (${response.status}): ${errorData.error?.message || errorData.message || response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("OpenAI API returned success response");
+    return result.choices?.[0]?.message?.content || 'Resposta vazia da API OpenAI.';
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error("OpenAI API request timed out after 60 seconds");
+      throw new Error('Erro: Timeout na requisição para OpenAI (60 segundos). Verifique sua conexão de internet.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const result = await response.json();
-  return result.choices?.[0]?.message?.content || 'Resposta vazia da API OpenAI.';
 }
 
 /**
- * Call the Claude API
+ * Call the Claude API with timeout and enhanced error handling
  */
 async function callClaude(config, prompt, apiKey, options) {
-  if (!apiKey) throw new Error(`API Key para ${config.name} é necessária.`);
-  
+  if (!apiKey) {
+    console.error("Claude API call failed: No API key provided");
+    throw new Error(`Erro: API Key para ${config.name} é necessária. Configure sua chave API nas configurações.`);
+  }
+
+  console.log("Calling Claude API with model:", options.model || config.defaultRequestConfig.model);
+  console.log("Prompt length:", prompt.length, "characters");
+
   const requestBody = {
     model: options.model || config.defaultRequestConfig.model,
     messages: [
@@ -225,32 +344,70 @@ async function callClaude(config, prompt, apiKey, options) {
     temperature: options.temperature === undefined ? config.defaultRequestConfig.temperature : options.temperature,
     max_tokens: options.maxTokens || config.defaultRequestConfig.max_tokens
   };
-  
-  const response = await fetch(config.apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify(requestBody)
-  });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new Error(`API Claude (${response.status}): ${errorData.error?.message || errorData.type || response.statusText}`);
+  // Add timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+  try {
+    const response = await fetch(config.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    console.log("Claude API response status:", response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      console.error("Claude API error:", errorData);
+
+      // Handle specific error cases with Portuguese messages
+      if (response.status === 429) {
+        throw new Error(`Erro: API Claude - Limite de taxa excedido. Tente novamente em alguns minutos.`);
+      } else if (response.status === 401 || response.status === 403) {
+        throw new Error(`Erro: API Claude - Chave API inválida ou sem permissão. Verifique sua configuração.`);
+      } else if (response.status === 400) {
+        throw new Error(`Erro: API Claude - Requisição inválida: ${errorData.error?.message || response.statusText}`);
+      } else if (response.status >= 500) {
+        throw new Error(`Erro: API Claude - Erro no servidor (${response.status}). Tente novamente mais tarde.`);
+      }
+
+      throw new Error(`Erro: API Claude (${response.status}): ${errorData.error?.message || errorData.type || response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("Claude API returned success response");
+
+    if (result.content && result.content.length > 0 && result.content[0].type === 'text') {
+      return result.content[0].text;
+    }
+    return 'Resposta vazia ou em formato inesperado da API Claude.';
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error("Claude API request timed out after 60 seconds");
+      throw new Error('Erro: Timeout na requisição para Claude (60 segundos). Verifique sua conexão de internet.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const result = await response.json();
-  if (result.content && result.content.length > 0 && result.content[0].type === 'text') {
-    return result.content[0].text;
-  }
-  return 'Resposta vazia ou em formato inesperado da API Claude.';
 }
 
 /**
- * Call the Ollama API
+ * Call the Ollama API with timeout and enhanced error handling
  */
 async function callOllama(config, prompt, apiKey, options) { // apiKey is not used by ollama but kept for signature consistency
+  console.log("Calling Ollama API with model:", options.model || config.defaultRequestConfig.model);
+  console.log("Prompt length:", prompt.length, "characters");
+
   const requestBody = {
     model: options.model || config.defaultRequestConfig.model,
     prompt: prompt,
@@ -260,19 +417,53 @@ async function callOllama(config, prompt, apiKey, options) { // apiKey is not us
       num_predict: options.maxTokens || config.defaultRequestConfig.max_tokens,
     }
   };
-  
-  const response = await fetch(config.apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody)
-  });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`API Ollama (${response.status}): ${errorText || response.statusText}`);
+  // Add timeout (120 seconds for local models which can be slower)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
+
+  try {
+    const response = await fetch(config.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    console.log("Ollama API response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Ollama API error:", errorText);
+
+      // Handle Ollama-specific errors
+      if (response.status === 404) {
+        throw new Error(`Erro: Modelo "${requestBody.model}" não encontrado no Ollama. Execute: ollama pull ${requestBody.model}`);
+      } else if (errorText.includes('connect ECONNREFUSED') || errorText.includes('ECONNREFUSED')) {
+        throw new Error(`Erro: Ollama não está rodando. Inicie o Ollama e tente novamente.`);
+      } else if (response.status >= 500) {
+        throw new Error(`Erro: API Ollama - Erro no servidor (${response.status}). Verifique se o Ollama está funcionando corretamente.`);
+      }
+
+      throw new Error(`Erro: API Ollama (${response.status}): ${errorText || response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("Ollama API returned success response");
+    return result.response || 'Resposta vazia da API Ollama.';
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error("Ollama API request timed out after 120 seconds");
+      throw new Error('Erro: Timeout na requisição para Ollama (120 segundos). O modelo pode estar muito lento ou não estar carregado.');
+    } else if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed')) {
+      throw new Error('Erro: Não foi possível conectar ao Ollama. Verifique se está rodando em http://localhost:11434');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const result = await response.json();
-  return result.response || 'Resposta vazia da API Ollama.';
 }
 
 /**
@@ -281,7 +472,7 @@ async function callOllama(config, prompt, apiKey, options) { // apiKey is not us
 export const AI_PROVIDERS = {
   gemini: {
     name: 'Google Gemini',
-    apiKeyPlaceholder: 'AIzaSyA1234...', 
+    apiKeyPlaceholder: 'AIzaSyA1234...',
     apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
     // Add alternative proxy URLs
     alternativeUrls: [
@@ -300,7 +491,8 @@ export const AI_PROVIDERS = {
       topP: 0.95,
       maxOutputTokens: 4096,
     },
-    callFunction: callGemini,
+    callFunction: (config, prompt, apiKey, options) =>
+      callWithRetry(() => callGemini(config, prompt, apiKey, options)),
     recommendedInputChars: 30000, // Reasonable size for the pro model
   },
   openai: {
@@ -320,7 +512,8 @@ export const AI_PROVIDERS = {
       frequency_penalty: 0,
       presence_penalty: 0
     },
-    callFunction: callOpenAI,
+    callFunction: (config, prompt, apiKey, options) =>
+      callWithRetry(() => callOpenAI(config, prompt, apiKey, options)),
     recommendedInputChars: 100000, // About 25k tokens for gpt-4-turbo's 128k context
   },
   claude: {
@@ -338,7 +531,8 @@ export const AI_PROVIDERS = {
       max_tokens: 4000,
       top_p: 1
     },
-    callFunction: callClaude,
+    callFunction: (config, prompt, apiKey, options) =>
+      callWithRetry(() => callClaude(config, prompt, apiKey, options)),
     recommendedInputChars: 150000, // About 37.5k tokens for Claude-3's 200k context
   },
   ollama: {
@@ -355,7 +549,8 @@ export const AI_PROVIDERS = {
       temperature: 0.2,
       max_tokens: 2000,
     },
-    callFunction: callOllama,
+    callFunction: (config, prompt, apiKey, options) =>
+      callWithRetry(() => callOllama(config, prompt, apiKey, options)),
     recommendedInputChars: 3000, // Very conservative for local models with typically 4k context
   }
 };

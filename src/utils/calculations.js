@@ -28,65 +28,255 @@ const PERIOD_DAYS = {
 const round2 = (num) => Math.round(num * 100) / 100;
 
 /**
- * Safely divides two numbers, returning 0 if denominator is 0
+ * Safely divides two numbers with comprehensive validation
+ * Returns 0 for invalid inputs or unsafe results
+ * Handles: NaN, Infinity, null, undefined, zero, near-zero, unsafe results
  */
 const safeDivide = (numerator, denominator) => {
-  if (denominator === 0 || !denominator) return 0;
-  return numerator / denominator;
+  // Validate numerator
+  if (numerator === null || numerator === undefined || isNaN(numerator)) return 0;
+  if (!isFinite(numerator)) return 0; // Handles Infinity and -Infinity
+
+  // Validate denominator
+  if (denominator === null || denominator === undefined || isNaN(denominator)) return 0;
+  if (!isFinite(denominator)) return 0; // Handles Infinity and -Infinity
+
+  // Check for zero and near-zero (using Number.EPSILON for precision)
+  if (Math.abs(denominator) < Number.EPSILON) return 0;
+
+  // Perform division
+  const result = numerator / denominator;
+
+  // Validate result
+  if (!isFinite(result)) return 0; // Handles Infinity, -Infinity, NaN
+  if (Math.abs(result) > Number.MAX_SAFE_INTEGER) return 0; // Unsafe large numbers
+
+  return result;
+};
+
+// Export safeDivide for testing
+export { safeDivide };
+
+/**
+ * Creates an audit trail for financial calculations
+ * Tracks original values, calculation steps, overrides, and validation results
+ *
+ * @param {object} originalData - Original input data
+ * @param {object} overrides - Manual overrides applied (optional)
+ * @param {Array} calculationSteps - Array of calculation steps (optional)
+ * @param {object} validationResults - Validation results (optional)
+ * @returns {object} Audit trail object
+ */
+export const createAuditTrail = (originalData, overrides = null, calculationSteps = [], validationResults = null) => {
+  // If no calculation steps provided, auto-generate basic metadata from input data
+  const steps = calculationSteps.length > 0 ? calculationSteps : [
+    {
+      step: 'initialization',
+      action: 'Created audit trail',
+      inputFields: Object.keys(originalData),
+      inputFieldCount: Object.keys(originalData).length,
+    }
+  ];
+
+  return {
+    timestamp: new Date().toISOString(),
+    originalValues: { ...originalData },
+    overrides: overrides ? { ...overrides } : null,
+    calculationSteps: [...steps],
+    validationResults: validationResults || { errors: [], warnings: [] },
+    version: '1.0',
+    system: 'EnterpriseCashFlow',
+  };
+};
+
+/**
+ * Calculates Brazilian corporate taxes (IRPJ + CSLL)
+ * IRPJ: 15% on profit + 10% surtax on profit exceeding R$ 20,000/month
+ * CSLL: 9% on profit for non-financial companies
+ *
+ * @param {number} profit - Taxable profit (EBT)
+ * @param {number} months - Number of months in the period (1, 3, 12, etc.)
+ * @returns {object} Tax breakdown with IRPJ, CSLL, total, and effective rate
+ */
+export const calculateBrazilianTax = (profit, months = 12) => {
+  // No tax on zero or negative profit
+  if (profit <= 0) {
+    return {
+      irpj: 0,
+      irpjBase: 0,
+      irpjSurtax: 0,
+      csll: 0,
+      total: 0,
+      effectiveRate: 0,
+    };
+  }
+
+  // IRPJ calculation
+  const monthlyThreshold = 20000; // R$ 20,000 per month
+  const periodThreshold = monthlyThreshold * months;
+  const irpjBaseRate = 0.15; // 15%
+  const irpjSurtaxRate = 0.10; // 10% additional
+
+  let irpjBase, irpjSurtax;
+
+  if (profit <= periodThreshold) {
+    // Below threshold: only 15% base rate
+    irpjBase = profit * irpjBaseRate;
+    irpjSurtax = 0;
+  } else {
+    // Above threshold: 15% on first portion + 25% (15% + 10%) on excess
+    irpjBase = periodThreshold * irpjBaseRate;
+    irpjSurtax = (profit - periodThreshold) * irpjSurtaxRate;
+  }
+
+  const irpj = round2(irpjBase + irpjSurtax);
+
+  // CSLL calculation (9% for non-financial companies)
+  const csllRate = 0.09; // 9%
+  const csll = round2(profit * csllRate);
+
+  // Total tax
+  const total = round2(irpj + csll);
+
+  // Effective tax rate
+  const effectiveRate = round2((total / profit) * 100);
+
+  return {
+    irpj,
+    irpjBase: round2(irpjBase),
+    irpjSurtax: round2(irpjSurtax),
+    csll,
+    total,
+    effectiveRate,
+  };
 };
 
 /**
  * Calculates a complete income statement from input data
+ * Now includes audit trail tracking
  */
-export const calculateIncomeStatement = (data) => {
+export const calculateIncomeStatement = (data, overrides = null) => {
+  // Track calculation steps for audit trail
+  const calculationSteps = [];
+
   const revenue = round2(data.revenue || 0);
-  
+  calculationSteps.push({ step: 'revenue', value: revenue, formula: 'data.revenue' });
+
   // Calculate COGS
   let cogs;
-  if (data.cogs !== undefined) {
+  if (overrides && overrides.cogs !== undefined) {
+    cogs = round2(overrides.cogs);
+    calculationSteps.push({ step: 'cogs', value: cogs, formula: 'OVERRIDE', source: 'manual' });
+  } else if (data.cogs !== undefined) {
     cogs = round2(data.cogs);
+    calculationSteps.push({ step: 'cogs', value: cogs, formula: 'data.cogs', source: 'input' });
   } else if (data.grossMarginPercent !== undefined) {
     // More precise calculation to match test expectations
     const marginDecimal = data.grossMarginPercent / 100;
     cogs = round2(revenue * (1 - marginDecimal));
+    calculationSteps.push({
+      step: 'cogs',
+      value: cogs,
+      formula: `revenue * (1 - grossMarginPercent/100) = ${revenue} * (1 - ${data.grossMarginPercent}/100)`,
+      source: 'calculated',
+    });
   } else {
     cogs = round2(revenue * (1 - DEFAULT_GROSS_MARGIN));
+    calculationSteps.push({
+      step: 'cogs',
+      value: cogs,
+      formula: `revenue * (1 - DEFAULT_GROSS_MARGIN) = ${revenue} * (1 - ${DEFAULT_GROSS_MARGIN})`,
+      source: 'default',
+    });
   }
   
   // Gross profit and margin
   const grossProfit = round2(revenue - cogs);
+  calculationSteps.push({
+    metric: 'grossProfit',
+    value: grossProfit,
+    formula: `revenue - cogs = ${revenue} - ${cogs}`,
+  });
+
   const grossMarginPercent = round2(safeDivide(grossProfit, revenue) * 100);
-  
+  calculationSteps.push({
+    metric: 'grossMarginPercent',
+    value: grossMarginPercent,
+    formula: `(grossProfit / revenue) * 100 = (${grossProfit} / ${revenue}) * 100`,
+  });
+
   // Operating expenses
   const operatingExpenses = round2(data.operatingExpenses || 0);
-  
+
   // EBITDA
-  const ebitda = round2(grossProfit - operatingExpenses);
+  const ebitda = overrides && overrides.ebitda !== undefined
+    ? round2(overrides.ebitda)
+    : round2(grossProfit - operatingExpenses);
+  calculationSteps.push({
+    metric: 'ebitda',
+    value: ebitda,
+    formula: overrides && overrides.ebitda !== undefined
+      ? 'OVERRIDE'
+      : `grossProfit - operatingExpenses = ${grossProfit} - ${operatingExpenses}`,
+    source: overrides && overrides.ebitda !== undefined ? 'manual' : 'calculated',
+  });
+
   const ebitdaMargin = round2(safeDivide(ebitda, revenue) * 100);
-  
+
   // Depreciation
   const depreciation = round2(
     data.depreciation !== undefined ? data.depreciation : revenue * DEFAULT_DEPRECIATION_RATE
   );
-  
+
   // EBIT
   const ebit = round2(ebitda - depreciation);
+  calculationSteps.push({
+    metric: 'ebit',
+    value: ebit,
+    formula: `ebitda - depreciation = ${ebitda} - ${depreciation}`,
+  });
+
   const ebitMargin = round2(safeDivide(ebit, revenue) * 100);
-  
+
   // Financial result
   const financialRevenue = round2(data.financialRevenue || 0);
   const financialExpenses = round2(data.financialExpenses || 0);
   const netFinancialResult = round2(financialRevenue - financialExpenses);
-  
+
   // EBT and taxes
   const ebt = round2(ebit + netFinancialResult);
-  // No taxes on negative income
-  const taxes = round2(ebt > 0 ? ebt * DEFAULT_TAX_RATE : 0);
-  
+  calculationSteps.push({
+    metric: 'ebt',
+    value: ebt,
+    formula: `ebit + netFinancialResult = ${ebit} + ${netFinancialResult}`,
+  });
+
+  // Calculate Brazilian taxes (IRPJ + CSLL) - default to annual (12 months)
+  const periodMonths = data.periodMonths || 12;
+  const taxCalculation = calculateBrazilianTax(ebt, periodMonths);
+  const taxes = taxCalculation.total;
+  const effectiveTaxRate = taxCalculation.effectiveRate;
+
+  calculationSteps.push({
+    metric: 'taxes',
+    value: taxes,
+    formula: `IRPJ (${taxCalculation.irpj}) + CSLL (${taxCalculation.csll})`,
+    detail: `IRPJ: ${taxCalculation.irpjBase} base + ${taxCalculation.irpjSurtax} surtax`,
+  });
+
   // Net income
   const netIncome = round2(ebt - taxes);
+  calculationSteps.push({
+    metric: 'netIncome',
+    value: netIncome,
+    formula: `ebt - taxes = ${ebt} - ${taxes}`,
+  });
+
   const netMargin = round2(safeDivide(netIncome, revenue) * 100);
-  
+
+  // Create audit trail
+  const auditTrail = createAuditTrail(data, overrides, calculationSteps);
+
   return {
     revenue,
     cogs,
@@ -101,40 +291,72 @@ export const calculateIncomeStatement = (data) => {
     netFinancialResult,
     ebt,
     taxes,
+    taxBreakdown: {
+      irpj: taxCalculation.irpj,
+      irpjBase: taxCalculation.irpjBase,
+      irpjSurtax: taxCalculation.irpjSurtax,
+      csll: taxCalculation.csll,
+    },
+    effectiveTaxRate,
     netIncome,
     netMargin,
+    auditTrail, // Include audit trail
   };
 };
 
 /**
  * Calculates cash flow statement
+ * Properly handles first period working capital as cash investment
  */
 export const calculateCashFlow = (currentPeriod, previousPeriod) => {
   const netIncome = currentPeriod.incomeStatement.netIncome;
   const depreciation = currentPeriod.incomeStatement.depreciation;
   const revenue = currentPeriod.incomeStatement.revenue;
-  
+
   // Working capital changes
   let workingCapitalChange = 0;
+
   if (previousPeriod && previousPeriod.workingCapital) {
+    // Subsequent period: Calculate change from previous period
+    // Per spec: WC change = -ΔAR - ΔInventory + ΔAP
     const currentWC = currentPeriod.workingCapital;
     const previousWC = previousPeriod.workingCapital;
-    
+
     const currentAR = currentWC.accountsReceivableValue || 0;
     const previousAR = previousWC.accountsReceivableValue || 0;
     const currentInv = currentWC.inventoryValue || 0;
     const previousInv = previousWC.inventoryValue || 0;
     const currentAP = currentWC.accountsPayableValue || 0;
     const previousAP = previousWC.accountsPayableValue || 0;
-    
+
     const arChange = currentAR - previousAR;
     const inventoryChange = currentInv - previousInv;
     const apChange = currentAP - previousAP;
-    
+
     // Negative because increases in AR/Inventory are cash outflows
+    // Positive because increases in AP are cash inflows
     workingCapitalChange = -(arChange + inventoryChange - apChange);
+  } else {
+    // First period: Working capital represents cash outflow to establish WC
+    // Per spec lines 78-84: First period WC change = -(AR + Inventory - AP)
+    const currentWC = currentPeriod.workingCapital;
+
+    if (currentWC) {
+      const arValue = currentWC.accountsReceivableValue || 0;
+      const inventoryValue = currentWC.inventoryValue || 0;
+      const apValue = currentWC.accountsPayableValue || 0;
+
+      // Cash investment needed to establish working capital
+      // This is a cash outflow (negative)
+      workingCapitalChange = -(arValue + inventoryValue - apValue);
+    }
   }
-  
+
+  // Handle JavaScript's -0 quirk: convert -0 to 0
+  if (Object.is(workingCapitalChange, -0)) {
+    workingCapitalChange = 0;
+  }
+
   const operatingCashFlow = round2(netIncome + depreciation + workingCapitalChange);
   
   // Investing cash flow
@@ -306,61 +528,132 @@ export const calculateFinancialRatios = (data) => {
 };
 
 /**
- * Estimates balance sheet components
+ * Estimates balance sheet components using asset turnover approach
+ * Per spec: lines 226-235 from 17_financial_algorithms_pseudocode.md
  */
 export const calculateBalanceSheet = (data) => {
   const { incomeStatement, workingCapital, cashFlow } = data;
   const revenue = incomeStatement?.revenue || 0;
-  
-  // Current assets estimation
-  const cash = round2(Math.max(revenue * 0.1, cashFlow?.netCashFlow || 0));
-  const accountsReceivable = round2(workingCapital?.accountsReceivableValue || 0);
-  const inventory = round2(workingCapital?.inventoryValue || 0);
-  const currentAssets = round2(cash + accountsReceivable + inventory);
-  
-  // Non-current assets estimation
-  const totalAssets = round2(incomeStatement?.totalAssets || revenue * 0.8);
-  const nonCurrentAssets = round2(Math.max(0, totalAssets - currentAssets));
-  
+
+  // Constants for balance sheet estimation
+  const DEFAULT_ASSET_TURNOVER = 2.5; // Industry average
+  const FIXED_ASSETS_RATIO = 0.4; // 40% of total assets are fixed assets
+  const BALANCE_TOLERANCE = 0.01; // Balance sheet equation tolerance
+
+  // Get asset turnover (allow override, default to 2.5)
+  const assetTurnover = data.assetTurnover || DEFAULT_ASSET_TURNOVER;
+
+  // Calculate total assets using asset turnover ratio
+  // Per spec: estimatedTotalAssets = revenue / assetTurnover
+  const estimatedTotalAssets = round2(safeDivide(revenue, assetTurnover));
+
+  // Use estimated total assets as the primary driver
+  const totalAssets = estimatedTotalAssets;
+
+  // Allocate assets: 60% current, 40% non-current (per spec)
+  const currentAssetsEstimate = round2(totalAssets * (1 - FIXED_ASSETS_RATIO)); // 60%
+  const nonCurrentAssetsEstimate = round2(totalAssets * FIXED_ASSETS_RATIO); // 40%
+
+  // Break down current assets
+  // Use working capital values if available, otherwise estimate proportionally
+  let accountsReceivable = round2(workingCapital?.accountsReceivableValue || 0);
+  let inventory = round2(workingCapital?.inventoryValue || 0);
+
+  // If we have working capital values, use them; otherwise estimate
+  let cash, otherCurrentAssets, currentAssets;
+
+  if (accountsReceivable > 0 || inventory > 0) {
+    // We have some working capital data - calculate cash to balance
+    const knownCurrentAssets = accountsReceivable + inventory;
+    cash = round2(Math.max(0, currentAssetsEstimate - knownCurrentAssets));
+    otherCurrentAssets = 0;
+    currentAssets = round2(cash + accountsReceivable + inventory);
+  } else {
+    // No working capital data - estimate all components
+    cash = round2(currentAssetsEstimate * 0.3); // 30% cash
+    accountsReceivable = round2(currentAssetsEstimate * 0.4); // 40% AR
+    inventory = round2(currentAssetsEstimate * 0.2); // 20% inventory
+    otherCurrentAssets = round2(currentAssetsEstimate * 0.1); // 10% other
+    currentAssets = round2(cash + accountsReceivable + inventory + otherCurrentAssets);
+  }
+
+  // Non-current assets (fixed assets)
+  // Per spec: fixedAssetsNet = estimatedTotalAssets * 0.4 (40% fixed assets)
+  let fixedAssetsNet = nonCurrentAssetsEstimate;
+
+  // Apply depreciation and capex if provided
+  if (data.depreciation || data.capex) {
+    const depreciation = data.depreciation || 0;
+    const capex = data.capex || 0;
+    fixedAssetsNet = round2(fixedAssetsNet - depreciation + capex);
+  }
+
+  const nonCurrentAssets = round2(Math.max(fixedAssetsNet, 0));
+
+  // Recalculate total assets to ensure balance sheet equation holds
+  // Total Assets must equal Current Assets + Non-Current Assets
+  const actualTotalAssets = round2(currentAssets + nonCurrentAssets);
+
   // Current liabilities
   const accountsPayable = round2(workingCapital?.accountsPayableValue || 0);
-  const shortTermDebt = round2(revenue * 0.05); // Estimate
-  const currentLiabilities = round2(accountsPayable + shortTermDebt);
-  
-  // Calculate equity and long-term debt to balance
-  const targetDebtToEquity = 0.5; // Conservative estimate
-  const totalLiabilitiesEquity = totalAssets;
-  
-  // Solve for equity: E + D = Total, D/E = 0.5, so D = 0.5E
-  // E + 0.5E = Total - CurrentLiabilities
-  const nonCurrentLiabilities = round2(
-    (totalLiabilitiesEquity - currentLiabilities) * (targetDebtToEquity / (1 + targetDebtToEquity))
-  );
-  const equity = round2(totalLiabilitiesEquity - currentLiabilities - nonCurrentLiabilities);
-  
-  const totalLiabilities = round2(currentLiabilities + nonCurrentLiabilities);
-  const balanceCheck = round2(totalAssets - totalLiabilitiesEquity);
-  
+  const shortTermDebt = round2(revenue * 0.05); // 5% estimate
+  const accruedExpenses = round2(revenue * 0.02); // 2% estimate
+  const currentLiabilities = round2(accountsPayable + shortTermDebt + accruedExpenses);
+
+  // Long-term liabilities
+  // Use target debt-to-equity ratio to estimate
+  const targetDebtToEquity = data.targetDebtToEquity || 0.5; // 50% conservative
+  const totalLiabilitiesEquity = actualTotalAssets;
+
+  // Solve for equity: Total = E + L, where L = CurrentLiab + NonCurrentLiab
+  // And we want: (CurrentLiab + NonCurrentLiab) / E = targetDebtToEquity
+  // So: L = targetDebtToEquity * E
+  // Total = E + targetDebtToEquity * E = E(1 + targetDebtToEquity)
+  // E = Total / (1 + targetDebtToEquity)
+  const equity = round2(actualTotalAssets / (1 + targetDebtToEquity));
+  const totalLiabilities = round2(actualTotalAssets - equity);
+  const nonCurrentLiabilities = round2(Math.max(0, totalLiabilities - currentLiabilities));
+
+  // Validation: Check balance sheet equation A = L + E
+  const balanceCheck = round2(actualTotalAssets - (totalLiabilities + equity));
+
+  if (Math.abs(balanceCheck) > BALANCE_TOLERANCE) {
+    console.warn(
+      `Balance sheet equation violated: Assets (${actualTotalAssets}) != Liabilities (${totalLiabilities}) + Equity (${equity}). Difference: ${balanceCheck}`
+    );
+  }
+
   return {
     // Assets
     cash,
     accountsReceivable,
     inventory,
+    otherCurrentAssets,
     currentAssets,
+    fixedAssetsNet,
     nonCurrentAssets,
-    totalAssets: round2(currentAssets + nonCurrentAssets),
+    totalAssets: actualTotalAssets,
+
     // Liabilities
     accountsPayable,
     shortTermDebt,
+    accruedExpenses,
     currentLiabilities,
     nonCurrentLiabilities,
     totalLiabilities,
+
     // Equity
     equity,
-    totalLiabilitiesEquity,
+    totalLiabilitiesEquity: round2(totalLiabilities + equity),
+
     // Validation
     balanceCheck,
+    isBalanced: Math.abs(balanceCheck) < BALANCE_TOLERANCE,
+    assetTurnoverUsed: assetTurnover,
+
+    // Ratios
     currentRatio: round2(safeDivide(currentAssets, currentLiabilities)),
+    debtToEquity: round2(safeDivide(totalLiabilities, equity)),
   };
 };
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+// Jest is available globally, no need to import
 import { FinancialCalculationService } from '../../../services/financial/FinancialCalculationService';
 
 // Mock Worker
@@ -14,8 +14,17 @@ class MockWorker {
     MockWorker.lastMessage = data;
     // Simulate async response
     setTimeout(() => {
-      if (this.onmessage && MockWorker.mockResponse) {
-        this.onmessage({ data: MockWorker.mockResponse(data) });
+      if (this.onmessage) {
+        const response = MockWorker.mockResponse ? MockWorker.mockResponse(data) : null;
+        // Ensure response has valid structure to prevent destructuring errors
+        const validResponse = response || {
+          id: data.id || 'unknown',
+          success: false,
+          type: data.type || 'unknown',
+          error: 'No mock response configured',
+          timestamp: Date.now(),
+        };
+        this.onmessage({ data: validResponse });
       }
     }, 0);
   }
@@ -53,7 +62,7 @@ describe('FinancialCalculationService', () => {
 
   afterEach(async () => {
     await service.cleanup();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('Initialization', () => {
@@ -74,7 +83,7 @@ describe('FinancialCalculationService', () => {
     });
 
     it('should handle worker initialization errors', async () => {
-      global.Worker = vi.fn().mockImplementation(() => {
+      global.Worker = jest.fn().mockImplementation(() => {
         throw new Error('Worker failed to load');
       });
 
@@ -471,12 +480,12 @@ describe('FinancialCalculationService', () => {
       const promise = service.calculateNPV([100], 0.1);
       
       // Fast-forward time
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(31000); // 31 seconds
+      jest.useFakeTimers();
+      jest.advanceTimersByTime(31000); // 31 seconds
       
       await expect(promise).rejects.toThrow('Calculation timeout');
       
-      vi.useRealTimers();
+      jest.useRealTimers();
     });
 
     it('should handle worker errors', async () => {

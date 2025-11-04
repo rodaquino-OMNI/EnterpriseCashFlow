@@ -28,8 +28,11 @@ const createMockPdfDocument = (numPages = 3, textContent = {}) => {
     numPages,
     getPage: jest.fn((pageNum) => Promise.resolve({
       getTextContent: jest.fn(() => Promise.resolve({
-        items: content[pageNum] 
-          ? content[pageNum].split(' ').map(str => ({ str }))
+        items: content[pageNum]
+          ? content[pageNum].split(' ').map((str, i) => ({
+              str,
+              transform: [1, 0, 0, 1, 10 + (i * 50), 100]  // x, y coordinates for text positioning
+            }))
           : []
       }))
     }))
