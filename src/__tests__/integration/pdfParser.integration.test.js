@@ -102,8 +102,9 @@ describe('PDF Parser Integration Tests', () => {
   describe('PDF.js Library Integration', () => {
     it('should check for PDF.js availability', async () => {
       const { result } = renderHook(() => usePdfParser());
-      
-      // Remove PDF.js temporarily
+
+      // Store original and remove PDF.js temporarily
+      const originalPdfjsLib = global.window.pdfjsLib;
       delete global.window.pdfjsLib;
 
       const pdfFile = new File(['%PDF-1.4'], 'test.pdf', { type: 'application/pdf' });
@@ -113,6 +114,9 @@ describe('PDF Parser Integration Tests', () => {
           await result.current.extractTextFromPdf(pdfFile);
         });
       }).rejects.toThrow('Biblioteca PDF.js não disponível');
+
+      // Restore PDF.js for subsequent tests
+      global.window.pdfjsLib = originalPdfjsLib;
     });
 
     it('should use PDF.js to load document', async () => {
