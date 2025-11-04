@@ -20,6 +20,9 @@ describe('AI Providers Integration Tests', () => {
   });
 
   describe('Timeout Handling', () => {
+    // Extend timeout for these tests since we're simulating 60-120s delays
+    jest.setTimeout(70000);
+
     test('OpenAI provider should timeout after 60 seconds', async () => {
       // Mock a hanging request
       global.fetch.mockImplementation(() => new Promise(() => {}));
@@ -200,7 +203,8 @@ describe('AI Providers Integration Tests', () => {
 
       // Advance timers to simulate backoff delays
       for (let i = 0; i < 3; i++) {
-        await jest.advanceTimersByTimeAsync(Math.pow(2, i) * 1000 + 100);
+        jest.advanceTimersByTime(Math.pow(2, i) * 1000 + 100);
+        await Promise.resolve(); // Flush promise queue
       }
 
       await promise;

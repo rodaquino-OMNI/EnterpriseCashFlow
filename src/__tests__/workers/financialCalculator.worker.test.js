@@ -22,6 +22,8 @@ describe('Financial Calculator Worker', () => {
     global.self = mockWorkerScope;
     mockPostMessage.mockClear();
     jest.clearAllMocks();
+    // Reset module cache to allow worker code to re-execute
+    jest.resetModules();
   });
 
   afterEach(() => {

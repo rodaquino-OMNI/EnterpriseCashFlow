@@ -14,8 +14,17 @@ class MockWorker {
     MockWorker.lastMessage = data;
     // Simulate async response
     setTimeout(() => {
-      if (this.onmessage && MockWorker.mockResponse) {
-        this.onmessage({ data: MockWorker.mockResponse(data) });
+      if (this.onmessage) {
+        const response = MockWorker.mockResponse ? MockWorker.mockResponse(data) : null;
+        // Ensure response has valid structure to prevent destructuring errors
+        const validResponse = response || {
+          id: data.id || 'unknown',
+          success: false,
+          type: data.type || 'unknown',
+          error: 'No mock response configured',
+          timestamp: Date.now(),
+        };
+        this.onmessage({ data: validResponse });
       }
     }, 0);
   }
