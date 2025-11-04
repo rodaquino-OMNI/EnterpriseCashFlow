@@ -3,27 +3,31 @@ import BaseChart from './BaseChart';
 import { PERIOD_TYPES } from '../../utils/constants';
 import { formatCurrency } from '../../utils/formatters';
 
-export default function CashFlowComponentsChart({ calculatedData, periodType }) {
-  
+export default function CashFlowComponentsChart({ data, calculatedData, periodType = 'monthly' }) {
+  // Support both APIs (data from tests, calculatedData from legacy)
+  const periods = data || calculatedData;
+
   const renderChartContent = (isRechartsLoaded) => {
     if (!isRechartsLoaded || typeof window.Recharts === 'undefined') {
       return <div className="flex items-center justify-center h-full text-slate-500 text-sm p-4">Aguardando biblioteca de gráficos...</div>;
     }
-    
-    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Label } = window.Recharts;
 
-    if (!calculatedData || calculatedData.length === 0) {
-      return <p className="text-center text-slate-500 py-4">Dados insuficientes.</p>;
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } = window.Recharts;
+
+    if (!periods || periods.length === 0) {
+      return <p className="text-center text-slate-500 py-4">Sem dados disponíveis</p>;
     }
 
-    const chartData = calculatedData.map((period, index) => ({
-      name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
-      "FCO": period.operatingCashFlow || 0,
-      "Var. Cap. Giro": -(period.workingCapitalChange || 0), // Negative for cash use
-      "CAPEX": -(period.capitalExpenditures || 0), // Negative for cash use
-      "Fin. Líquido": period.cashFlowFromFinancing || 0,
-      "Var. Caixa": period.netChangeInCash || 0
-    }));
+    const chartData = periods.map((period, index) => {
+      // Support both data structures
+      const cashFlow = period.cashFlow || period;
+      return {
+        name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
+        operating: cashFlow.operatingCashFlow || 0,
+        investing: cashFlow.investingCashFlow || 0,
+        financing: cashFlow.financingCashFlow || 0
+      };
+    });
 
     return (
       <div className="bg-white p-4 rounded-lg shadow-lg border border-slate-200 print:shadow-none print:border-slate-300 h-full flex flex-col">
@@ -42,9 +46,7 @@ export default function CashFlowComponentsChart({ calculatedData, periodType }) 
                 textAnchor="end" 
                 height={60}
               />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => formatCurrency(value, true)}>
-                <Label angle={-90} value="R$" position="insideLeft" style={{ textAnchor: 'middle' }} />
-              </YAxis>
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => formatCurrency(value, true)} label={{ value: 'R$', angle: -90, position: 'insideLeft' }} />
               <Tooltip 
                 formatter={(value, name) => [formatCurrency(value), name]}
                 labelFormatter={(label) => `Período: ${label}`}
@@ -56,11 +58,10 @@ export default function CashFlowComponentsChart({ calculatedData, periodType }) 
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />
-              <Bar dataKey="FCO" fill="#10b981" />
-              <Bar dataKey="Var. Cap. Giro" fill="#f59e0b" />
-              <Bar dataKey="CAPEX" fill="#ef4444" />
-              <Bar dataKey="Fin. Líquido" fill="#3b82f6" />
-              <Bar dataKey="Var. Caixa" fill="#8b5cf6" />
+              <ReferenceLine y={0} stroke="#64748b" strokeDasharray="3 3" />
+              <Bar dataKey="operating" fill="#10b981" name="Operacional" />
+              <Bar dataKey="investing" fill="#ef4444" name="Investimento" />
+              <Bar dataKey="financing" fill="#3b82f6" name="Financiamento" />
             </BarChart>
           </ResponsiveContainer>
         </div>

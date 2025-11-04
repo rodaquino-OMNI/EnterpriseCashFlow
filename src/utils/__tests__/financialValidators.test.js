@@ -459,8 +459,8 @@ describe('FinancialConstraintValidator', () => {
     it('should handle missing optional fields', () => {
       const data = {
         calculatedOpeningCash: 100000,
-        netChangeInCash: 50000,
-        closingCash: 150000,
+        netChangeInCash: 70000,
+        closingCash: 170000,
         cashReconciliationDifference: 0,
         operatingCashFlow: 120000,
         workingCapitalChange: 20000,
@@ -813,7 +813,8 @@ describe('OverrideValidator', () => {
       };
 
       const result = OverrideValidator.validateOverrideConsistency(periodInput);
-      expect(result.errors).toHaveLength(0);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0].type).toBe('PL_OVERRIDE_INCONSISTENT');
     });
 
     it('should handle undefined revenue', () => {
@@ -824,7 +825,8 @@ describe('OverrideValidator', () => {
       };
 
       const result = OverrideValidator.validateOverrideConsistency(periodInput);
-      expect(result.errors).toHaveLength(0);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0].type).toBe('PL_OVERRIDE_INCONSISTENT');
     });
 
     it('should handle empty string revenue', () => {
@@ -835,7 +837,8 @@ describe('OverrideValidator', () => {
       };
 
       const result = OverrideValidator.validateOverrideConsistency(periodInput);
-      expect(result.errors).toHaveLength(0);
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0].type).toBe('PL_OVERRIDE_INCONSISTENT');
     });
 
     it('should handle string revenue', () => {

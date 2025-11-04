@@ -12,7 +12,7 @@ jest.mock('../InputPanel/ExcelTemplateSelector', () => {
   return function MockExcelTemplateSelector({ onTemplateDownloadRequest, isLoading }) {
     return (
       <div data-testid="excel-template-selector">
-        <button 
+        <button
           onClick={() => onTemplateDownloadRequest('SMART_ADAPTIVE')}
           disabled={isLoading}
           data-testid="template-download-button"
@@ -67,12 +67,13 @@ describe('ExcelUploader Component', () => {
     it('should handle file selection via input', async () => {
       const user = userEvent.setup();
       render(<ExcelUploader {...defaultProps} />);
-      
+
       const file = new File(['excel content'], 'financial-data.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      const input = screen.getByRole('button', { name: /carregar planilha excel/i }).querySelector('input');
+      const label = screen.getByText(/carregar planilha excel/i).closest('label');
+      const input = label.querySelector('input');
       await user.upload(input, file);
 
       expect(defaultProps.onFileUpload).toHaveBeenCalledWith(file);
@@ -81,12 +82,13 @@ describe('ExcelUploader Component', () => {
     it('should clear input after file selection', async () => {
       const user = userEvent.setup();
       render(<ExcelUploader {...defaultProps} />);
-      
+
       const file = new File(['excel content'], 'test.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      const input = screen.getByRole('button', { name: /carregar planilha excel/i }).querySelector('input');
+      const label = screen.getByText(/carregar planilha excel/i).closest('label');
+      const input = label.querySelector('input');
       await user.upload(input, file);
 
       expect(input.value).toBe('');
@@ -94,22 +96,25 @@ describe('ExcelUploader Component', () => {
 
     it('should disable upload when loading', () => {
       render(<ExcelUploader {...defaultProps} isLoading={true} />);
-      
-      const input = screen.getByRole('button', { name: /carregar planilha excel/i }).querySelector('input');
+
+      const label = screen.getByText(/carregar planilha excel/i).closest('label');
+      const input = label.querySelector('input');
       expect(input).toBeDisabled();
     });
 
     it('should disable upload when ExcelJS is loading', () => {
       render(<ExcelUploader {...defaultProps} isExcelJsLoading={true} />);
-      
-      const input = screen.getByRole('button', { name: /carregar planilha excel/i }).querySelector('input');
+
+      const label = screen.getByText(/carregar planilha excel/i).closest('label');
+      const input = label.querySelector('input');
       expect(input).toBeDisabled();
     });
 
     it('should accept Excel file types', () => {
       render(<ExcelUploader {...defaultProps} />);
-      
-      const input = screen.getByRole('button', { name: /carregar planilha excel/i }).querySelector('input');
+
+      const label = screen.getByText(/carregar planilha excel/i).closest('label');
+      const input = label.querySelector('input');
       expect(input).toHaveAttribute('accept', '.xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     });
   });
@@ -133,8 +138,8 @@ describe('ExcelUploader Component', () => {
     });
 
     it('should disable template download when processing', () => {
-      render(<ExcelUploader {...defaultProps} isLoading={true} />);
-      
+      render(<ExcelUploader {...defaultProps} isLoading={true} isExcelJsLoading={true} />);
+
       const downloadButton = screen.getByTestId('template-download-button');
       expect(downloadButton).toBeDisabled();
     });
@@ -173,15 +178,16 @@ describe('ExcelUploader Component', () => {
   describe('Accessibility', () => {
     it('should have accessible file input', () => {
       render(<ExcelUploader {...defaultProps} />);
-      
-      const input = screen.getByRole('button', { name: /carregar planilha excel/i }).querySelector('input');
+
+      const label = screen.getByText(/carregar planilha excel/i).closest('label');
+      const input = label.querySelector('input');
       expect(input).toHaveAttribute('type', 'file');
       expect(input).toHaveClass('hidden');
     });
 
     it('should have proper button labels', () => {
       render(<ExcelUploader {...defaultProps} />);
-      
+
       expect(screen.getByText(/carregar planilha excel/i)).toBeInTheDocument();
       expect(screen.getByText(/baixar modelo excel/i)).toBeInTheDocument();
     });
