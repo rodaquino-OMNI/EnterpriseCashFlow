@@ -282,15 +282,16 @@ describe('DEFECT #3: Brazilian Tax Calculation - IRPJ + CSLL', () => {
 
       const tax = calculateBrazilianTax(profit, months);
 
-      // IRPJ base: 240,000 * 0.15 = 36,000
-      // IRPJ surtax: (500,000 - 240,000) * 0.10 = 26,000
-      // IRPJ total: 36,000 + 26,000 = 62,000
+      // Per Lei nº 9.249/1995 and Lei nº 9.430/1996:
+      // IRPJ base: 500,000 * 0.15 = 75,000 (15% on ALL profit)
+      // IRPJ surtax: (500,000 - 240,000) * 0.10 = 26,000 (10% on excess above R$ 240k)
+      // IRPJ total: 75,000 + 26,000 = 101,000
       // CSLL: 500,000 * 0.09 = 45,000
-      // Total: 107,000 (21.4%)
-      expect(tax.irpj).toBeCloseTo(62000, 1);
+      // Total: 146,000 (29.2% effective rate)
+      expect(tax.irpj).toBeCloseTo(101000, 1);
       expect(tax.csll).toBeCloseTo(45000, 1);
-      expect(tax.total).toBeCloseTo(107000, 1);
-      expect(tax.effectiveRate).toBeCloseTo(21.4, 1);
+      expect(tax.total).toBeCloseTo(146000, 1);
+      expect(tax.effectiveRate).toBeCloseTo(29.2, 1);
     });
 
     test('should handle monthly threshold of R$ 20k/month', () => {
@@ -300,14 +301,14 @@ describe('DEFECT #3: Brazilian Tax Calculation - IRPJ + CSLL', () => {
       const tax = calculateBrazilianTax(profit, months);
 
       // Monthly threshold: 20,000
-      // IRPJ base: 20,000 * 0.15 = 3,000
-      // IRPJ surtax: (50,000 - 20,000) * 0.10 = 3,000
-      // IRPJ total: 6,000
+      // IRPJ base: 50,000 * 0.15 = 7,500 (15% on ALL profit)
+      // IRPJ surtax: (50,000 - 20,000) * 0.10 = 3,000 (10% on excess above R$ 20k)
+      // IRPJ total: 7,500 + 3,000 = 10,500
       // CSLL: 50,000 * 0.09 = 4,500
-      // Total: 10,500 (21%)
-      expect(tax.irpj).toBeCloseTo(6000, 1);
+      // Total: 15,000 (30% effective rate)
+      expect(tax.irpj).toBeCloseTo(10500, 1);
       expect(tax.csll).toBeCloseTo(4500, 1);
-      expect(tax.total).toBeCloseTo(10500, 1);
+      expect(tax.total).toBeCloseTo(15000, 1);
     });
 
     test('should handle quarterly periods', () => {
@@ -317,14 +318,14 @@ describe('DEFECT #3: Brazilian Tax Calculation - IRPJ + CSLL', () => {
       const tax = calculateBrazilianTax(profit, months);
 
       // Quarterly threshold: 20,000 * 3 = 60,000
-      // IRPJ base: 60,000 * 0.15 = 9,000
-      // IRPJ surtax: (150,000 - 60,000) * 0.10 = 9,000
-      // IRPJ total: 18,000
+      // IRPJ base: 150,000 * 0.15 = 22,500 (15% on ALL profit)
+      // IRPJ surtax: (150,000 - 60,000) * 0.10 = 9,000 (10% on excess above R$ 60k)
+      // IRPJ total: 22,500 + 9,000 = 31,500
       // CSLL: 150,000 * 0.09 = 13,500
-      // Total: 31,500 (21%)
-      expect(tax.irpj).toBeCloseTo(18000, 1);
+      // Total: 45,000 (30% effective rate)
+      expect(tax.irpj).toBeCloseTo(31500, 1);
       expect(tax.csll).toBeCloseTo(13500, 1);
-      expect(tax.total).toBeCloseTo(31500, 1);
+      expect(tax.total).toBeCloseTo(45000, 1);
     });
   });
 
@@ -360,12 +361,14 @@ describe('DEFECT #3: Brazilian Tax Calculation - IRPJ + CSLL', () => {
 
       const tax = calculateBrazilianTax(profit, months);
 
-      // IRPJ: 240,000 * 0.15 + (10,000,000 - 240,000) * 0.10 = 36,000 + 976,000 = 1,012,000
+      // IRPJ base: 10,000,000 * 0.15 = 1,500,000 (15% on ALL profit)
+      // IRPJ surtax: (10,000,000 - 240,000) * 0.10 = 976,000 (10% on excess above R$ 240k)
+      // IRPJ total: 1,500,000 + 976,000 = 2,476,000
       // CSLL: 10,000,000 * 0.09 = 900,000
-      // Total: 1,912,000 (19.12%)
-      expect(tax.irpj).toBeCloseTo(1012000, 1);
+      // Total: 3,376,000 (33.76% effective rate)
+      expect(tax.irpj).toBeCloseTo(2476000, 1);
       expect(tax.csll).toBeCloseTo(900000, 1);
-      expect(tax.total).toBeCloseTo(1912000, 1);
+      expect(tax.total).toBeCloseTo(3376000, 1);
     });
   });
 
