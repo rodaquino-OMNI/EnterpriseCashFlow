@@ -124,9 +124,10 @@ export const calculateBrazilianTax = (profit, months = 12) => {
     irpjBase = profit * irpjBaseRate;
     irpjSurtax = 0;
   } else {
-    // Above threshold: 15% on first portion + 25% (15% + 10%) on excess
-    irpjBase = periodThreshold * irpjBaseRate;
-    irpjSurtax = (profit - periodThreshold) * irpjSurtaxRate;
+    // Above threshold: 15% on ALL profit + 10% surtax on excess above threshold
+    // Per Lei nº 9.249/1995 (15% base) and Lei nº 9.430/1996 (10% surtax)
+    irpjBase = profit * irpjBaseRate;  // 15% on ALL profit
+    irpjSurtax = (profit - periodThreshold) * irpjSurtaxRate;  // 10% on excess
   }
 
   const irpj = round2(irpjBase + irpjSurtax);
