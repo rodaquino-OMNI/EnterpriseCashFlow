@@ -62,7 +62,7 @@ export function useAiAnalysis(aiService, apiKeys, selectedAiProviderKey) {
     if (!financialDataBundle?.calculatedData?.length) {
       setErrors(prev => ({ 
         ...prev, 
-        [analysisType]: new Error("Gere o relatório com dados financeiros primeiro para esta análise.")
+        [analysisType]: new Error('Gere o relatório com dados financeiros primeiro para esta análise.'),
       }));
       return;
     }
@@ -71,7 +71,7 @@ export function useAiAnalysis(aiService, apiKeys, selectedAiProviderKey) {
     if (analysisType === ANALYSIS_TYPES.VARIANCE_ANALYSIS && financialDataBundle.calculatedData.length < 2) {
       setErrors(prev => ({ 
         ...prev, 
-        [analysisType]: new Error("Análise de variações requer pelo menos 2 períodos de dados.")
+        [analysisType]: new Error('Análise de variações requer pelo menos 2 períodos de dados.'),
       }));
       return;
     }
@@ -89,7 +89,7 @@ export function useAiAnalysis(aiService, apiKeys, selectedAiProviderKey) {
         analysisType,
         financialDataBundle,
         {}, // options - can be empty object for default settings
-        apiKey
+        apiKey,
       );
 
       // Update the analysis result
@@ -109,6 +109,6 @@ export function useAiAnalysis(aiService, apiKeys, selectedAiProviderKey) {
     isLoading,
     performAnalysis,
     clearAnalysis,
-    clearAllAnalyses
+    clearAllAnalyses,
   };
 }

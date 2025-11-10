@@ -254,7 +254,7 @@ export function useStorage(options = {}) {
     // Auto-save
     registerAutoSave,
     triggerAutoSave,
-    getAutoSaveState
+    getAutoSaveState,
   };
 }
 
@@ -291,7 +291,7 @@ export function useAutoSave(key, dataProvider, options = {}) {
   
   return {
     saveState,
-    save
+    save,
   };
 }
 
@@ -350,7 +350,7 @@ export function useStoragePreferences() {
   return {
     preferences,
     loading,
-    updatePreference: update
+    updatePreference: update,
   };
 }
 

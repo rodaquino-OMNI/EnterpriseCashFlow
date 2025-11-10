@@ -20,7 +20,7 @@ const calculateNPV = (cashFlows, discountRate, initialInvestment = 0) => {
     npv: round2(npv),
     profitabilityIndex: round2(profitabilityIndex),
     presentValues: cashFlows.map((cf, i) => 
-      round2(cf / Math.pow(1 + discountRate, i + 1))
+      round2(cf / Math.pow(1 + discountRate, i + 1)),
     ),
   };
 };
@@ -238,7 +238,7 @@ const validateInputs = (type, data) => {
 self.onmessage = function(event) {
   const { type, id, ...data } = event.data;
   
-  console.log("Worker received message:", { type, id, data });
+  console.log('Worker received message:', { type, id, data });
   
   try {
     let result;
@@ -251,7 +251,7 @@ self.onmessage = function(event) {
         const { processFinancialData } = require('../utils/calculations.js');
         const calculatedData = processFinancialData(
           data.periodsInputDataRaw,
-          data.periodTypeLabel
+          data.periodTypeLabel,
         );
         
         self.postMessage({
@@ -271,7 +271,7 @@ self.onmessage = function(event) {
         result = calculateNPV(
           data.cashFlows,
           data.discountRate,
-          data.initialInvestment
+          data.initialInvestment,
         );
         break;
         
@@ -302,7 +302,7 @@ self.onmessage = function(event) {
         result = calculateBreakEven(
           data.fixedCosts,
           data.variableCostPerUnit,
-          data.pricePerUnit
+          data.pricePerUnit,
         );
         break;
         
@@ -316,7 +316,7 @@ self.onmessage = function(event) {
           data.baseCashFlow,
           data.growthRate,
           data.periods,
-          data.discountRate
+          data.discountRate,
         );
         break;
         
@@ -324,7 +324,7 @@ self.onmessage = function(event) {
         result = performSensitivityAnalysis(
           data.baseCase,
           data.variables,
-          data.calculation
+          data.calculation,
         );
         break;
         
@@ -359,7 +359,7 @@ self.onmessage = function(event) {
           const { processFinancialData } = require('../utils/calculations.js');
           const calculatedData = processFinancialData(
             data.periodsInputDataRaw,
-            data.periodTypeLabel
+            data.periodTypeLabel,
           );
           
           self.postMessage({
@@ -384,7 +384,7 @@ self.onmessage = function(event) {
     });
     
   } catch (error) {
-    console.error("Error in financialCalculator.worker.js:", error);
+    console.error('Error in financialCalculator.worker.js:', error);
     
     self.postMessage({
       success: false,

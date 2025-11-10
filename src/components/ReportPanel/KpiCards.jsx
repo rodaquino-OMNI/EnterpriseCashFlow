@@ -29,7 +29,7 @@ export default function KpiCards({ calculatedData }) {
       value: lastPeriod?.revenue ? (lastPeriod?.ebitda / lastPeriod.revenue) * 100 : null,
       change: getPercentageChange(
         lastPeriod?.revenue ? (lastPeriod?.ebitda / lastPeriod.revenue) * 100 : null,
-        prevPeriod?.revenue ? (prevPeriod?.ebitda / prevPeriod.revenue) * 100 : null
+        prevPeriod?.revenue ? (prevPeriod?.ebitda / prevPeriod.revenue) * 100 : null,
       ),
       formatter: formatPercentage,
       goodTrend: 'up',
@@ -47,7 +47,7 @@ export default function KpiCards({ calculatedData }) {
       change: getPercentageChange(lastPeriod?.wcDays, prevPeriod?.wcDays),
       formatter: (value) => value?.toFixed(1) + ' dias',
       goodTrend: 'down',
-    }
+    },
   ];
 
   if (!lastPeriod) return null;

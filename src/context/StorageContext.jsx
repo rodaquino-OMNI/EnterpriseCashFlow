@@ -51,7 +51,7 @@ export const StorageProvider = ({ children }) => {
             if (event.type === 'state-change') {
               setSaveStates(prev => ({
                 ...prev,
-                [event.key]: event.state
+                [event.key]: event.state,
               }));
             }
           });
@@ -93,8 +93,8 @@ export const StorageProvider = ({ children }) => {
           status: 'idle',
           error: null,
           lastSaved: null,
-          isDirty: false
-        }
+          isDirty: false,
+        },
       }));
 
       return unregister;
@@ -110,7 +110,7 @@ export const StorageProvider = ({ children }) => {
       status: 'unknown',
       error: null,
       lastSaved: null,
-      isDirty: false
+      isDirty: false,
     };
   }, [saveStates]);
 
@@ -184,7 +184,7 @@ export const StorageProvider = ({ children }) => {
     savePreference,
     loadPreferences,
     loadAutoSaved,
-    getStorageStats
+    getStorageStats,
   };
 
   // Show loading state while initializing

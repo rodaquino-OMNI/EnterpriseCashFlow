@@ -45,7 +45,7 @@ const FormField = ({
   // Build aria-describedby attribute
   const describedBy = [
     hint ? hintId : null,
-    error ? errorId : null
+    error ? errorId : null,
   ].filter(Boolean).join(' ');
 
   // Base styles for the container
@@ -54,15 +54,15 @@ const FormField = ({
     alignItems: inline ? 'center' : 'stretch',
     gap: inline ? designTokens.spacing[3] : designTokens.spacing[2],
     marginBottom: inline ? 0 : designTokens.spacing[4],
-    fontFamily: designTokens.typography.fontFamily.sans.join(', ')
+    fontFamily: designTokens.typography.fontFamily.sans.join(', '),
   };
 
   // Label styles
   const labelStyles = {
     display: 'block',
     fontSize: size === 'sm' ? designTokens.typography.fontSize.sm[0] : 
-              size === 'lg' ? designTokens.typography.fontSize.lg[0] : 
-              designTokens.typography.fontSize.base[0],
+      size === 'lg' ? designTokens.typography.fontSize.lg[0] : 
+        designTokens.typography.fontSize.base[0],
     fontWeight: designTokens.typography.fontWeight.medium,
     color: designTokens.colors.secondary[700],
     marginBottom: inline ? 0 : designTokens.spacing[1],
@@ -70,7 +70,7 @@ const FormField = ({
     cursor: 'pointer',
     userSelect: 'none',
     minWidth: inline ? 'auto' : 'unset',
-    flexShrink: inline ? 0 : 'unset'
+    flexShrink: inline ? 0 : 'unset',
   };
 
   // Required indicator styles
@@ -78,7 +78,7 @@ const FormField = ({
     color: designTokens.colors.semantic.error[500],
     marginLeft: designTokens.spacing[1],
     fontSize: 'inherit',
-    fontWeight: 'inherit'
+    fontWeight: 'inherit',
   };
 
   // Hint text styles
@@ -86,7 +86,7 @@ const FormField = ({
     fontSize: designTokens.typography.fontSize.sm[0],
     color: designTokens.colors.secondary[500],
     marginTop: designTokens.spacing[1],
-    lineHeight: designTokens.typography.lineHeight.normal
+    lineHeight: designTokens.typography.lineHeight.normal,
   };
 
   // Error message styles
@@ -98,7 +98,7 @@ const FormField = ({
     fontWeight: designTokens.typography.fontWeight.medium,
     display: 'flex',
     alignItems: 'flex-start',
-    gap: designTokens.spacing[1]
+    gap: designTokens.spacing[1],
   };
 
   // Error icon component
@@ -112,7 +112,7 @@ const FormField = ({
       style={{ 
         flexShrink: 0, 
         marginTop: '1px',
-        color: designTokens.colors.semantic.error[500]
+        color: designTokens.colors.semantic.error[500],
       }}
     >
       <circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity="0.1"/>
@@ -129,13 +129,13 @@ const FormField = ({
   // Clone the child element with accessibility props
   const enhancedChild = React.isValidElement(children) 
     ? React.cloneElement(children, {
-        id: fieldId,
-        'aria-describedby': describedBy || undefined,
-        'aria-invalid': error ? 'true' : 'false',
-        'aria-required': required ? 'true' : 'false',
-        'aria-errormessage': error ? errorId : undefined,
-        className: `${children.props.className || ''} ${error ? 'field-error' : ''}`.trim()
-      })
+      id: fieldId,
+      'aria-describedby': describedBy || undefined,
+      'aria-invalid': error ? 'true' : 'false',
+      'aria-required': required ? 'true' : 'false',
+      'aria-errormessage': error ? errorId : undefined,
+      className: `${children.props.className || ''} ${error ? 'field-error' : ''}`.trim(),
+    })
     : children;
 
   return (
@@ -243,7 +243,7 @@ FormField.propTypes = {
   className: PropTypes.string,
   labelClassName: PropTypes.string,
   inline: PropTypes.bool,
-  size: PropTypes.oneOf(['sm', 'md', 'lg'])
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
 };
 
 /**
@@ -259,13 +259,13 @@ export const FormFieldGroup = ({
   const spacingMap = {
     sm: designTokens.spacing[3],
     md: designTokens.spacing[4],
-    lg: designTokens.spacing[6]
+    lg: designTokens.spacing[6],
   };
 
   const groupStyles = {
     display: 'flex',
     flexDirection: 'column',
-    gap: spacingMap[spacing]
+    gap: spacingMap[spacing],
   };
 
   return (
@@ -282,7 +282,7 @@ export const FormFieldGroup = ({
 FormFieldGroup.propTypes = {
   children: PropTypes.node.isRequired,
   className: PropTypes.string,
-  spacing: PropTypes.oneOf(['sm', 'md', 'lg'])
+  spacing: PropTypes.oneOf(['sm', 'md', 'lg']),
 };
 
 /**
@@ -297,7 +297,7 @@ export const FormSection = ({
   ...props 
 }) => {
   const sectionStyles = {
-    marginBottom: designTokens.spacing[8]
+    marginBottom: designTokens.spacing[8],
   };
 
   const titleStyles = {
@@ -305,14 +305,14 @@ export const FormSection = ({
     fontWeight: designTokens.typography.fontWeight.semibold,
     color: designTokens.colors.secondary[800],
     marginBottom: designTokens.spacing[2],
-    lineHeight: designTokens.typography.lineHeight.tight
+    lineHeight: designTokens.typography.lineHeight.tight,
   };
 
   const descriptionStyles = {
     fontSize: designTokens.typography.fontSize.sm[0],
     color: designTokens.colors.secondary[600],
     marginBottom: designTokens.spacing[4],
-    lineHeight: designTokens.typography.lineHeight.normal
+    lineHeight: designTokens.typography.lineHeight.normal,
   };
 
   return (
@@ -342,7 +342,7 @@ FormSection.propTypes = {
   title: PropTypes.string,
   description: PropTypes.string,
   children: PropTypes.node.isRequired,
-  className: PropTypes.string
+  className: PropTypes.string,
 };
 
 export default FormField;

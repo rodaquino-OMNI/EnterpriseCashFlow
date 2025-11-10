@@ -74,6 +74,19 @@ docs/CODE_ANALYSIS_REPORT.md
 docs/FINANCIAL_CALCULATION_TEST_FIX_REPORT.md
 docs/TEST_FAILURE_ROOT_CAUSE_ANALYSIS.md
 
+# Swarm coordination scripts and working files
+coordination.md
+memory-bank.md
+claude-flow
+claude-sparc.sh
+
+# Test output logs
+test-output.log
+*.test.log
+
+# Old ESLint config (keep .eslintrc.json only)
+.eslintrc.js
+
 # ============================================
 # TESTING & COVERAGE
 # ============================================

@@ -75,7 +75,7 @@ export const createAuditTrail = (originalData, overrides = null, calculationStep
       action: 'Created audit trail',
       inputFields: Object.keys(originalData),
       inputFieldCount: Object.keys(originalData).length,
-    }
+    },
   ];
 
   return {
@@ -226,7 +226,7 @@ export const calculateIncomeStatement = (data, overrides = null) => {
 
   // Depreciation
   const depreciation = round2(
-    data.depreciation !== undefined ? data.depreciation : revenue * DEFAULT_DEPRECIATION_RATE
+    data.depreciation !== undefined ? data.depreciation : revenue * DEFAULT_DEPRECIATION_RATE,
   );
 
   // EBIT
@@ -464,18 +464,18 @@ export const calculateFinancialRatios = (data) => {
   
   // Liquidity ratios
   const currentRatio = round2(
-    safeDivide(balanceSheet.currentAssets, balanceSheet.currentLiabilities)
+    safeDivide(balanceSheet.currentAssets, balanceSheet.currentLiabilities),
   );
   
   const quickRatio = round2(
     safeDivide(
       balanceSheet.currentAssets - (balanceSheet.inventory || 0),
-      balanceSheet.currentLiabilities
-    )
+      balanceSheet.currentLiabilities,
+    ),
   );
   
   const cashRatio = round2(
-    safeDivide(cashFlow.operatingCashFlow, balanceSheet.currentLiabilities)
+    safeDivide(cashFlow.operatingCashFlow, balanceSheet.currentLiabilities),
   );
   
   // Leverage ratios
@@ -620,7 +620,7 @@ export const calculateBalanceSheet = (data) => {
 
   if (Math.abs(balanceCheck) > BALANCE_TOLERANCE) {
     console.warn(
-      `Balance sheet equation violated: Assets (${actualTotalAssets}) != Liabilities (${totalLiabilities}) + Equity (${equity}). Difference: ${balanceCheck}`
+      `Balance sheet equation violated: Assets (${actualTotalAssets}) != Liabilities (${totalLiabilities}) + Equity (${equity}). Difference: ${balanceCheck}`,
     );
   }
 
@@ -733,17 +733,17 @@ export const processFinancialData = (rawPeriodData, periodType) => {
         revenueGrowth: round2(
           safeDivide(
             incomeStatement.revenue - previousPeriod.incomeStatement.revenue,
-            previousPeriod.incomeStatement.revenue
-          ) * 100
+            previousPeriod.incomeStatement.revenue,
+          ) * 100,
         ),
         marginImprovement: round2(
-          incomeStatement.grossMarginPercent - previousPeriod.incomeStatement.grossMarginPercent
+          incomeStatement.grossMarginPercent - previousPeriod.incomeStatement.grossMarginPercent,
         ),
         profitGrowth: round2(
           safeDivide(
             incomeStatement.netIncome - previousPeriod.incomeStatement.netIncome,
-            Math.abs(previousPeriod.incomeStatement.netIncome || 0.01)
-          ) * 100
+            Math.abs(previousPeriod.incomeStatement.netIncome || 0.01),
+          ) * 100,
         ),
       };
     }

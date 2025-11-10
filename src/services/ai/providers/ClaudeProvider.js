@@ -21,12 +21,12 @@ export class ClaudeProvider extends BaseProvider {
         'claude-3-sonnet-20240229',
         'claude-3-haiku-20240307',
         'claude-2.1',
-        'claude-2.0'
+        'claude-2.0',
       ],
       rateLimit: {
         requestsPerMinute: 50,
-        tokensPerMinute: 100000
-      }
+        tokensPerMinute: 100000,
+      },
     };
   }
 
@@ -38,12 +38,12 @@ export class ClaudeProvider extends BaseProvider {
       model: request.parameters?.model || this.defaultModel,
       messages: [{
         role: 'user',
-        content: request.prompt
+        content: request.prompt,
       }],
       system: request.systemPrompt || 'You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.',
       temperature: request.parameters?.temperature ?? 0.3,
       max_tokens: request.parameters?.maxTokens || 4000,
-      top_p: request.parameters?.topP ?? 1
+      top_p: request.parameters?.topP ?? 1,
     };
 
     try {
@@ -55,7 +55,7 @@ export class ClaudeProvider extends BaseProvider {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(requestBody),
-            signal: controller.signal
+            signal: controller.signal,
           });
 
           clearTimeout(timeoutId);
@@ -86,8 +86,8 @@ export class ClaudeProvider extends BaseProvider {
           tokensUsed: response.usage?.total_tokens || 0,
           responseTime,
           usage: response.usage,
-          stopReason: response.stop_reason
-        }
+          stopReason: response.stop_reason,
+        },
       };
     } catch (error) {
       console.error('Claude API error:', error);
@@ -114,8 +114,8 @@ Guidelines:
       systemPrompt,
       parameters: {
         temperature: 0.1,
-        ...options.parameters
-      }
+        ...options.parameters,
+      },
     };
 
     try {
@@ -145,8 +145,8 @@ Guidelines:
         metadata: {
           provider: 'claude',
           model: response.metadata.model,
-          tokensUsed: response.metadata.tokensUsed
-        }
+          tokensUsed: response.metadata.tokensUsed,
+        },
       };
     } catch (error) {
       return {
@@ -154,7 +154,7 @@ Guidelines:
         data: [],
         confidence: 0,
         error: error.message,
-        metadata: { provider: 'claude' }
+        metadata: { provider: 'claude' },
       };
     }
   }
@@ -163,7 +163,7 @@ Guidelines:
     return {
       'Content-Type': 'application/json',
       'x-api-key': this.apiKey,
-      'anthropic-version': this.anthropicVersion
+      'anthropic-version': this.anthropicVersion,
     };
   }
 

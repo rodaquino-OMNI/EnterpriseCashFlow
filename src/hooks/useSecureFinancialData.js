@@ -8,7 +8,7 @@ import {
   monitoringService, 
   dataValidator, 
   apiKeyManager,
-  securityHeaders 
+  securityHeaders, 
 } from '../services';
 
 export const useSecureFinancialData = () => {
@@ -58,7 +58,7 @@ export const useSecureFinancialData = () => {
       const policyCheck = monitoringService.securityMonitor.checkPolicy(
         'current-user', // In real app, get from auth context
         'process_financial_data',
-        { dataType, dataSize: JSON.stringify(data).length }
+        { dataType, dataSize: JSON.stringify(data).length },
       );
 
       if (!policyCheck.allowed) {
@@ -140,7 +140,7 @@ export const useSecureFinancialData = () => {
       const rateLimitCheck = monitoringService.securityMonitor.checkPolicy(
         'current-user',
         'file_upload',
-        { fileType, fileSize: file.size }
+        { fileType, fileSize: file.size },
       );
 
       if (!rateLimitCheck.allowed) {
@@ -205,7 +205,7 @@ export const useSecureFinancialData = () => {
         { 
           format, 
           recordCount: Array.isArray(data) ? data.length : 1,
-        }
+        },
       );
 
       if (!exportPolicy.allowed) {
@@ -278,7 +278,7 @@ export const useSecureFinancialData = () => {
       const response = await monitoringService.metricsCollector.recordTiming(
         `api.${service}.call`,
         async () => apiCall({ ...params, headers }),
-        { service, operation: params.operation }
+        { service, operation: params.operation },
       );
 
       // 4. Log successful API call

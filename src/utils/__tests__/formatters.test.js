@@ -10,7 +10,7 @@ import {
   formatDays,
   getMovementClass,
   getMovementIndicator,
-  formatMovement
+  formatMovement,
 } from '../formatters';
 
 describe('Formatter Utilities', () => {

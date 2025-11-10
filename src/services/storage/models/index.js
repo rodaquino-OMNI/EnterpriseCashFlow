@@ -217,8 +217,8 @@ export const ModelSchemas = {
       settings: 'object',
       scenarioIds: 'array',
       reportIds: 'array',
-      metadata: 'object'
-    }
+      metadata: 'object',
+    },
   },
   scenario: {
     required: ['id', 'projectId', 'name', 'type', 'createdAt', 'updatedAt', 'data'],
@@ -232,8 +232,8 @@ export const ModelSchemas = {
       updatedAt: 'date',
       data: 'object',
       assumptions: 'object',
-      metadata: 'object'
-    }
+      metadata: 'object',
+    },
   },
   report: {
     required: ['id', 'projectId', 'scenarioId', 'name', 'type', 'createdAt', 'content'],
@@ -247,9 +247,9 @@ export const ModelSchemas = {
       generatedAt: 'date',
       content: 'object',
       settings: 'object',
-      metadata: 'object'
-    }
-  }
+      metadata: 'object',
+    },
+  },
 };
 
 // Export model factory functions
@@ -263,7 +263,7 @@ export const createProject = (data) => ({
   settings: data.settings || getDefaultProjectSettings(),
   scenarioIds: data.scenarioIds || [],
   reportIds: data.reportIds || [],
-  metadata: data.metadata || {}
+  metadata: data.metadata || {},
 });
 
 export const createScenario = (data) => ({
@@ -276,7 +276,7 @@ export const createScenario = (data) => ({
   updatedAt: data.updatedAt || new Date(),
   data: data.data,
   assumptions: data.assumptions || getDefaultAssumptions(),
-  metadata: data.metadata || {}
+  metadata: data.metadata || {},
 });
 
 export const createReport = (data) => ({
@@ -289,7 +289,7 @@ export const createReport = (data) => ({
   generatedAt: data.generatedAt || new Date(),
   content: data.content,
   settings: data.settings || getDefaultReportSettings(),
-  metadata: data.metadata || {}
+  metadata: data.metadata || {},
 });
 
 // Helper functions
@@ -303,7 +303,7 @@ function getDefaultProjectSettings() {
     fiscalYearEnd: 'December',
     industry: 'General',
     companySize: 'Medium',
-    preferences: {}
+    preferences: {},
   };
 }
 
@@ -313,7 +313,7 @@ function getDefaultAssumptions() {
     margins: {},
     workingCapital: {},
     capex: {},
-    financing: {}
+    financing: {},
   };
 }
 
@@ -324,7 +324,7 @@ function getDefaultReportSettings() {
     format: 'html',
     includeCharts: true,
     includeAnalysis: true,
-    customization: {}
+    customization: {},
   };
 }
 
@@ -356,7 +356,7 @@ export function validateModel(model, type) {
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 

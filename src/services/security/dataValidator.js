@@ -366,7 +366,7 @@ export class DataValidator {
   sanitizeIncomeStatement(data) {
     const fields = [
       'revenue', 'costOfGoodsSold', 'grossProfit', 'operatingExpenses',
-      'operatingIncome', 'interestExpense', 'taxExpense', 'netIncome'
+      'operatingIncome', 'interestExpense', 'taxExpense', 'netIncome',
     ];
 
     const sanitized = {};

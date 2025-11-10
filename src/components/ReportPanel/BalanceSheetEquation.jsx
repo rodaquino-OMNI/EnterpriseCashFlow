@@ -3,7 +3,7 @@ import React from 'react';
 import { formatCurrency } from '../../utils/formatters'; // Assuming formatters.js is in ../../utils/
 
 // Modular sub-components from your enhanced design
-const ValueCard = ({ title, value, detail, bgColor = "bg-slate-100", borderColor = "border-slate-300", textColor = "text-slate-700", titleColor, valueTextSize = "text-xl lg:text-2xl" }) => (
+const ValueCard = ({ title, value, detail, bgColor = 'bg-slate-100', borderColor = 'border-slate-300', textColor = 'text-slate-700', titleColor, valueTextSize = 'text-xl lg:text-2xl' }) => (
   <div className={`${bgColor} p-4 md:p-5 rounded-xl border-2 ${borderColor} min-w-[160px] md:min-w-[180px] shadow-sm transition-all hover:shadow-md text-center print:p-2 print:border print:shadow-none`}>
     <div className={`text-xs font-medium ${titleColor || textColor} mb-1 uppercase tracking-wider print:text-[8pt]`}>{title}</div>
     <div className={`${valueTextSize} font-bold ${textColor} print:text-lg`}>{formatCurrency(value)}</div>
@@ -21,21 +21,21 @@ const BalanceDifferenceIndicator = ({ difference, totalAssets }) => {
   let message = '✅ Equilibrado';
   if (!isEffectivelyZero) {
     if (diffPercentage > 5) { // More than 5% of assets is critical
-        severity = 'critical';
-        message = `⚠️ ${diffPercentage.toFixed(1)}% dos Ativos (Crítico!)`;
+      severity = 'critical';
+      message = `⚠️ ${diffPercentage.toFixed(1)}% dos Ativos (Crítico!)`;
     } else if (diffPercentage > 1) { // More than 1% is a warning
-        severity = 'warning';
-        message = `⚠️ ${diffPercentage.toFixed(1)}% dos Ativos (Revisar)`;
+      severity = 'warning';
+      message = `⚠️ ${diffPercentage.toFixed(1)}% dos Ativos (Revisar)`;
     } else { // Small difference, but not zero
-        severity = 'ok'; // Still okay, but not perfectly zero
-        message = `~ ${diffPercentage.toFixed(1)}% dos Ativos (Pequena Diferença)`;
+      severity = 'ok'; // Still okay, but not perfectly zero
+      message = `~ ${diffPercentage.toFixed(1)}% dos Ativos (Pequena Diferença)`;
     }
   }
   
   const severityStyles = {
     critical: 'bg-red-100 text-red-700 border-red-400 print:bg-red-50 print:border-red-300',
     warning: 'bg-yellow-100 text-yellow-700 border-yellow-400 print:bg-yellow-50 print:border-yellow-300',
-    ok: 'bg-green-100 text-green-700 border-green-400 print:bg-green-50 print:border-green-300'
+    ok: 'bg-green-100 text-green-700 border-green-400 print:bg-green-50 print:border-green-300',
   };
 
   return (
@@ -58,7 +58,7 @@ const NetDebtIndicator = ({ netDebt, totalAssets }) => {
   return (
     <div className="flex flex-col items-center">
       <span className="font-semibold text-slate-700 text-sm mb-1">
-        {isNetCashPosition ? "Posição Líquida de Caixa:" : "Dívida Líquida:"}
+        {isNetCashPosition ? 'Posição Líquida de Caixa:' : 'Dívida Líquida:'}
       </span>
       <span className={`font-bold text-lg ${isNetCashPosition ? 'text-green-600' : 'text-red-600'}`}>
         {formatCurrency(Math.abs(netDebt))}
@@ -119,25 +119,25 @@ export default function BalanceSheetEquation({ calculatedData }) {
                 bgColor="bg-emerald-100 print:bg-emerald-50" borderColor="border-emerald-400 print:border-emerald-300" textColor="text-emerald-700" titleColor="text-emerald-600"/>
             </div>
             <div className="text-2xl font-bold text-slate-800 mt-3 border-t-2 border-slate-400 pt-2 w-full max-w-sm text-center">
-                {formatCurrency(totalLiabilities + equity)}
+              {formatCurrency(totalLiabilities + equity)}
             </div>
           </div>
         </div>
         
         <div className="mt-6 pt-6 border-t-2 border-dashed border-slate-300 text-center">
-            <p className="text-sm text-slate-600 mb-2 font-medium">
+          <p className="text-sm text-slate-600 mb-2 font-medium">
                 Verificação da Equação (Ativos - (Passivos + PL)):
-            </p>
-            <BalanceDifferenceIndicator difference={balanceSheetDifference} totalAssets={totalAssets} />
-             {Math.abs(balanceSheetDifference) > 1.01 && ( // Using same threshold as indicator
-                <p className="text-xs text-red-600 mt-3 max-w-md mx-auto">
+          </p>
+          <BalanceDifferenceIndicator difference={balanceSheetDifference} totalAssets={totalAssets} />
+          {Math.abs(balanceSheetDifference) > 1.01 && ( // Using same threshold as indicator
+            <p className="text-xs text-red-600 mt-3 max-w-md mx-auto">
                     Uma "Diferença de Balanço" indica que os valores de Ativos, Passivos e PL fornecidos ou calculados não se igualam perfeitamente. Isso geralmente requer revisão dos inputs para maior precisão.
-                </p>
-            )}
+            </p>
+          )}
         </div>
         
         <div className="mt-6 pt-4 border-t border-slate-300 text-center">
-            <NetDebtIndicator netDebt={netDebt} totalAssets={totalAssets} />
+          <NetDebtIndicator netDebt={netDebt} totalAssets={totalAssets} />
         </div>
       </div>
     </section>

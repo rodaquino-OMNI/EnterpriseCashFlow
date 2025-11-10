@@ -36,7 +36,7 @@ export default function WorkingCapitalTimeline({ data, calculatedData }) {
       workingCapital: wc.workingCapitalValue || 0,
       dso: wc.dso || 0,
       dio: wc.dio || 0,
-      dpo: wc.dpo || 0
+      dpo: wc.dpo || 0,
     };
   });
 
@@ -77,7 +77,7 @@ export default function WorkingCapitalTimeline({ data, calculatedData }) {
               backgroundColor: 'white',
               border: '1px solid #e2e8f0',
               borderRadius: '6px',
-              fontSize: '12px'
+              fontSize: '12px',
             }}
           />
           <Legend wrapperStyle={{ fontSize: '11px' }} />

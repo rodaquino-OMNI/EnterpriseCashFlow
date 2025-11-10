@@ -16,7 +16,7 @@ export default function AiProviderSelector({
   onProviderChange,
   apiKeys,
   onApiKeyChange,
-  className = ""
+  className = '',
 }) {
   const [showApiKeysInput, setShowApiKeysInput] = useState(false);
   const currentProviderConfig = AI_PROVIDERS[selectedProviderKey];
@@ -64,8 +64,8 @@ export default function AiProviderSelector({
               <div className="text-xs">
                 Max Tokens (Saída Padrão): {currentProviderConfig.maxTokens?.toLocaleString()}
               </div>
-               <div className="text-xs">
-                {currentProviderConfig.requiresKey ? "Requer Chave API" : "Não Requer Chave API (Local)"}
+              <div className="text-xs">
+                {currentProviderConfig.requiresKey ? 'Requer Chave API' : 'Não Requer Chave API (Local)'}
               </div>
             </div>
           </div>

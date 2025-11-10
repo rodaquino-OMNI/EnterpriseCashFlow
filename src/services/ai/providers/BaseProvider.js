@@ -52,7 +52,7 @@ export class BaseProvider {
     try {
       const testRequest = {
         prompt: 'Hello',
-        parameters: { maxTokens: 10 }
+        parameters: { maxTokens: 10 },
       };
       const response = await this.complete(testRequest);
       return !!response.content;

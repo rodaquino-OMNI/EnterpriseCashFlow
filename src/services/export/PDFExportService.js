@@ -20,19 +20,19 @@ export class PDFExportService extends BaseExportService {
         top: 20,
         bottom: 20,
         left: 20,
-        right: 20
+        right: 20,
       },
       compress: true,
       tableOfContents: false,
       header: {
         enabled: true,
-        height: 30
+        height: 30,
       },
       footer: {
         enabled: true,
-        height: 20
+        height: 20,
       },
-      ...options
+      ...options,
     };
   }
 
@@ -58,7 +58,7 @@ export class PDFExportService extends BaseExportService {
         orientation: exportOptions.orientation,
         unit: 'mm',
         format: exportOptions.pageSize,
-        compress: exportOptions.compress
+        compress: exportOptions.compress,
       });
 
       // Set document properties
@@ -68,7 +68,7 @@ export class PDFExportService extends BaseExportService {
         subject: metadata.subject,
         author: metadata.author,
         keywords: metadata.keywords,
-        creator: metadata.creator
+        creator: metadata.creator,
       });
 
       // Add branding
@@ -119,7 +119,7 @@ export class PDFExportService extends BaseExportService {
       // Generate filename
       const fileName = this.generateFileName(
         exportOptions.fileName || 'financial-report',
-        'pdf'
+        'pdf',
       );
 
       // Convert to blob
@@ -131,7 +131,7 @@ export class PDFExportService extends BaseExportService {
         data: blob,
         mimeType: this.getMimeType(ExportFormat.PDF),
         size: blob.size,
-        metadata
+        metadata,
       };
 
     } catch (error) {
@@ -322,17 +322,17 @@ export class PDFExportService extends BaseExportService {
       startY: y,
       margin: {
         left: this.defaultOptions.margins.left,
-        right: this.defaultOptions.margins.right
+        right: this.defaultOptions.margins.right,
       },
       theme: 'striped',
       headStyles: {
         fillColor: this.branding.colors.primary,
         textColor: 255,
-        fontStyle: 'bold'
+        fontStyle: 'bold',
       },
       styles: {
         fontSize: 10,
-        cellPadding: 5
+        cellPadding: 5,
       },
       columnStyles: this.getColumnStyles(tableData),
       didDrawPage: (data) => {
@@ -340,7 +340,7 @@ export class PDFExportService extends BaseExportService {
         if (data.pageNumber > 1) {
           this.addPageHeader(pdf, data.pageNumber);
         }
-      }
+      },
     });
 
     return pdf.lastAutoTable.finalY + 15;
@@ -375,7 +375,7 @@ export class PDFExportService extends BaseExportService {
       if (chartData.element) {
         const canvas = await html2canvas(chartData.element, {
           scale: 2,
-          backgroundColor: 'white'
+          backgroundColor: 'white',
         });
 
         const imgData = canvas.toDataURL('image/png');
@@ -415,7 +415,7 @@ export class PDFExportService extends BaseExportService {
       // Rotate and center watermark
       pdf.text(watermark, pageWidth / 2, pageHeight / 2, {
         align: 'center',
-        angle: -45
+        angle: -45,
       });
       
       pdf.restoreGraphicsState();
@@ -444,7 +444,7 @@ export class PDFExportService extends BaseExportService {
       pdf.text(
         text,
         pageWidth - this.defaultOptions.margins.right - textWidth,
-        pageHeight - this.defaultOptions.margins.bottom + 10
+        pageHeight - this.defaultOptions.margins.bottom + 10,
       );
     }
   }
@@ -496,7 +496,7 @@ export class PDFExportService extends BaseExportService {
       Object.entries(tableData.columnStyles).forEach(([col, style]) => {
         styles[col] = {
           halign: style.align || 'left',
-          cellWidth: style.width || 'auto'
+          cellWidth: style.width || 'auto',
         };
       });
     }
@@ -542,7 +542,7 @@ export class PDFExportService extends BaseExportService {
       pdf.text(
         'Financial Report - Continued',
         this.defaultOptions.margins.left,
-        this.defaultOptions.margins.top - 5
+        this.defaultOptions.margins.top - 5,
       );
     }
   }

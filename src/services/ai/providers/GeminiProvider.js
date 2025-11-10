@@ -21,12 +21,12 @@ export class GeminiProvider extends BaseProvider {
         'gemini-1.5-pro-latest',
         'gemini-1.5-pro',
         'gemini-pro',
-        'gemini-pro-vision'
+        'gemini-pro-vision',
       ],
       rateLimit: {
         requestsPerMinute: 60,
-        tokensPerMinute: 1000000
-      }
+        tokensPerMinute: 1000000,
+      },
     };
   }
 
@@ -37,16 +37,16 @@ export class GeminiProvider extends BaseProvider {
     const requestBody = {
       contents: [{
         role: 'user',
-        parts: [{ text: this.formatPromptWithContext(request.prompt, request.systemPrompt) }]
+        parts: [{ text: this.formatPromptWithContext(request.prompt, request.systemPrompt) }],
       }],
       generationConfig: {
         temperature: request.parameters?.temperature ?? 0.4,
         topK: request.parameters?.topK ?? 40,
         topP: request.parameters?.topP ?? 0.95,
         maxOutputTokens: request.parameters?.maxTokens || 4096,
-        candidateCount: 1
+        candidateCount: 1,
       },
-      safetySettings: this.getSafetySettings()
+      safetySettings: this.getSafetySettings(),
     };
 
     const model = request.parameters?.model || this.defaultModel;
@@ -61,7 +61,7 @@ export class GeminiProvider extends BaseProvider {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
-            signal: controller.signal
+            signal: controller.signal,
           });
 
           clearTimeout(timeoutId);
@@ -102,8 +102,8 @@ export class GeminiProvider extends BaseProvider {
           responseTime,
           usage: response.usageMetadata,
           finishReason: candidate.finishReason,
-          safetyRatings: candidate.safetyRatings
-        }
+          safetyRatings: candidate.safetyRatings,
+        },
       };
     } catch (error) {
       console.error('Gemini API error:', error);
@@ -130,8 +130,8 @@ Important:
       parameters: {
         temperature: 0.1,
         topK: 1,
-        ...options.parameters
-      }
+        ...options.parameters,
+      },
     };
 
     try {
@@ -160,8 +160,8 @@ Important:
         metadata: {
           provider: 'gemini',
           model: response.metadata.model,
-          tokensUsed: response.metadata.tokensUsed
-        }
+          tokensUsed: response.metadata.tokensUsed,
+        },
       };
     } catch (error) {
       return {
@@ -169,7 +169,7 @@ Important:
         data: [],
         confidence: 0,
         error: error.message,
-        metadata: { provider: 'gemini' }
+        metadata: { provider: 'gemini' },
       };
     }
   }
@@ -183,20 +183,20 @@ Important:
     return [
       {
         category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_ONLY_HIGH'
+        threshold: 'BLOCK_ONLY_HIGH',
       },
       {
         category: 'HARM_CATEGORY_HATE_SPEECH',
-        threshold: 'BLOCK_ONLY_HIGH'
+        threshold: 'BLOCK_ONLY_HIGH',
       },
       {
         category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-        threshold: 'BLOCK_ONLY_HIGH'
+        threshold: 'BLOCK_ONLY_HIGH',
       },
       {
         category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-        threshold: 'BLOCK_ONLY_HIGH'
-      }
+        threshold: 'BLOCK_ONLY_HIGH',
+      },
     ];
   }
 

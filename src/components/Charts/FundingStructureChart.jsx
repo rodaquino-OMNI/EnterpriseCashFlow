@@ -25,7 +25,7 @@ export default function FundingStructureChart({ data, calculatedData, periodInde
       pieData = [
         { name: 'Dívida', value: data.debt || 0, color: '#ef4444' },
         { name: 'Capital Social', value: data.equity || 0, color: '#10b981' },
-        { name: 'Lucros Retidos', value: data.retainedEarnings || 0, color: '#8b5cf6' }
+        { name: 'Lucros Retidos', value: data.retainedEarnings || 0, color: '#8b5cf6' },
       ].filter(item => item.value > 0);
 
     } else if (calculatedData || (Array.isArray(data) && data.length > 0)) {
@@ -45,7 +45,7 @@ export default function FundingStructureChart({ data, calculatedData, periodInde
         { name: 'Fornecedores', value: period.accountsPayableValueAvg || 0, color: '#ef4444' },
         { name: 'Empréstimos Bancários', value: period.totalBankLoans || 0, color: '#f59e0b' },
         { name: 'Outros Passivos', value: Math.max(0, (period.estimatedTotalLiabilities || 0) - (period.accountsPayableValueAvg || 0) - (period.totalBankLoans || 0)), color: '#8b5cf6' },
-        { name: 'Capital Próprio', value: period.equity || 0, color: '#10b981' }
+        { name: 'Capital Próprio', value: period.equity || 0, color: '#10b981' },
       ].filter(item => item.value > 0);
     } else {
       return <p className="text-center text-slate-500 py-4">Sem dados disponíveis</p>;
@@ -82,7 +82,7 @@ export default function FundingStructureChart({ data, calculatedData, periodInde
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />

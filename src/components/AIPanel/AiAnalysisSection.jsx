@@ -69,7 +69,7 @@ export default function AiAnalysisSection({
   error,
   onRetry,
   analysisTypeForRetry,
-  className = ""
+  className = '',
 }) {
   if (isLoading) {
     return (
@@ -120,12 +120,12 @@ export default function AiAnalysisSection({
   
   // Check if content itself is an error/placeholder message (from useAiService fallback or initial state)
   const isContentIndicatingIssue = typeof content === 'string' &&
-    (content.toLowerCase().includes("erro:") ||
-     content.toLowerCase().includes("falha") ||
-     content.toLowerCase().includes("api key") ||
-     content.toLowerCase().includes("não configurada") ||
-     content.toLowerCase().includes("gere o relatório com dados primeiro") ||
-     content.toLowerCase().includes("requer pelo menos 2 períodos"));
+    (content.toLowerCase().includes('erro:') ||
+     content.toLowerCase().includes('falha') ||
+     content.toLowerCase().includes('api key') ||
+     content.toLowerCase().includes('não configurada') ||
+     content.toLowerCase().includes('gere o relatório com dados primeiro') ||
+     content.toLowerCase().includes('requer pelo menos 2 períodos'));
 
   if (!content || content.trim() === '') {
     return null; // Don't render anything if no content, not loading, and no explicit error prop
@@ -145,7 +145,7 @@ export default function AiAnalysisSection({
             <div>
               <p className="font-medium">Aviso</p>
               <p className="text-sm">{content}</p>
-              {onRetry && content.toLowerCase().includes("tente novamente") && (
+              {onRetry && content.toLowerCase().includes('tente novamente') && (
                 <button
                   onClick={() => onRetry(analysisTypeForRetry)}
                   className="mt-3 text-sm bg-amber-600 text-white px-4 py-1.5 rounded-md hover:bg-amber-700 transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50"

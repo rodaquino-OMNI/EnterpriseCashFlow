@@ -141,62 +141,62 @@ const ValidationIssuesPanel = ({ validationIssuesFromEngine }) => {
 
 // Enhanced Diagnosis Panel focusing on Cash Flow and BS Difference
 const DiagnosisPanelForMonitor = ({ periodData }) => {
-    if (!periodData) return <p>Selecione um período para diagnóstico.</p>;
+  if (!periodData) return <p>Selecione um período para diagnóstico.</p>;
 
-    const { 
-        calculatedOpeningCash, netChangeInCash, closingCash, 
-        cashReconciliationDifference,
-        override_closingCash, // Raw override input from spread rawInput
-        estimatedTotalAssets, estimatedTotalLiabilities, equity, balanceSheetDifference
-    } = periodData;
+  const { 
+    calculatedOpeningCash, netChangeInCash, closingCash, 
+    cashReconciliationDifference,
+    override_closingCash, // Raw override input from spread rawInput
+    estimatedTotalAssets, estimatedTotalLiabilities, equity, balanceSheetDifference,
+  } = periodData;
 
-    const rawOverrideClosingCash = override_closingCash;
-    const dfcCalculatedInternalClosingCash = (calculatedOpeningCash || 0) + (netChangeInCash || 0);
-    const isCashOverridden = rawOverrideClosingCash !== null && typeof rawOverrideClosingCash !== 'undefined' && String(rawOverrideClosingCash).trim() !== '';
+  const rawOverrideClosingCash = override_closingCash;
+  const dfcCalculatedInternalClosingCash = (calculatedOpeningCash || 0) + (netChangeInCash || 0);
+  const isCashOverridden = rawOverrideClosingCash !== null && typeof rawOverrideClosingCash !== 'undefined' && String(rawOverrideClosingCash).trim() !== '';
 
-    return (
-        <div className="space-y-4 text-xs">
-            <div className="p-3 bg-sky-50 border border-sky-200 rounded-md shadow-sm">
-                <h5 className="font-semibold text-sky-800 mb-2 text-sm">Diagnóstico do Fluxo de Caixa (DFC)</h5>
-                <table className="w-full text-left">
-                    <tbody>
-                        <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Caixa Inicial (Usado no DFC):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(calculatedOpeningCash)}</td></tr>
-                        <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Variação Líquida de Caixa (Calculada DFC):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(netChangeInCash)}</td></tr>
-                        <tr className="border-b"><td className="py-1 pr-2 font-semibold text-slate-800">Subtotal (Caixa Final Calculado pelo DFC):</td><td className="py-1 font-bold text-slate-900">{formatCurrency(dfcCalculatedInternalClosingCash)}</td></tr>
-                        <tr><td colSpan="2" className="pt-2"></td></tr>
-                        <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Input de Override para Caixa Final:</td><td className="py-1 font-medium text-orange-600">{isCashOverridden ? formatCurrency(parseToNumber(rawOverrideClosingCash)) : <span className="italic text-slate-500">Não fornecido</span>}</td></tr>
-                        <tr className="border-b"><td className="py-1 pr-2 font-bold text-blue-700">Caixa Final (Final, Usado no Balanço):</td><td className="py-1 font-extrabold text-blue-700">{formatCurrency(closingCash)}</td></tr>
-                        <tr>
-                            <td className="py-1 pr-2 font-semibold text-purple-700">Diferença de Reconciliação de Caixa <br/>(Final - DFC Calc):</td>
-                            <td className={`py-1 font-bold ${Math.abs(cashReconciliationDifference || 0) > 0.015 ? 'text-orange-700' : 'text-green-700'}`}>
-                                {formatCurrency(cashReconciliationDifference)}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                {Math.abs(cashReconciliationDifference || 0) > 0.015 && <p className="text-xs italic text-orange-600 mt-2">Esta diferença mostra o impacto do override de caixa final nos cálculos do balanço.</p>}
-            </div>
+  return (
+    <div className="space-y-4 text-xs">
+      <div className="p-3 bg-sky-50 border border-sky-200 rounded-md shadow-sm">
+        <h5 className="font-semibold text-sky-800 mb-2 text-sm">Diagnóstico do Fluxo de Caixa (DFC)</h5>
+        <table className="w-full text-left">
+          <tbody>
+            <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Caixa Inicial (Usado no DFC):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(calculatedOpeningCash)}</td></tr>
+            <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Variação Líquida de Caixa (Calculada DFC):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(netChangeInCash)}</td></tr>
+            <tr className="border-b"><td className="py-1 pr-2 font-semibold text-slate-800">Subtotal (Caixa Final Calculado pelo DFC):</td><td className="py-1 font-bold text-slate-900">{formatCurrency(dfcCalculatedInternalClosingCash)}</td></tr>
+            <tr><td colSpan="2" className="pt-2"></td></tr>
+            <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Input de Override para Caixa Final:</td><td className="py-1 font-medium text-orange-600">{isCashOverridden ? formatCurrency(parseToNumber(rawOverrideClosingCash)) : <span className="italic text-slate-500">Não fornecido</span>}</td></tr>
+            <tr className="border-b"><td className="py-1 pr-2 font-bold text-blue-700">Caixa Final (Final, Usado no Balanço):</td><td className="py-1 font-extrabold text-blue-700">{formatCurrency(closingCash)}</td></tr>
+            <tr>
+              <td className="py-1 pr-2 font-semibold text-purple-700">Diferença de Reconciliação de Caixa <br/>(Final - DFC Calc):</td>
+              <td className={`py-1 font-bold ${Math.abs(cashReconciliationDifference || 0) > 0.015 ? 'text-orange-700' : 'text-green-700'}`}>
+                {formatCurrency(cashReconciliationDifference)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        {Math.abs(cashReconciliationDifference || 0) > 0.015 && <p className="text-xs italic text-orange-600 mt-2">Esta diferença mostra o impacto do override de caixa final nos cálculos do balanço.</p>}
+      </div>
 
-            <div className="p-3 bg-lime-50 border border-lime-200 rounded-md shadow-sm">
-                <h5 className="font-semibold text-lime-800 mb-2 text-sm">Diagnóstico do Balanço Patrimonial</h5>
-                <table className="w-full text-left">
-                     <tbody>
-                        <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Total Ativos (Estimado SSOT):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(estimatedTotalAssets)}</td></tr>
-                        <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Total Passivos (Estimado SSOT):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(estimatedTotalLiabilities)}</td></tr>
-                        <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Patrimônio Líquido (Final SSOT):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(equity)}</td></tr>
-                        <tr className="border-b"><td className="py-1 pr-2 font-semibold text-slate-800">Subtotal (Passivos + PL):</td><td className="py-1 font-bold text-slate-900">{formatCurrency((estimatedTotalLiabilities || 0) + (equity || 0))}</td></tr>
-                        <tr>
-                            <td className="py-1 pr-2 font-bold text-purple-700">Diferença de Balanço (A - (L+E) SSOT):</td>
-                            <td className={`py-1 font-extrabold ${Math.abs(balanceSheetDifference || 0) > 1.01 ? 'text-red-700' : 'text-green-700'}`}>
-                                {formatCurrency(balanceSheetDifference)}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                {Math.abs(balanceSheetDifference || 0) > 1.01 && <p className="text-xs italic text-red-600 mt-2">Diferença no balanço pode ser causada por overrides (especialmente de Caixa Final) ou simplificações no modelo de passivos.</p>}
-            </div>
-        </div>
-    );
+      <div className="p-3 bg-lime-50 border border-lime-200 rounded-md shadow-sm">
+        <h5 className="font-semibold text-lime-800 mb-2 text-sm">Diagnóstico do Balanço Patrimonial</h5>
+        <table className="w-full text-left">
+          <tbody>
+            <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Total Ativos (Estimado SSOT):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(estimatedTotalAssets)}</td></tr>
+            <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Total Passivos (Estimado SSOT):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(estimatedTotalLiabilities)}</td></tr>
+            <tr className="border-b"><td className="py-1 pr-2 text-slate-600">Patrimônio Líquido (Final SSOT):</td><td className="py-1 font-medium text-slate-700">{formatCurrency(equity)}</td></tr>
+            <tr className="border-b"><td className="py-1 pr-2 font-semibold text-slate-800">Subtotal (Passivos + PL):</td><td className="py-1 font-bold text-slate-900">{formatCurrency((estimatedTotalLiabilities || 0) + (equity || 0))}</td></tr>
+            <tr>
+              <td className="py-1 pr-2 font-bold text-purple-700">Diferença de Balanço (A - (L+E) SSOT):</td>
+              <td className={`py-1 font-extrabold ${Math.abs(balanceSheetDifference || 0) > 1.01 ? 'text-red-700' : 'text-green-700'}`}>
+                {formatCurrency(balanceSheetDifference)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        {Math.abs(balanceSheetDifference || 0) > 1.01 && <p className="text-xs italic text-red-600 mt-2">Diferença no balanço pode ser causada por overrides (especialmente de Caixa Final) ou simplificações no modelo de passivos.</p>}
+      </div>
+    </div>
+  );
 };
 
 export default function DataConsistencyMonitor({ calculatedData, isVisible = false, onClose }) {

@@ -20,42 +20,42 @@ export class ExcelExportService extends BaseExportService {
         currency: true,
         percentage: true,
         dates: true,
-        numbers: true
+        numbers: true,
       },
       multipleSheets: false,
       sheetNames: [],
       columnWidths: {},
-      ...options
+      ...options,
     };
 
     // Excel cell styles
     this.styles = {
       header: {
-        font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "007bff" } },
-        alignment: { horizontal: "center", vertical: "center" },
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '007bff' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
-        }
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } },
+        },
       },
       currency: {
-        numFmt: "$#,##0.00"
+        numFmt: '$#,##0.00',
       },
       percentage: {
-        numFmt: "0.0%"
+        numFmt: '0.0%',
       },
       date: {
-        numFmt: "mm/dd/yyyy"
+        numFmt: 'mm/dd/yyyy',
       },
       number: {
-        numFmt: "#,##0"
+        numFmt: '#,##0',
       },
       decimal: {
-        numFmt: "#,##0.00"
-      }
+        numFmt: '#,##0.00',
+      },
     };
   }
 
@@ -85,7 +85,7 @@ export class ExcelExportService extends BaseExportService {
         Title: metadata.title,
         Subject: metadata.subject,
         Author: metadata.author,
-        CreatedDate: metadata.creationDate
+        CreatedDate: metadata.creationDate,
       };
 
       // Process sheets
@@ -104,19 +104,19 @@ export class ExcelExportService extends BaseExportService {
       // Generate filename
       const fileName = this.generateFileName(
         exportOptions.fileName || 'financial-report',
-        'xlsx'
+        'xlsx',
       );
 
       // Write workbook to buffer
       const buffer = XLSX.write(workbook, {
         bookType: 'xlsx',
         type: 'array',
-        compression: true
+        compression: true,
       });
 
       // Create blob
       const blob = new Blob([buffer], {
-        type: this.getMimeType(ExportFormat.EXCEL)
+        type: this.getMimeType(ExportFormat.EXCEL),
       });
 
       return {
@@ -125,7 +125,7 @@ export class ExcelExportService extends BaseExportService {
         data: blob,
         mimeType: this.getMimeType(ExportFormat.EXCEL),
         size: blob.size,
-        metadata
+        metadata,
       };
 
     } catch (error) {
@@ -203,7 +203,7 @@ export class ExcelExportService extends BaseExportService {
   addTitle(worksheet, title, row) {
     const titleCell = { v: title, t: 's', s: {
       font: { bold: true, sz: 18 },
-      alignment: { horizontal: "center" }
+      alignment: { horizontal: 'center' },
     }};
     
     XLSX.utils.sheet_add_aoa(worksheet, [[title]], { origin: { r: row, c: 0 } });
@@ -212,7 +212,7 @@ export class ExcelExportService extends BaseExportService {
     if (!worksheet['!merges']) worksheet['!merges'] = [];
     worksheet['!merges'].push({
       s: { r: row, c: 0 },
-      e: { r: row, c: 7 }
+      e: { r: row, c: 7 },
     });
     
     return row + 2;
@@ -272,7 +272,7 @@ export class ExcelExportService extends BaseExportService {
       if (!worksheet['!merges']) worksheet['!merges'] = [];
       worksheet['!merges'].push({
         s: { r: row, c: 0 },
-        e: { r: row, c: 7 }
+        e: { r: row, c: 7 },
       });
       
       row++;
@@ -311,7 +311,7 @@ export class ExcelExportService extends BaseExportService {
         this.formatKPIValue(kpi),
         kpi.target ? this.formatKPIValue({ ...kpi, value: kpi.target }) : '-',
         variance !== null ? this.formatPercentage(variance) : '-',
-        kpi.trend ? `${kpi.trend > 0 ? '↑' : '↓'} ${Math.abs(kpi.trend)}%` : '-'
+        kpi.trend ? `${kpi.trend > 0 ? '↑' : '↓'} ${Math.abs(kpi.trend)}%` : '-',
       ];
       kpiData.push(row);
     });
@@ -334,7 +334,7 @@ export class ExcelExportService extends BaseExportService {
           const value = parseFloat(worksheet[varianceCell].v);
           worksheet[varianceCell].s = {
             ...worksheet[varianceCell].s,
-            font: { color: { rgb: value >= 0 ? "28a745" : "dc3545" } }
+            font: { color: { rgb: value >= 0 ? '28a745' : 'dc3545' } },
           };
         }
       }
@@ -399,7 +399,7 @@ export class ExcelExportService extends BaseExportService {
         startRow + 1,
         tableArray.length - 1,
         headers,
-        options
+        options,
       );
     }
     
@@ -412,7 +412,7 @@ export class ExcelExportService extends BaseExportService {
           if (!worksheet[cell].s) worksheet[cell].s = {};
           worksheet[cell].s.font = { bold: true };
           worksheet[cell].s.border = {
-            top: { style: "double", color: { rgb: "000000" } }
+            top: { style: 'double', color: { rgb: '000000' } },
           };
         }
       }
@@ -422,7 +422,7 @@ export class ExcelExportService extends BaseExportService {
     if (options.autoFilter) {
       const range = {
         s: { r: startRow, c: 0 },
-        e: { r: startRow + tableData.data.length, c: headers.length - 1 }
+        e: { r: startRow + tableData.data.length, c: headers.length - 1 },
       };
       worksheet['!autofilter'] = range;
     }
@@ -492,7 +492,7 @@ export class ExcelExportService extends BaseExportService {
           if (tableData.conditionalFormatting && tableData.conditionalFormatting[header]) {
             this.applyConditionalFormatting(
               worksheet[cell],
-              tableData.conditionalFormatting[header]
+              tableData.conditionalFormatting[header],
             );
           }
         }
@@ -510,7 +510,7 @@ export class ExcelExportService extends BaseExportService {
       const cell = XLSX.utils.encode_cell({ r: formula.row, c: formula.col });
       worksheet[cell] = {
         f: formula.formula,
-        t: 'n'
+        t: 'n',
       };
       
       if (formula.format) {
@@ -530,7 +530,7 @@ export class ExcelExportService extends BaseExportService {
     
     for (let i = 0; i <= maxCol; i++) {
       cols.push({
-        wch: widths[i] || 15
+        wch: widths[i] || 15,
       });
     }
     
@@ -564,8 +564,8 @@ export class ExcelExportService extends BaseExportService {
     worksheet['!autofilter'] = {
       ref: XLSX.utils.encode_range({
         s: { r: range.s.r, c: range.s.c },
-        e: { r: lastDataRow, c: range.e.c }
-      })
+        e: { r: lastDataRow, c: range.e.c },
+      }),
     };
   }
 
@@ -581,7 +581,7 @@ export class ExcelExportService extends BaseExportService {
       ySplit: row,
       topLeftCell: XLSX.utils.encode_cell({ r: row, c: col }),
       activePane: 'bottomRight',
-      state: 'frozen'
+      state: 'frozen',
     };
   }
 
@@ -638,16 +638,16 @@ export class ExcelExportService extends BaseExportService {
     
     if (!isNaN(value)) {
       if (rules.positive && value > 0) {
-        cell.s.font = { ...cell.s.font, color: { rgb: "28a745" } };
+        cell.s.font = { ...cell.s.font, color: { rgb: '28a745' } };
       } else if (rules.negative && value < 0) {
-        cell.s.font = { ...cell.s.font, color: { rgb: "dc3545" } };
+        cell.s.font = { ...cell.s.font, color: { rgb: 'dc3545' } };
       }
       
       if (rules.threshold) {
         if (value >= rules.threshold.high) {
-          cell.s.fill = { fgColor: { rgb: "d4edda" } };
+          cell.s.fill = { fgColor: { rgb: 'd4edda' } };
         } else if (value <= rules.threshold.low) {
-          cell.s.fill = { fgColor: { rgb: "f8d7da" } };
+          cell.s.fill = { fgColor: { rgb: 'f8d7da' } };
         }
       }
     }

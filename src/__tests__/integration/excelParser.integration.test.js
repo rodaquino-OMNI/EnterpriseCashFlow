@@ -18,7 +18,7 @@ const createMockExcelJS = () => {
       fill: fillColor ? { fgColor: { argb: fillColor } } : undefined,
       style: {},
       formula: undefined,
-      result: undefined
+      result: undefined,
     };
 
     // Handle formula cells
@@ -42,7 +42,7 @@ const createMockExcelJS = () => {
         const value = values[colIndex];
         const fillColor = options.cellFills ? options.cellFills[colIndex] : null;
         return createMockCell(value, fillColor);
-      })
+      }),
     };
     return row;
   };
@@ -65,15 +65,15 @@ const createMockExcelJS = () => {
 
     getCell: jest.fn((row, col) => {
       return createMockCell(null);
-    })
+    }),
   };
 
   const mockWorkbook = {
     worksheets: [mockWorksheet],
     getWorksheet: jest.fn(() => mockWorksheet),
     xlsx: {
-      load: jest.fn()
-    }
+      load: jest.fn(),
+    },
   };
 
   return {
@@ -81,7 +81,7 @@ const createMockExcelJS = () => {
     mockWorksheet,
     mockWorkbook,
     createMockRow,
-    createMockCell
+    createMockCell,
   };
 };
 
@@ -125,7 +125,7 @@ describe('Excel Parser Integration Tests', () => {
       const instructionSheet = {
         name: 'Instruções',
         getRow: jest.fn(() => mockExcelJS.createMockRow([])),
-        eachRow: jest.fn()
+        eachRow: jest.fn(),
       };
       const dataSheet = {
         name: 'Dados Financeiros',
@@ -137,7 +137,7 @@ describe('Excel Parser Integration Tests', () => {
         }),
         eachRow: jest.fn((callback) => {
           callback(mockExcelJS.createMockRow([undefined, 'Receita', 1000000, 1100000, 1200000, 1300000]), 2);
-        })
+        }),
       };
 
       mockExcelJS.mockWorkbook.worksheets = [instructionSheet, dataSheet];
@@ -367,7 +367,7 @@ describe('Excel Parser Integration Tests', () => {
         // Create row with grey fill on column 3 (P2)
         const rowWithGreyCell = mockExcelJS.createMockRow(
           [undefined, 'Receita', 1000000, 1100000, 1200000],
-          { cellFills: { 3: 'FFD3D3D3' } }  // Grey fill on column 3 (P2)
+          { cellFills: { 3: 'FFD3D3D3' } },  // Grey fill on column 3 (P2)
         );
         callback(rowWithGreyCell, 2);
       });
@@ -512,13 +512,13 @@ describe('Excel Parser Integration Tests', () => {
         // First row with valid field to ensure parsing succeeds
         callback(
           mockExcelJS.createMockRow([undefined, 'Receita', 1000000, 1100000, 1200000, 1300000]),
-          2
+          2,
         );
         // Remaining rows with invalid fields to test performance
         for (let i = 3; i <= 1000; i++) {
           callback(
             mockExcelJS.createMockRow([undefined, `Field ${i}`, 1000 * i, 1100 * i, 1200 * i, 1300 * i]),
-            i
+            i,
           );
         }
       });
@@ -569,7 +569,7 @@ describe('Excel Parser Integration Tests', () => {
       mockExcelJS.mockWorksheet.getRow.mockImplementation((rowNum) => {
         return mockExcelJS.createMockRow(
           rowNum === 1 ? [undefined, 'Descrição', 'P1', 'P2'] : [],
-          { hidden: rowNum === 3 }
+          { hidden: rowNum === 3 },
         );
       });
 

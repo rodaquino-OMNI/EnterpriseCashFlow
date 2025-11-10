@@ -324,7 +324,7 @@ class FinancialCalculationService {
     // Reuse existing calculation logic
     const result = await this.processFinancialData(
       [financialStatements],
-      'YEARLY'
+      'YEARLY',
     );
     
     return result[0].ratios;

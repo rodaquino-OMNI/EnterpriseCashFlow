@@ -39,7 +39,7 @@ export default function ProfitWaterfallChart({ data, calculatedData }) {
     cogs: Math.abs(income.cogs || 0),
     opex: Math.abs(income.operatingExpenses || 0),
     financial: Math.abs(income.netFinancialResult || 0),
-    taxes: Math.abs(income.taxes || 0)
+    taxes: Math.abs(income.taxes || 0),
   }];
 
   return (
@@ -61,7 +61,7 @@ export default function ProfitWaterfallChart({ data, calculatedData }) {
               backgroundColor: 'white',
               border: '1px solid #e2e8f0',
               borderRadius: '6px',
-              fontSize: '12px'
+              fontSize: '12px',
             }}
           />
           <Bar dataKey="revenue" fill="#10b981" name="Receita" />

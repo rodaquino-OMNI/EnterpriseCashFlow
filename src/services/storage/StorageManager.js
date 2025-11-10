@@ -18,7 +18,7 @@ export class StorageManager {
     this.config = {
       encryptionEnabled: config.encryptionEnabled !== false,
       autoSaveEnabled: config.autoSaveEnabled !== false,
-      ...config
+      ...config,
     };
     
     // Initialize services
@@ -54,7 +54,7 @@ export class StorageManager {
       // Initialize base storage services
       await Promise.all([
         this.indexedDB.initialize(),
-        this.localStorage.initialize()
+        this.localStorage.initialize(),
       ]);
       
       // Initialize encryption if enabled
@@ -65,11 +65,11 @@ export class StorageManager {
         // Create secure storage wrappers
         this.secureIndexedDB = this.encryption.createSecureStorage(
           this.indexedDB,
-          encryptionKey
+          encryptionKey,
         );
         this.secureLocalStorage = this.encryption.createSecureStorage(
           this.localStorage,
-          encryptionKey
+          encryptionKey,
         );
       }
       
@@ -89,7 +89,7 @@ export class StorageManager {
       throw new StorageError(
         'Failed to initialize storage manager',
         StorageErrorCode.INITIALIZATION_FAILED,
-        error
+        error,
       );
     }
   }
@@ -177,7 +177,7 @@ export class StorageManager {
     
     await Promise.all([
       ...scenarios.map(s => this.deleteScenario(s.id)),
-      ...reports.map(r => this.deleteReport(r.id))
+      ...reports.map(r => this.deleteReport(r.id)),
     ]);
     
     // Cancel auto-save
@@ -517,13 +517,13 @@ export class StorageManager {
     const [indexedDBSize, localStorageSize, localStorageStats] = await Promise.all([
       this.indexedDB.getSize(),
       this.localStorage.getSize(),
-      this.localStorage.getStats()
+      this.localStorage.getStats(),
     ]);
     
     const [projectCount, scenarioCount, reportCount] = await Promise.all([
       this.indexedDB.keys('projects').then(keys => keys.length),
       this.indexedDB.keys('scenarios').then(keys => keys.length),
-      this.indexedDB.keys('reports').then(keys => keys.length)
+      this.indexedDB.keys('reports').then(keys => keys.length),
     ]);
     
     return {
@@ -531,13 +531,13 @@ export class StorageManager {
         size: indexedDBSize,
         projects: projectCount,
         scenarios: scenarioCount,
-        reports: reportCount
+        reports: reportCount,
       },
       localStorage: localStorageStats,
       total: {
         size: indexedDBSize + localStorageSize,
-        items: projectCount + scenarioCount + reportCount + localStorageStats.totalKeys
-      }
+        items: projectCount + scenarioCount + reportCount + localStorageStats.totalKeys,
+      },
     };
   }
 
@@ -588,8 +588,8 @@ export class StorageManager {
         projects,
         scenarios,
         reports,
-        preferences
-      }
+        preferences,
+      },
     };
     
     return await this.exportService.exportJSON(backupData);
@@ -604,7 +604,7 @@ export class StorageManager {
     this._ensureInitialized();
     
     const backup = await this.importService.importJSON(
-      await backupFile.text()
+      await backupFile.text(),
     );
     
     if (!backup.data) {

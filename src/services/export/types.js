@@ -8,7 +8,7 @@
 export const ExportFormat = {
   PDF: 'pdf',
   EXCEL: 'excel',
-  CSV: 'csv'
+  CSV: 'csv',
 };
 
 /**
@@ -16,7 +16,7 @@ export const ExportFormat = {
  */
 export const PageOrientation = {
   PORTRAIT: 'portrait',
-  LANDSCAPE: 'landscape'
+  LANDSCAPE: 'landscape',
 };
 
 /**
@@ -26,7 +26,7 @@ export const PageSize = {
   A4: 'a4',
   LETTER: 'letter',
   LEGAL: 'legal',
-  A3: 'a3'
+  A3: 'a3',
 };
 
 /**

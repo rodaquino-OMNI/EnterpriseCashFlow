@@ -19,7 +19,7 @@ export const designTokens = {
       700: '#1d4ed8',
       800: '#1e40af',
       900: '#1e3a8a',
-      950: '#172554'
+      950: '#172554',
     },
 
     // Secondary Colors
@@ -33,7 +33,7 @@ export const designTokens = {
       600: '#475569',
       700: '#334155',
       800: '#1e293b',
-      900: '#0f172a'
+      900: '#0f172a',
     },
 
     // Semantic Colors
@@ -44,7 +44,7 @@ export const designTokens = {
         500: '#10b981',
         600: '#059669',
         700: '#047857',
-        900: '#064e3b'
+        900: '#064e3b',
       },
       warning: {
         50: '#fffbeb',
@@ -52,7 +52,7 @@ export const designTokens = {
         500: '#f59e0b',
         600: '#d97706',
         700: '#b45309',
-        900: '#78350f'
+        900: '#78350f',
       },
       error: {
         50: '#fef2f2',
@@ -60,7 +60,7 @@ export const designTokens = {
         500: '#ef4444',
         600: '#dc2626',
         700: '#b91c1c',
-        900: '#7f1d1d'
+        900: '#7f1d1d',
       },
       info: {
         50: '#eff6ff',
@@ -68,8 +68,8 @@ export const designTokens = {
         500: '#3b82f6',
         600: '#2563eb',
         700: '#1d4ed8',
-        900: '#1e3a8a'
-      }
+        900: '#1e3a8a',
+      },
     },
 
     // Neutral Grays
@@ -84,7 +84,7 @@ export const designTokens = {
       700: '#334155',
       800: '#1e293b',
       900: '#0f172a',
-      950: '#020617'
+      950: '#020617',
     },
 
     // Financial Context Colors
@@ -92,8 +92,8 @@ export const designTokens = {
       positive: '#10b981', // Green for profits, gains
       negative: '#ef4444', // Red for losses, deficits
       neutral: '#64748b',  // Gray for neutral values
-      highlight: '#f59e0b' // Amber for important metrics
-    }
+      highlight: '#f59e0b', // Amber for important metrics
+    },
   },
 
   // Spacing System (8px base grid)
@@ -132,7 +132,7 @@ export const designTokens = {
     64: '16rem',     // 256px
     72: '18rem',     // 288px
     80: '20rem',     // 320px
-    96: '24rem'      // 384px
+    96: '24rem',      // 384px
   },
 
   // Typography System
@@ -140,7 +140,7 @@ export const designTokens = {
     fontFamily: {
       sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       mono: ['JetBrains Mono', 'Monaco', 'Cascadia Code', 'Segoe UI Mono', 'Roboto Mono', 'monospace'],
-      display: ['Inter', 'system-ui', 'sans-serif']
+      display: ['Inter', 'system-ui', 'sans-serif'],
     },
 
     fontSize: {
@@ -156,7 +156,7 @@ export const designTokens = {
       '6xl': ['3.75rem', { lineHeight: '1' }],        // 60px
       '7xl': ['4.5rem', { lineHeight: '1' }],         // 72px
       '8xl': ['6rem', { lineHeight: '1' }],           // 96px
-      '9xl': ['8rem', { lineHeight: '1' }]            // 128px
+      '9xl': ['8rem', { lineHeight: '1' }],            // 128px
     },
 
     fontWeight: {
@@ -168,7 +168,7 @@ export const designTokens = {
       semibold: '600',
       bold: '700',
       extrabold: '800',
-      black: '900'
+      black: '900',
     },
 
     letterSpacing: {
@@ -177,7 +177,7 @@ export const designTokens = {
       normal: '0em',
       wide: '0.025em',
       wider: '0.05em',
-      widest: '0.1em'
+      widest: '0.1em',
     },
 
     lineHeight: {
@@ -186,8 +186,8 @@ export const designTokens = {
       snug: '1.375',
       normal: '1.5',
       relaxed: '1.625',
-      loose: '2'
-    }
+      loose: '2',
+    },
   },
 
   // Border Radius
@@ -200,7 +200,7 @@ export const designTokens = {
     xl: '0.75rem',    // 12px
     '2xl': '1rem',    // 16px
     '3xl': '1.5rem',  // 24px
-    full: '9999px'
+    full: '9999px',
   },
 
   // Shadow System
@@ -213,7 +213,7 @@ export const designTokens = {
     xl: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
     '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
     inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
-    none: '0 0 #0000'
+    none: '0 0 #0000',
   },
 
   // Z-Index Scale
@@ -231,7 +231,7 @@ export const designTokens = {
     modal: '1040',
     popover: '1050',
     tooltip: '1060',
-    toast: '1070'
+    toast: '1070',
   },
 
   // Breakpoints for Responsive Design
@@ -241,7 +241,7 @@ export const designTokens = {
     md: '768px',
     lg: '1024px',
     xl: '1280px',
-    '2xl': '1536px'
+    '2xl': '1536px',
   },
 
   // Animation & Transitions
@@ -254,15 +254,15 @@ export const designTokens = {
       300: '300ms',
       500: '500ms',
       700: '700ms',
-      1000: '1000ms'
+      1000: '1000ms',
     },
     
     easing: {
       linear: 'linear',
       in: 'cubic-bezier(0.4, 0, 1, 1)',
       out: 'cubic-bezier(0, 0, 0.2, 1)',
-      'in-out': 'cubic-bezier(0.4, 0, 0.2, 1)'
-    }
+      'in-out': 'cubic-bezier(0.4, 0, 0.2, 1)',
+    },
   },
 
   // Component-specific tokens
@@ -271,31 +271,31 @@ export const designTokens = {
       height: {
         sm: '2.25rem',  // 36px
         md: '2.5rem',   // 40px
-        lg: '2.75rem'   // 44px
+        lg: '2.75rem',   // 44px
       },
       padding: {
         sm: '0.5rem 0.75rem',
         md: '0.5rem 1rem',
-        lg: '0.75rem 1.5rem'
-      }
+        lg: '0.75rem 1.5rem',
+      },
     },
     
     input: {
       height: {
         sm: '2.25rem',  // 36px
         md: '2.5rem',   // 40px
-        lg: '3rem'      // 48px
-      }
+        lg: '3rem',      // 48px
+      },
     },
 
     card: {
       padding: {
         sm: '1rem',
         md: '1.5rem',
-        lg: '2rem'
-      }
-    }
-  }
+        lg: '2rem',
+      },
+    },
+  },
 };
 
 // CSS Custom Properties Generator

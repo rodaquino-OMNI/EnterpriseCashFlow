@@ -18,7 +18,7 @@ describe('ManualDataEntry Component', () => {
     onInputChange: jest.fn(),
     onSubmit: jest.fn(),
     isLoading: false,
-    validationErrors: null
+    validationErrors: null,
   };
 
   beforeEach(() => {

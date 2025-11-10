@@ -108,21 +108,21 @@ async function callWithRetry(providerFunc, maxRetries = 3) {
 async function callGemini(config, prompt, apiKey, options) {
   // Validate API key first to prevent hanging requests
   if (!apiKey || apiKey.trim() === '') {
-    console.error("Gemini API call failed: No API key provided");
-    return `Erro: Chave API do Google Gemini é obrigatória. Configure sua chave API nas configurações.`;
+    console.error('Gemini API call failed: No API key provided');
+    return 'Erro: Chave API do Google Gemini é obrigatória. Configure sua chave API nas configurações.';
   }
   
-  console.log("Calling Gemini API with model:", options.model || config.defaultRequestConfig.model);
-  console.log("Prompt length:", prompt.length, "characters");
+  console.log('Calling Gemini API with model:', options.model || config.defaultRequestConfig.model);
+  console.log('Prompt length:', prompt.length, 'characters');
   
   const requestBody = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
       maxOutputTokens: options.maxTokens || config.defaultRequestConfig.maxOutputTokens,
       temperature: options.temperature === undefined ? config.defaultRequestConfig.temperature : options.temperature,
       topK: options.topK || config.defaultRequestConfig.topK,
       topP: options.topP || config.defaultRequestConfig.topP,
-    }
+    },
   };
   const model = options.model || config.defaultRequestConfig.model;
   
@@ -136,29 +136,29 @@ async function callGemini(config, prompt, apiKey, options) {
     
     // Log endpoint without exposing sensitive API key
     if (process.env.NODE_ENV === 'development') {
-      console.log("Calling Gemini endpoint:", `${config.apiUrl}/${model}:generateContent`);
+      console.log('Calling Gemini endpoint:', `${config.apiUrl}/${model}:generateContent`);
     }
     
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
-      signal: controller.signal
+      signal: controller.signal,
     });
     clearTimeout(timeoutId);
     
-    console.log("Gemini API response status:", response.status);
+    console.log('Gemini API response status:', response.status);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => {
         // If response isn't valid JSON, get the text instead
         return response.text().then(text => {
-          console.error("Non-JSON error response:", text);
-          return { error: { message: response.statusText + " (Corpo da resposta não é JSON)" } };
+          console.error('Non-JSON error response:', text);
+          return { error: { message: response.statusText + ' (Corpo da resposta não é JSON)' } };
         });
       });
       
-      console.error("Gemini API error:", errorData);
+      console.error('Gemini API error:', errorData);
       
       // Handle specific error cases
       if (response.status === 400) {
@@ -166,23 +166,23 @@ async function callGemini(config, prompt, apiKey, options) {
       } else if (response.status === 403) {
         return `Erro: API Gemini - Acesso negado. Verifique sua chave API: ${errorData.error?.message || response.statusText}`;
       } else if (response.status === 429) {
-        return `Erro: API Gemini - Limite de taxa excedido. Tente novamente em alguns minutos.`;
+        return 'Erro: API Gemini - Limite de taxa excedido. Tente novamente em alguns minutos.';
       }
       
       return `Erro: API Gemini (${response.status}): ${errorData.error?.message || response.statusText}`;
     }
     
-    console.log("Gemini API returned success response");
+    console.log('Gemini API returned success response');
     const result = await response.json();
     
     // Log summary of response structure to help debug
-    console.log("Response structure:", {
+    console.log('Response structure:', {
       hasCandidate: !!result.candidates,
       candidatesCount: result.candidates?.length || 0,
       hasContent: result.candidates?.[0]?.content != null,
       hasParts: result.candidates?.[0]?.content?.parts != null,
       partsCount: result.candidates?.[0]?.content?.parts?.length || 0,
-      finishReason: result.candidates?.[0]?.finishReason || 'unknown'
+      finishReason: result.candidates?.[0]?.finishReason || 'unknown',
     });
     
     // Check for content filtering block first
@@ -192,7 +192,7 @@ async function callGemini(config, prompt, apiKey, options) {
       if (result.promptFeedback.safetyRatings) {
         message += ` Classificações de segurança: ${JSON.stringify(result.promptFeedback.safetyRatings.map(r => `${r.category}: ${r.probability}`))}`;
       }
-      console.warn("Gemini content blocked:", result.promptFeedback);
+      console.warn('Gemini content blocked:', result.promptFeedback);
       return message;
     }
     
@@ -212,7 +212,7 @@ async function callGemini(config, prompt, apiKey, options) {
       if (finishReason && finishReason !== 'STOP') {
         console.warn(`Gemini response finished with reason: ${finishReason} but we have text content of length ${text.length}`);
       } else {
-        console.log("Successfully extracted text response, length:", text.length);
+        console.log('Successfully extracted text response, length:', text.length);
       }
       
       // Even with a non-STOP finish reason, return the content if we have it
@@ -229,22 +229,22 @@ async function callGemini(config, prompt, apiKey, options) {
       let message = `Erro: Geração Gemini finalizada com razão "${reason}" sem conteúdo válido.`;
       if (safetyRatings) message += ` Segurança: ${JSON.stringify(safetyRatings)}`;
       
-      console.warn("Gemini response had finish reason but no valid content:", result.candidates[0]);
+      console.warn('Gemini response had finish reason but no valid content:', result.candidates[0]);
       return message;
     }
     
     // If we got here, we have a completely unexpected response format
-    console.error("Unexpected Gemini API response format:", result);
+    console.error('Unexpected Gemini API response format:', result);
     return 'Erro: Resposta em formato inesperado da API Gemini. Por favor tente novamente.';
     
   } catch (error) {
     if (error.name === 'AbortError') {
-      console.error("Gemini API request timed out after 60 seconds");
+      console.error('Gemini API request timed out after 60 seconds');
       return 'Erro: Timeout na requisição para Google Gemini. Verifique sua conexão de internet.';
     }
     
     // Log the raw error object to help with debugging
-    console.error("Gemini API call failed with error:", error);
+    console.error('Gemini API call failed with error:', error);
     return `Erro: Falha ao comunicar com API Gemini: ${error.message || 'Erro desconhecido'}`;
   }
 }
@@ -254,22 +254,22 @@ async function callGemini(config, prompt, apiKey, options) {
  */
 async function callOpenAI(config, prompt, apiKey, options) {
   if (!apiKey) {
-    console.error("OpenAI API call failed: No API key provided");
+    console.error('OpenAI API call failed: No API key provided');
     throw new Error(`Erro: API Key para ${config.name} é necessária. Configure sua chave API nas configurações.`);
   }
 
-  console.log("Calling OpenAI API with model:", options.model || config.defaultRequestConfig.model);
-  console.log("Prompt length:", prompt.length, "characters");
+  console.log('Calling OpenAI API with model:', options.model || config.defaultRequestConfig.model);
+  console.log('Prompt length:', prompt.length, 'characters');
 
   const requestBody = {
     model: options.model || config.defaultRequestConfig.model,
     messages: [
-      { role: "system", content: "You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided." },
-      { role: "user", content: prompt }
+      { role: 'system', content: 'You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.' },
+      { role: 'user', content: prompt },
     ],
     temperature: options.temperature === undefined ? config.defaultRequestConfig.temperature : options.temperature,
     max_tokens: options.maxTokens || config.defaultRequestConfig.max_tokens,
-    top_p: options.top_p || config.defaultRequestConfig.top_p
+    top_p: options.top_p || config.defaultRequestConfig.top_p,
   };
 
   // Add timeout to prevent hanging requests
@@ -281,24 +281,24 @@ async function callOpenAI(config, prompt, apiKey, options) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
-    console.log("OpenAI API response status:", response.status);
+    console.log('OpenAI API response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      console.error("OpenAI API error:", errorData);
+      console.error('OpenAI API error:', errorData);
 
       // Handle specific error cases with Portuguese messages
       if (response.status === 429) {
-        throw new Error(`Erro: API OpenAI - Limite de taxa excedido. Tente novamente em alguns minutos.`);
+        throw new Error('Erro: API OpenAI - Limite de taxa excedido. Tente novamente em alguns minutos.');
       } else if (response.status === 401 || response.status === 403) {
-        throw new Error(`Erro: API OpenAI - Chave API inválida ou sem permissão. Verifique sua configuração.`);
+        throw new Error('Erro: API OpenAI - Chave API inválida ou sem permissão. Verifique sua configuração.');
       } else if (response.status === 400) {
         throw new Error(`Erro: API OpenAI - Requisição inválida: ${errorData.error?.message || response.statusText}`);
       } else if (response.status >= 500) {
@@ -309,12 +309,12 @@ async function callOpenAI(config, prompt, apiKey, options) {
     }
 
     const result = await response.json();
-    console.log("OpenAI API returned success response");
+    console.log('OpenAI API returned success response');
     return result.choices?.[0]?.message?.content || 'Resposta vazia da API OpenAI.';
 
   } catch (error) {
     if (error.name === 'AbortError') {
-      console.error("OpenAI API request timed out after 60 seconds");
+      console.error('OpenAI API request timed out after 60 seconds');
       throw new Error('Erro: Timeout na requisição para OpenAI (60 segundos). Verifique sua conexão de internet.');
     }
     throw error;
@@ -328,21 +328,21 @@ async function callOpenAI(config, prompt, apiKey, options) {
  */
 async function callClaude(config, prompt, apiKey, options) {
   if (!apiKey) {
-    console.error("Claude API call failed: No API key provided");
+    console.error('Claude API call failed: No API key provided');
     throw new Error(`Erro: API Key para ${config.name} é necessária. Configure sua chave API nas configurações.`);
   }
 
-  console.log("Calling Claude API with model:", options.model || config.defaultRequestConfig.model);
-  console.log("Prompt length:", prompt.length, "characters");
+  console.log('Calling Claude API with model:', options.model || config.defaultRequestConfig.model);
+  console.log('Prompt length:', prompt.length, 'characters');
 
   const requestBody = {
     model: options.model || config.defaultRequestConfig.model,
     messages: [
-      { role: "user", content: prompt }
+      { role: 'user', content: prompt },
     ],
-    system: "You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.",
+    system: 'You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.',
     temperature: options.temperature === undefined ? config.defaultRequestConfig.temperature : options.temperature,
-    max_tokens: options.maxTokens || config.defaultRequestConfig.max_tokens
+    max_tokens: options.maxTokens || config.defaultRequestConfig.max_tokens,
   };
 
   // Add timeout to prevent hanging requests
@@ -355,24 +355,24 @@ async function callClaude(config, prompt, apiKey, options) {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify(requestBody),
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
-    console.log("Claude API response status:", response.status);
+    console.log('Claude API response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      console.error("Claude API error:", errorData);
+      console.error('Claude API error:', errorData);
 
       // Handle specific error cases with Portuguese messages
       if (response.status === 429) {
-        throw new Error(`Erro: API Claude - Limite de taxa excedido. Tente novamente em alguns minutos.`);
+        throw new Error('Erro: API Claude - Limite de taxa excedido. Tente novamente em alguns minutos.');
       } else if (response.status === 401 || response.status === 403) {
-        throw new Error(`Erro: API Claude - Chave API inválida ou sem permissão. Verifique sua configuração.`);
+        throw new Error('Erro: API Claude - Chave API inválida ou sem permissão. Verifique sua configuração.');
       } else if (response.status === 400) {
         throw new Error(`Erro: API Claude - Requisição inválida: ${errorData.error?.message || response.statusText}`);
       } else if (response.status >= 500) {
@@ -383,7 +383,7 @@ async function callClaude(config, prompt, apiKey, options) {
     }
 
     const result = await response.json();
-    console.log("Claude API returned success response");
+    console.log('Claude API returned success response');
 
     if (result.content && result.content.length > 0 && result.content[0].type === 'text') {
       return result.content[0].text;
@@ -392,7 +392,7 @@ async function callClaude(config, prompt, apiKey, options) {
 
   } catch (error) {
     if (error.name === 'AbortError') {
-      console.error("Claude API request timed out after 60 seconds");
+      console.error('Claude API request timed out after 60 seconds');
       throw new Error('Erro: Timeout na requisição para Claude (60 segundos). Verifique sua conexão de internet.');
     }
     throw error;
@@ -405,8 +405,8 @@ async function callClaude(config, prompt, apiKey, options) {
  * Call the Ollama API with timeout and enhanced error handling
  */
 async function callOllama(config, prompt, apiKey, options) { // apiKey is not used by ollama but kept for signature consistency
-  console.log("Calling Ollama API with model:", options.model || config.defaultRequestConfig.model);
-  console.log("Prompt length:", prompt.length, "characters");
+  console.log('Calling Ollama API with model:', options.model || config.defaultRequestConfig.model);
+  console.log('Prompt length:', prompt.length, 'characters');
 
   const requestBody = {
     model: options.model || config.defaultRequestConfig.model,
@@ -415,7 +415,7 @@ async function callOllama(config, prompt, apiKey, options) { // apiKey is not us
     options: {
       temperature: options.temperature === undefined ? config.defaultRequestConfig.temperature : options.temperature,
       num_predict: options.maxTokens || config.defaultRequestConfig.max_tokens,
-    }
+    },
   };
 
   // Add timeout (120 seconds for local models which can be slower)
@@ -427,21 +427,21 @@ async function callOllama(config, prompt, apiKey, options) { // apiKey is not us
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
-    console.log("Ollama API response status:", response.status);
+    console.log('Ollama API response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Ollama API error:", errorText);
+      console.error('Ollama API error:', errorText);
 
       // Handle Ollama-specific errors
       if (response.status === 404) {
         throw new Error(`Erro: Modelo "${requestBody.model}" não encontrado no Ollama. Execute: ollama pull ${requestBody.model}`);
       } else if (errorText.includes('connect ECONNREFUSED') || errorText.includes('ECONNREFUSED')) {
-        throw new Error(`Erro: Ollama não está rodando. Inicie o Ollama e tente novamente.`);
+        throw new Error('Erro: Ollama não está rodando. Inicie o Ollama e tente novamente.');
       } else if (response.status >= 500) {
         throw new Error(`Erro: API Ollama - Erro no servidor (${response.status}). Verifique se o Ollama está funcionando corretamente.`);
       }
@@ -450,12 +450,12 @@ async function callOllama(config, prompt, apiKey, options) { // apiKey is not us
     }
 
     const result = await response.json();
-    console.log("Ollama API returned success response");
+    console.log('Ollama API returned success response');
     return result.response || 'Resposta vazia da API Ollama.';
 
   } catch (error) {
     if (error.name === 'AbortError') {
-      console.error("Ollama API request timed out after 120 seconds");
+      console.error('Ollama API request timed out after 120 seconds');
       throw new Error('Erro: Timeout na requisição para Ollama (120 segundos). O modelo pode estar muito lento ou não estar carregado.');
     } else if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed')) {
       throw new Error('Erro: Não foi possível conectar ao Ollama. Verifique se está rodando em http://localhost:11434');
@@ -477,7 +477,7 @@ export const AI_PROVIDERS = {
     // Add alternative proxy URLs
     alternativeUrls: [
       'https://corsproxy.io/?https://generativelanguage.googleapis.com/v1beta/models',
-      'https://api.allorigins.win/raw?url=https://generativelanguage.googleapis.com/v1beta/models'
+      'https://api.allorigins.win/raw?url=https://generativelanguage.googleapis.com/v1beta/models',
     ],
     icon: '🧠',
     apiKeyHelpUrl: 'https://ai.google.dev/tutorials/setup',
@@ -510,7 +510,7 @@ export const AI_PROVIDERS = {
       max_tokens: 4000,
       top_p: 1,
       frequency_penalty: 0,
-      presence_penalty: 0
+      presence_penalty: 0,
     },
     callFunction: (config, prompt, apiKey, options) =>
       callWithRetry(() => callOpenAI(config, prompt, apiKey, options)),
@@ -529,7 +529,7 @@ export const AI_PROVIDERS = {
       model: 'claude-3-opus-20240229',
       temperature: 0.2,
       max_tokens: 4000,
-      top_p: 1
+      top_p: 1,
     },
     callFunction: (config, prompt, apiKey, options) =>
       callWithRetry(() => callClaude(config, prompt, apiKey, options)),
@@ -552,7 +552,7 @@ export const AI_PROVIDERS = {
     callFunction: (config, prompt, apiKey, options) =>
       callWithRetry(() => callOllama(config, prompt, apiKey, options)),
     recommendedInputChars: 3000, // Very conservative for local models with typically 4k context
-  }
+  },
 };
 
 export const DEFAULT_AI_PROVIDER = 'gemini';
@@ -569,38 +569,38 @@ export function formatRequestData(providerKey, prompt, options = {}) {
     case 'gemini':
       return {
         contents: [{
-          role: "user",
-          parts: [{ text: prompt }]
+          role: 'user',
+          parts: [{ text: prompt }],
         }],
         generationConfig: {
           temperature: options.temperature ?? AI_PROVIDERS.gemini.defaultRequestConfig.temperature,
           topK: options.topK ?? AI_PROVIDERS.gemini.defaultRequestConfig.topK,
           topP: options.topP ?? AI_PROVIDERS.gemini.defaultRequestConfig.topP,
-          maxOutputTokens: options.maxTokens ?? AI_PROVIDERS.gemini.defaultRequestConfig.maxOutputTokens
-        }
+          maxOutputTokens: options.maxTokens ?? AI_PROVIDERS.gemini.defaultRequestConfig.maxOutputTokens,
+        },
       };
 
     case 'openai':
       return {
         model: options.model ?? AI_PROVIDERS.openai.defaultRequestConfig.model,
         messages: [
-          { role: "system", content: "You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided." },
-          { role: "user", content: prompt }
+          { role: 'system', content: 'You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.' },
+          { role: 'user', content: prompt },
         ],
         temperature: options.temperature ?? AI_PROVIDERS.openai.defaultRequestConfig.temperature,
         max_tokens: options.maxTokens ?? AI_PROVIDERS.openai.defaultRequestConfig.max_tokens,
-        top_p: options.top_p ?? AI_PROVIDERS.openai.defaultRequestConfig.top_p
+        top_p: options.top_p ?? AI_PROVIDERS.openai.defaultRequestConfig.top_p,
       };
 
     case 'claude':
       return {
         model: options.model ?? AI_PROVIDERS.claude.defaultRequestConfig.model,
         messages: [
-          { role: "user", content: prompt }
+          { role: 'user', content: prompt },
         ],
-        system: "You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.",
+        system: 'You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.',
         temperature: options.temperature ?? AI_PROVIDERS.claude.defaultRequestConfig.temperature,
-        max_tokens: options.maxTokens ?? AI_PROVIDERS.claude.defaultRequestConfig.max_tokens
+        max_tokens: options.maxTokens ?? AI_PROVIDERS.claude.defaultRequestConfig.max_tokens,
       };
       
     case 'ollama':
@@ -611,7 +611,7 @@ export function formatRequestData(providerKey, prompt, options = {}) {
         options: {
           temperature: options.temperature ?? AI_PROVIDERS.ollama.defaultRequestConfig.temperature,
           num_predict: options.maxTokens ?? AI_PROVIDERS.ollama.defaultRequestConfig.max_tokens,
-        }
+        },
       };
 
     default:

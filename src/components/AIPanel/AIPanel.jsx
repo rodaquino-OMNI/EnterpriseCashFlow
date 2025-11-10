@@ -15,7 +15,7 @@ export default function AIPanel({
   showAiPanel,
   toggleAiPanel,
   canGenerateContent,
-  currentProviderName
+  currentProviderName,
 }) {
   if (!showAiPanel) {
     return (
@@ -49,8 +49,8 @@ export default function AIPanel({
               disabled={!canGenerateContent || isGenerating}
               className={`px-4 py-1.5 rounded-lg flex items-center text-sm font-medium transition-colors 
                 ${canGenerateContent && !isGenerating 
-                  ? 'bg-white text-blue-700 hover:bg-blue-50' 
-                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+      ? 'bg-white text-blue-700 hover:bg-blue-50' 
+      : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
             >
               {isGenerating ? (
                 <>

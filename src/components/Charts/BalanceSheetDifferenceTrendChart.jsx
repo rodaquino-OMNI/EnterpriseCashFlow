@@ -18,9 +18,9 @@ export default function BalanceSheetDifferenceTrendChart({ calculatedData, perio
 
     const chartData = calculatedData.map((period, index) => ({
       name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
-      "Diferença BS": period.balanceSheetDifference || 0,
-      "% dos Ativos": period.estimatedTotalAssets ? 
-        ((period.balanceSheetDifference || 0) / period.estimatedTotalAssets) * 100 : 0
+      'Diferença BS': period.balanceSheetDifference || 0,
+      '% dos Ativos': period.estimatedTotalAssets ? 
+        ((period.balanceSheetDifference || 0) / period.estimatedTotalAssets) * 100 : 0,
     }));
 
     return (
@@ -45,15 +45,15 @@ export default function BalanceSheetDifferenceTrendChart({ calculatedData, perio
               </YAxis>
               <Tooltip 
                 formatter={(value, name) => [
-                  name === "% dos Ativos" ? `${value.toFixed(2)}%` : formatCurrency(value), 
-                  name
+                  name === '% dos Ativos' ? `${value.toFixed(2)}%` : formatCurrency(value), 
+                  name,
                 ]}
                 labelFormatter={(label) => `Período: ${label}`}
                 contentStyle={{ 
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <ReferenceLine y={0} stroke="#64748b" strokeDasharray="2 2" />

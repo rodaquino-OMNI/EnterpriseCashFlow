@@ -13,7 +13,7 @@ import AiAnalysisSection from './AiAnalysisSection';
  */
 export default function AiSummarySection(props) {
   const { titleOverride, content, isLoading, error, onRetry } = props;
-  const displayTitle = titleOverride || "Resumo Executivo (Análise IA) ✨";
+  const displayTitle = titleOverride || 'Resumo Executivo (Análise IA) ✨';
   
   // For debugging during transition
   console.log('[AiSummarySection] Render state:', { 
@@ -21,7 +21,7 @@ export default function AiSummarySection(props) {
     isLoading, 
     hasError: !!error,
     contentLength: content?.length,
-    contentPreview: content?.substring?.(0, 50)
+    contentPreview: content?.substring?.(0, 50),
   });
 
   // Use the unified component

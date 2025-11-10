@@ -20,7 +20,7 @@ import * as Recharts from 'recharts';
  */
 export default function BaseChart({
   children,
-  libraryName = "Recharts",
+  libraryName = 'Recharts',
   chartTitle,
   title,
   subtitle,
@@ -28,13 +28,13 @@ export default function BaseChart({
   height = 400,
   loading = false,
   error = null,
-  empty = false
+  empty = false,
 }) {
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 2;
 
-  const displayTitle = title || chartTitle || "Chart";
+  const displayTitle = title || chartTitle || 'Chart';
 
   // Memoize library check
   const checkLibraryAvailability = useCallback(() => {
@@ -105,7 +105,7 @@ export default function BaseChart({
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
           <div className="text-sm text-slate-600">Carregando...</div>
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -117,7 +117,7 @@ export default function BaseChart({
           <div className="text-slate-400 mb-2">⚠️</div>
           <div className="text-sm text-slate-600">{error}</div>
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -128,7 +128,7 @@ export default function BaseChart({
         <div className="text-center p-4">
           <div className="text-sm text-slate-500">Sem dados disponíveis</div>
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -146,7 +146,7 @@ export default function BaseChart({
               Verifique a conexão de rede
             </div>
           </div>
-        </div>
+        </div>,
       );
     }
 
@@ -156,7 +156,7 @@ export default function BaseChart({
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
           <div className="text-sm text-slate-600">Carregando gráfico...</div>
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -172,7 +172,7 @@ export default function BaseChart({
     return renderContent(
       <ResponsiveContainer width="100%" height="100%">
         {children}
-      </ResponsiveContainer>
+      </ResponsiveContainer>,
     );
   }
 

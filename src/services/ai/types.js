@@ -66,7 +66,7 @@ export const AIProviderType = {
   OPENAI: 'openai',
   GEMINI: 'gemini',
   CLAUDE: 'claude',
-  OLLAMA: 'ollama'
+  OLLAMA: 'ollama',
 };
 
 export const AnalysisType = {
@@ -77,19 +77,19 @@ export const AnalysisType = {
   STRATEGIC_RECOMMENDATIONS: 'strategic_recommendations',
   FINANCIAL_DATA_EXTRACTION: 'financial_data_extraction',
   DOCUMENT_PARSING: 'document_parsing',
-  INSIGHT_GENERATION: 'insight_generation'
+  INSIGHT_GENERATION: 'insight_generation',
 };
 
 export const ResponseFormat = {
   TEXT: 'text',
   JSON: 'json',
   MARKDOWN: 'markdown',
-  STRUCTURED: 'structured'
+  STRUCTURED: 'structured',
 };
 
 export const ExtractionSource = {
   PDF: 'pdf',
   EXCEL: 'excel',
   IMAGE: 'image',
-  TEXT: 'text'
+  TEXT: 'text',
 };

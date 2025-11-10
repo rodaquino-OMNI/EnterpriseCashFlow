@@ -43,7 +43,7 @@ export default function CashFlowWaterfallChart({ data, calculatedData }) {
     { name: 'Var. Cap. Giro', value: workingCapitalChange, workingCapitalChange: workingCapitalChange },
     { name: 'CAPEX', value: capex, capex: capex },
     { name: 'Financiamento', value: financing, financing: financing },
-    { name: 'Caixa Final', value: ebitda + workingCapitalChange + capex + financing }
+    { name: 'Caixa Final', value: ebitda + workingCapitalChange + capex + financing },
   ];
 
   return (
@@ -70,7 +70,7 @@ export default function CashFlowWaterfallChart({ data, calculatedData }) {
               backgroundColor: 'white',
               border: '1px solid #e2e8f0',
               borderRadius: '6px',
-              fontSize: '12px'
+              fontSize: '12px',
             }}
           />
           <Bar dataKey="value" fill="#8b5cf6" name="Valor" />

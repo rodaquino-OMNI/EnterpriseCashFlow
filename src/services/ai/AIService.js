@@ -80,13 +80,13 @@ export class AIService {
       
       // Generate prompt using template
       const template = PromptTemplateFactory.create(analysisType, {
-        language: options.language || 'pt-BR'
+        language: options.language || 'pt-BR',
       });
       
       const prompt = template.generate(
         financialData,
         financialData.companyInfo,
-        options.focusAreas
+        options.focusAreas,
       );
 
       // Make AI request
@@ -95,15 +95,15 @@ export class AIService {
         parameters: {
           temperature: options.temperature || 0.3,
           maxTokens: options.maxTokens || 4000,
-          ...options.parameters
-        }
+          ...options.parameters,
+        },
       });
 
       // Parse and structure response
       const result = this.structureAnalysisResult(
         response,
         analysisType,
-        financialData
+        financialData,
       );
 
       // Cache result
@@ -135,7 +135,7 @@ export class AIService {
       // Perform extraction
       const result = await provider.extractData(content, schema, {
         ...options,
-        documentType
+        documentType,
       });
 
       return result;
@@ -146,7 +146,7 @@ export class AIService {
         data: [],
         confidence: 0,
         error: error.message,
-        metadata: { provider: this.currentProvider }
+        metadata: { provider: this.currentProvider },
       };
     }
   }
@@ -165,7 +165,7 @@ export class AIService {
         financialData,
         financialData.companyInfo,
         focusAreas,
-        options
+        options,
       );
 
       const provider = this.getCurrentProvider();
@@ -174,8 +174,8 @@ export class AIService {
         parameters: {
           temperature: options.temperature || 0.5,
           maxTokens: options.maxTokens || 3000,
-          ...options.parameters
-        }
+          ...options.parameters,
+        },
       });
 
       // Parse insights
@@ -185,7 +185,7 @@ export class AIService {
         insights,
         metadata: response.metadata,
         focusAreas,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       console.error('Insight generation failed:', error);
@@ -211,7 +211,7 @@ export class AIService {
         } catch (error) {
           errors[type] = error.message;
         }
-      })
+      }),
     );
 
     return { results, errors };
@@ -234,8 +234,8 @@ export class AIService {
         ...response.metadata,
         company: financialData.companyInfo.name,
         periods: financialData.calculatedData.length,
-        analysisDate: new Date().toISOString()
-      }
+        analysisDate: new Date().toISOString(),
+      },
     };
   }
 
@@ -254,7 +254,7 @@ export class AIService {
         insights.push({
           text: item.text,
           category: this.categorizeInsight(item.text),
-          priority: this.prioritizeInsight(item.text)
+          priority: this.prioritizeInsight(item.text),
         });
       });
     });
@@ -266,7 +266,7 @@ export class AIService {
         insights.push({
           text: bullet,
           category: this.categorizeInsight(bullet),
-          priority: this.prioritizeInsight(bullet)
+          priority: this.prioritizeInsight(bullet),
         });
       });
     });
@@ -289,12 +289,12 @@ export class AIService {
         'oportunidades de crescimento',
         'growth potential',  // growth is the subject, potential is the modifier
         'potencial de crescimento',
-        'potencial para crescimento'
+        'potencial para crescimento',
       ],
       opportunity: [
         'opportunity for',  // opportunity FOR something → opportunity is the subject
-        'oportunidade para'  // opportunity FOR something → opportunity is the subject
-      ]
+        'oportunidade para',  // opportunity FOR something → opportunity is the subject
+      ],
     };
 
     // Check compound phrases first
@@ -311,7 +311,7 @@ export class AIService {
       growth: ['growth', 'crescimento', 'expansion', 'expansão'],
       cost: ['cost', 'custo', 'expense', 'despesa'],
       efficiency: ['efficiency', 'eficiência', 'optimize', 'otimizar'],
-      opportunity: ['opportunity', 'oportunidade', 'potential', 'potencial']
+      opportunity: ['opportunity', 'oportunidade', 'potential', 'potencial'],
     };
 
     for (const [category, keywords] of Object.entries(categories)) {
@@ -332,11 +332,11 @@ export class AIService {
     const highPriorityKeywords = [
       'critical', 'crítico', 'crítica', 'críticos', 'críticas',
       'urgent', 'urgente', 'urgentes',
-      'immediate', 'imediato', 'imediata', 'imediatos', 'imediatas'
+      'immediate', 'imediato', 'imediata', 'imediatos', 'imediatas',
     ];
     const mediumPriorityKeywords = [
       'important', 'importante', 'importantes',
-      'significant', 'significativo', 'significativa', 'significativos', 'significativas'
+      'significant', 'significativo', 'significativa', 'significativos', 'significativas',
     ];
 
     const lowerText = text.toLowerCase();
@@ -361,7 +361,7 @@ export class AIService {
       type: analysisType,
       company: financialData.companyInfo.name,
       periods: financialData.calculatedData.length,
-      lastPeriod: financialData.calculatedData[financialData.calculatedData.length - 1]?.netProfit
+      lastPeriod: financialData.calculatedData[financialData.calculatedData.length - 1]?.netProfit,
     });
     
     return `${analysisType}_${this.currentProvider}_${dataHash}`;
@@ -390,7 +390,7 @@ export class AIService {
   setCache(key, data) {
     this.cache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -415,7 +415,7 @@ export class AIService {
         } catch (error) {
           status[type] = false;
         }
-      })
+      }),
     );
     
     return status;

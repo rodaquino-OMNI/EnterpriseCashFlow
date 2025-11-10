@@ -18,16 +18,16 @@ const buttonVariants = {
     border: `1px solid ${designTokens.colors.primary[500]}`,
     '&:hover': {
       backgroundColor: designTokens.colors.primary[600],
-      borderColor: designTokens.colors.primary[600]
+      borderColor: designTokens.colors.primary[600],
     },
     '&:focus': {
       backgroundColor: designTokens.colors.primary[600],
       borderColor: designTokens.colors.primary[700],
-      boxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`
+      boxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`,
     },
     '&:active': {
-      backgroundColor: designTokens.colors.primary[700]
-    }
+      backgroundColor: designTokens.colors.primary[700],
+    },
   },
   secondary: {
     backgroundColor: designTokens.colors.secondary[100],
@@ -35,13 +35,13 @@ const buttonVariants = {
     border: `1px solid ${designTokens.colors.secondary[200]}`,
     '&:hover': {
       backgroundColor: designTokens.colors.secondary[200],
-      borderColor: designTokens.colors.secondary[300]
+      borderColor: designTokens.colors.secondary[300],
     },
     '&:focus': {
       backgroundColor: designTokens.colors.secondary[200],
       borderColor: designTokens.colors.secondary[400],
-      boxShadow: `0 0 0 2px ${designTokens.colors.secondary[100]}`
-    }
+      boxShadow: `0 0 0 2px ${designTokens.colors.secondary[100]}`,
+    },
   },
   outline: {
     backgroundColor: 'transparent',
@@ -49,13 +49,13 @@ const buttonVariants = {
     border: `1px solid ${designTokens.colors.primary[300]}`,
     '&:hover': {
       backgroundColor: designTokens.colors.primary[50],
-      borderColor: designTokens.colors.primary[400]
+      borderColor: designTokens.colors.primary[400],
     },
     '&:focus': {
       backgroundColor: designTokens.colors.primary[50],
       borderColor: designTokens.colors.primary[500],
-      boxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`
-    }
+      boxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`,
+    },
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -63,12 +63,12 @@ const buttonVariants = {
     border: '1px solid transparent',
     '&:hover': {
       backgroundColor: designTokens.colors.secondary[100],
-      color: designTokens.colors.secondary[800]
+      color: designTokens.colors.secondary[800],
     },
     '&:focus': {
       backgroundColor: designTokens.colors.secondary[100],
-      boxShadow: `0 0 0 2px ${designTokens.colors.secondary[200]}`
-    }
+      boxShadow: `0 0 0 2px ${designTokens.colors.secondary[200]}`,
+    },
   },
   danger: {
     backgroundColor: designTokens.colors.semantic.error[500],
@@ -76,14 +76,14 @@ const buttonVariants = {
     border: `1px solid ${designTokens.colors.semantic.error[500]}`,
     '&:hover': {
       backgroundColor: designTokens.colors.semantic.error[600],
-      borderColor: designTokens.colors.semantic.error[600]
+      borderColor: designTokens.colors.semantic.error[600],
     },
     '&:focus': {
       backgroundColor: designTokens.colors.semantic.error[600],
       borderColor: designTokens.colors.semantic.error[700],
-      boxShadow: `0 0 0 2px ${designTokens.colors.semantic.error[200]}`
-    }
-  }
+      boxShadow: `0 0 0 2px ${designTokens.colors.semantic.error[200]}`,
+    },
+  },
 };
 
 /**
@@ -94,20 +94,20 @@ const buttonSizes = {
     height: designTokens.components.button.height.sm,
     padding: designTokens.components.button.padding.sm,
     fontSize: designTokens.typography.fontSize.sm[0],
-    borderRadius: designTokens.borderRadius.md
+    borderRadius: designTokens.borderRadius.md,
   },
   md: {
     height: designTokens.components.button.height.md,
     padding: designTokens.components.button.padding.md,
     fontSize: designTokens.typography.fontSize.base[0],
-    borderRadius: designTokens.borderRadius.md
+    borderRadius: designTokens.borderRadius.md,
   },
   lg: {
     height: designTokens.components.button.height.lg,
     padding: designTokens.components.button.padding.lg,
     fontSize: designTokens.typography.fontSize.lg[0],
-    borderRadius: designTokens.borderRadius.lg
-  }
+    borderRadius: designTokens.borderRadius.lg,
+  },
 };
 
 /**
@@ -122,7 +122,7 @@ const LoadingSpinner = ({ size = 16 }) => (
     xmlns="http://www.w3.org/2000/svg"
     style={{
       animation: 'spin 1s linear infinite',
-      marginRight: designTokens.spacing[2]
+      marginRight: designTokens.spacing[2],
     }}
   >
     <circle
@@ -188,7 +188,7 @@ const Button = forwardRef(({
     userSelect: 'none',
     opacity: disabled ? 0.5 : 1,
     ...buttonSizes[size],
-    ...buttonVariants[variant]
+    ...buttonVariants[variant],
   };
 
   // Handle click events
@@ -218,7 +218,7 @@ const Button = forwardRef(({
     'aria-disabled': disabled || loading,
     'aria-busy': loading,
     role: 'button',
-    tabIndex: disabled ? -1 : 0
+    tabIndex: disabled ? -1 : 0,
   };
 
   return (
@@ -266,7 +266,7 @@ const Button = forwardRef(({
             style={{ 
               marginRight: children ? designTokens.spacing[2] : 0,
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
             }}
           >
             {icon}
@@ -297,7 +297,7 @@ Button.propTypes = {
   type: PropTypes.oneOf(['button', 'submit', 'reset']),
   style: PropTypes.object,
   ariaLabel: PropTypes.string,
-  ariaDescribedBy: PropTypes.string
+  ariaDescribedBy: PropTypes.string,
 };
 
 export default Button;

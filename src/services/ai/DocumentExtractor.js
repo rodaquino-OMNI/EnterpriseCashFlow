@@ -31,9 +31,9 @@ export class DocumentExtractor {
           'Look for table structures with financial data',
           'Headers may be in Portuguese or English',
           'Numbers may use Brazilian format (1.234,56) or US format (1,234.56)',
-          'Identify period columns (months, quarters, years)'
-        ]
-      }
+          'Identify period columns (months, quarters, years)',
+        ],
+      },
     );
   }
 
@@ -56,9 +56,9 @@ export class DocumentExtractor {
           'Financial statements may be in table format or narrative',
           'Look for income statement, balance sheet, and cash flow sections',
           'Numbers may include currency symbols and formatting',
-          'Period information may be in headers or footers'
-        ]
-      }
+          'Period information may be in headers or footers',
+        ],
+      },
     );
   }
 
@@ -81,9 +81,9 @@ export class DocumentExtractor {
           'OCR text may have recognition errors',
           'Numbers might be misread (0/O, 1/l confusion)',
           'Table structure might be broken',
-          'Be conservative with uncertain values'
-        ]
-      }
+          'Be conservative with uncertain values',
+        ],
+      },
     );
   }
 
@@ -124,9 +124,9 @@ export class DocumentExtractor {
         instructions: [
           'Identify any financial data present',
           'Use context clues to determine data types',
-          'Be flexible with formats and structures'
-        ]
-      }
+          'Be flexible with formats and structures',
+        ],
+      },
     );
   }
 
@@ -140,7 +140,7 @@ export class DocumentExtractor {
       isValid: true,
       errors: [],
       warnings: [],
-      dataQuality: 0
+      dataQuality: 0,
     };
 
     if (!Array.isArray(extractedData) || extractedData.length === 0) {
@@ -167,12 +167,12 @@ export class DocumentExtractor {
             validFields++;
           } else {
             validationResult.warnings.push(
-              `Period ${index + 1}: Invalid value for ${field}`
+              `Period ${index + 1}: Invalid value for ${field}`,
             );
           }
         } else {
           validationResult.errors.push(
-            `Period ${index + 1}: Missing required field ${field}`
+            `Period ${index + 1}: Missing required field ${field}`,
           );
         }
       });
@@ -248,7 +248,7 @@ export class DocumentExtractor {
     }
 
     return {
-      periods: Array(periods).fill(periodSchema)
+      periods: Array(periods).fill(periodSchema),
     };
   }
 
@@ -284,7 +284,7 @@ export class DocumentExtractor {
       const difference = Math.abs(calculatedGrossProfit - data.grossProfit);
       if (difference > 1) { // Allow small rounding differences
         validationResult.warnings.push(
-          `Period ${periodIndex + 1}: Gross profit inconsistency (calculated: ${calculatedGrossProfit}, provided: ${data.grossProfit})`
+          `Period ${periodIndex + 1}: Gross profit inconsistency (calculated: ${calculatedGrossProfit}, provided: ${data.grossProfit})`,
         );
       }
     }
@@ -296,7 +296,7 @@ export class DocumentExtractor {
       const tolerance = data.totalAssets * 0.01; // 1% tolerance
       if (difference > tolerance) {
         validationResult.warnings.push(
-          `Period ${periodIndex + 1}: Balance sheet doesn't balance (Assets: ${data.totalAssets}, Liabilities + Equity: ${calculatedAssets})`
+          `Period ${periodIndex + 1}: Balance sheet doesn't balance (Assets: ${data.totalAssets}, Liabilities + Equity: ${calculatedAssets})`,
         );
       }
     }
@@ -313,7 +313,7 @@ export class DocumentExtractor {
         success: false,
         data: [],
         confidence: 0,
-        error: 'No results to merge'
+        error: 'No results to merge',
       };
     }
 
@@ -352,7 +352,7 @@ export class DocumentExtractor {
 
       mergedData.push({
         periodLabel: `Period ${i + 1}`,
-        data: periodData
+        data: periodData,
       });
 
       confidence = count > 0 ? confidence / count : 0;
@@ -364,8 +364,8 @@ export class DocumentExtractor {
       confidence: results.reduce((sum, r) => sum + (r.confidence || 0), 0) / results.length,
       metadata: {
         sourceCount: results.length,
-        merged: true
-      }
+        merged: true,
+      },
     };
   }
 }

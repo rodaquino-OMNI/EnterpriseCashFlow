@@ -11,7 +11,7 @@ import {
   validateWorkingCapitalEfficiency,
   validateBalanceSheetConsistency,
   validateFinancialData,
-  runAllValidations
+  runAllValidations,
 } from '../dataValidation';
 
 describe('Data Validation Utilities', () => {
@@ -21,7 +21,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 400000,
         equity: 600000,
-        balanceSheetDifference: 0
+        balanceSheetDifference: 0,
       };
 
       const result = validateBalanceSheetInternalConsistency(periodData);
@@ -33,7 +33,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 400000,
         equity: 500000,
-        balanceSheetDifference: 100000 // 10% of assets
+        balanceSheetDifference: 100000, // 10% of assets
       };
 
       const result = validateBalanceSheetInternalConsistency(periodData);
@@ -48,7 +48,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 400000,
         equity: 599990,
-        balanceSheetDifference: 10 // Minor difference
+        balanceSheetDifference: 10, // Minor difference
       };
 
       const result = validateBalanceSheetInternalConsistency(periodData);
@@ -62,7 +62,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 0,
         estimatedTotalLiabilities: 0,
         equity: 0,
-        balanceSheetDifference: 500 // Any difference is significant when assets are 0
+        balanceSheetDifference: 500, // Any difference is significant when assets are 0
       };
 
       const result = validateBalanceSheetInternalConsistency(periodData);
@@ -77,7 +77,7 @@ describe('Data Validation Utilities', () => {
         inventoryDaysDerived: 60,
         inventoryValueAvg: 100000,
         cogs: 600000,
-        revenue: 1000000
+        revenue: 1000000,
       };
 
       const result = validateInventoryLevels(periodData);
@@ -89,7 +89,7 @@ describe('Data Validation Utilities', () => {
         inventoryDaysDerived: 400, // > 365 days
         inventoryValueAvg: 200000,
         cogs: 182500,
-        revenue: 1000000
+        revenue: 1000000,
       };
 
       const result = validateInventoryLevels(periodData);
@@ -104,7 +104,7 @@ describe('Data Validation Utilities', () => {
         inventoryDaysDerived: 0.5,
         inventoryValueAvg: 1000,
         cogs: 730000,
-        revenue: 1000000
+        revenue: 1000000,
       };
 
       const result = validateInventoryLevels(periodData);
@@ -118,7 +118,7 @@ describe('Data Validation Utilities', () => {
         inventoryDaysDerived: 90,
         inventoryValueAvg: 800000, // 80% of revenue
         cogs: 600000,
-        revenue: 1000000
+        revenue: 1000000,
       };
 
       const result = validateInventoryLevels(periodData);
@@ -132,7 +132,7 @@ describe('Data Validation Utilities', () => {
         inventoryDaysDerived: 0,
         inventoryValueAvg: 50000,
         cogs: 0,
-        revenue: 0
+        revenue: 0,
       };
 
       const result = validateInventoryLevels(periodData);
@@ -144,7 +144,7 @@ describe('Data Validation Utilities', () => {
     it('should return empty array for healthy metrics', () => {
       const periodData = {
         closingCash: 100000,
-        ebit: 50000
+        ebit: 50000,
       };
 
       const result = validateRealisticBusinessMetrics(periodData);
@@ -154,7 +154,7 @@ describe('Data Validation Utilities', () => {
     it('should detect insolvency risk', () => {
       const periodData = {
         closingCash: -50000,
-        ebit: -100000
+        ebit: -100000,
       };
 
       const result = validateRealisticBusinessMetrics(periodData);
@@ -166,7 +166,7 @@ describe('Data Validation Utilities', () => {
     it('should not flag insolvency if only one metric is negative', () => {
       const periodData = {
         closingCash: 50000,
-        ebit: -100000
+        ebit: -100000,
       };
 
       const result = validateRealisticBusinessMetrics(periodData);
@@ -185,7 +185,7 @@ describe('Data Validation Utilities', () => {
         { netCashFlowBeforeFinancing: 100000 },
         { netCashFlowBeforeFinancing: 150000 },
         { netCashFlowBeforeFinancing: 120000 },
-        { netCashFlowBeforeFinancing: -50000 } // Only 1 negative out of 4
+        { netCashFlowBeforeFinancing: -50000 }, // Only 1 negative out of 4
       ];
 
       const result = validateCashFlowPatterns(calculatedData);
@@ -197,7 +197,7 @@ describe('Data Validation Utilities', () => {
         { netCashFlowBeforeFinancing: -100000 },
         { netCashFlowBeforeFinancing: -150000 },
         { netCashFlowBeforeFinancing: 50000 },
-        { netCashFlowBeforeFinancing: -120000 } // 3 negative out of 4 (75%)
+        { netCashFlowBeforeFinancing: -120000 }, // 3 negative out of 4 (75%)
       ];
 
       const result = validateCashFlowPatterns(calculatedData);
@@ -209,7 +209,7 @@ describe('Data Validation Utilities', () => {
     it('should handle edge case of all negative cash flows', () => {
       const calculatedData = [
         { netCashFlowBeforeFinancing: -100000 },
-        { netCashFlowBeforeFinancing: -150000 }
+        { netCashFlowBeforeFinancing: -150000 },
       ];
 
       const result = validateCashFlowPatterns(calculatedData);
@@ -224,7 +224,7 @@ describe('Data Validation Utilities', () => {
         wcDays: 60,
         arDaysDerived: 45,
         inventoryDaysDerived: 30,
-        apDaysDerived: 15
+        apDaysDerived: 15,
       };
 
       const result = validateWorkingCapitalEfficiency(periodData, 'Q1 2024');
@@ -236,7 +236,7 @@ describe('Data Validation Utilities', () => {
         wcDays: 150, // > 120 days
         arDaysDerived: 90,
         inventoryDaysDerived: 80,
-        apDaysDerived: 20
+        apDaysDerived: 20,
       };
 
       const result = validateWorkingCapitalEfficiency(periodData, 'Q1 2024');
@@ -250,7 +250,7 @@ describe('Data Validation Utilities', () => {
         wcDays: -45, // < -30 days
         arDaysDerived: 30,
         inventoryDaysDerived: 15,
-        apDaysDerived: 90
+        apDaysDerived: 90,
       };
 
       const result = validateWorkingCapitalEfficiency(periodData, 'Q1 2024');
@@ -264,7 +264,7 @@ describe('Data Validation Utilities', () => {
         wcDays: 0,
         arDaysDerived: 30,
         inventoryDaysDerived: 30,
-        apDaysDerived: 60
+        apDaysDerived: 60,
       };
 
       const result = validateWorkingCapitalEfficiency(periodData, 'Q1 2024');
@@ -278,7 +278,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 400000,
         equity: 600000,
-        balanceSheetDifference: 0
+        balanceSheetDifference: 0,
       };
 
       const result = validateBalanceSheetConsistency(periodData);
@@ -290,7 +290,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 400000,
         equity: 600000,
-        balanceSheetDifference: 50000 // Stored value doesn't match A - (L + E)
+        balanceSheetDifference: 50000, // Stored value doesn't match A - (L + E)
       };
 
       const result = validateBalanceSheetConsistency(periodData);
@@ -304,7 +304,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 400000,
         equity: 580000,
-        balanceSheetDifference: 20000 // 2% of assets
+        balanceSheetDifference: 20000, // 2% of assets
       };
 
       const result = validateBalanceSheetConsistency(periodData);
@@ -318,7 +318,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 400000,
         equity: 599500,
-        balanceSheetDifference: 500 // < 1% threshold
+        balanceSheetDifference: 500, // < 1% threshold
       };
 
       const result = validateBalanceSheetConsistency(periodData);
@@ -351,8 +351,8 @@ describe('Data Validation Utilities', () => {
           apDaysDerived: 15,
           closingCash: 50000,
           ebit: 100000,
-          netCashFlowBeforeFinancing: 80000
-        }
+          netCashFlowBeforeFinancing: 80000,
+        },
       ];
 
       const result = runAllValidations(calculatedData);
@@ -379,7 +379,7 @@ describe('Data Validation Utilities', () => {
           apDaysDerived: 20,
           closingCash: -50000, // Negative cash + negative EBIT = insolvency (critical)
           ebit: -100000,
-          netCashFlowBeforeFinancing: -80000
+          netCashFlowBeforeFinancing: -80000,
         },
         {
           // Data that triggers success
@@ -397,8 +397,8 @@ describe('Data Validation Utilities', () => {
           apDaysDerived: 90,
           closingCash: 100000,
           ebit: 50000,
-          netCashFlowBeforeFinancing: 80000
-        }
+          netCashFlowBeforeFinancing: 80000,
+        },
       ];
 
       const result = runAllValidations(calculatedData);
@@ -427,7 +427,7 @@ describe('Data Validation Utilities', () => {
           balanceSheetDifference: 0,
           closingCash: 100000,
           netCashFlowBeforeFinancing: 50000,
-          ebit: 100000
+          ebit: 100000,
         },
         {
           // Period 2 - critical issues
@@ -437,8 +437,8 @@ describe('Data Validation Utilities', () => {
           balanceSheetDifference: 100000,
           closingCash: -50000,
           netCashFlowBeforeFinancing: -100000,
-          ebit: -50000
-        }
+          ebit: -50000,
+        },
       ];
 
       const result = validateFinancialData(calculatedData);
@@ -460,7 +460,7 @@ describe('Data Validation Utilities', () => {
         revenue: 1000000,
         closingCash: 100000,
         netCashFlowBeforeFinancing: 50000,
-        ebit: 100000
+        ebit: 100000,
       }));
 
       const result = validateFinancialData(calculatedData);
@@ -474,7 +474,7 @@ describe('Data Validation Utilities', () => {
         { netCashFlowBeforeFinancing: -50000, balanceSheetDifference: 5000 },
         { netCashFlowBeforeFinancing: -60000, balanceSheetDifference: 10000 },
         { netCashFlowBeforeFinancing: -70000, balanceSheetDifference: 15000 },
-        { netCashFlowBeforeFinancing: -80000, balanceSheetDifference: 20000 }
+        { netCashFlowBeforeFinancing: -80000, balanceSheetDifference: 20000 },
       ];
 
       const result = validateFinancialData(calculatedData);
@@ -495,8 +495,8 @@ describe('Data Validation Utilities', () => {
           revenue: 1000000,
           closingCash: 50000,
           netCashFlowBeforeFinancing: -100000,
-          ebit: 50000
-        }
+          ebit: 50000,
+        },
       ];
 
       const result = validateFinancialData(calculatedData);
@@ -513,8 +513,8 @@ describe('Data Validation Utilities', () => {
           estimatedTotalAssets: 1000000,
           estimatedTotalLiabilities: 400000,
           equity: 600000,
-          balanceSheetDifference: 0
-        }
+          balanceSheetDifference: 0,
+        },
       ];
 
       const result = validateFinancialData(calculatedData);
@@ -528,7 +528,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: undefined,
         estimatedTotalLiabilities: undefined,
         equity: undefined,
-        balanceSheetDifference: undefined
+        balanceSheetDifference: undefined,
       };
 
       expect(() => validateBalanceSheetInternalConsistency(periodData)).not.toThrow();
@@ -541,7 +541,7 @@ describe('Data Validation Utilities', () => {
         inventoryDaysDerived: NaN,
         inventoryValueAvg: 100000,
         cogs: 0, // Division by zero causing NaN
-        revenue: 1000000
+        revenue: 1000000,
       };
 
       const result = validateInventoryLevels(periodData);
@@ -553,7 +553,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1e15, // 1 quadrillion
         estimatedTotalLiabilities: 4e14,
         equity: 6e14,
-        balanceSheetDifference: 0
+        balanceSheetDifference: 0,
       };
 
       const result = validateBalanceSheetConsistency(periodData);
@@ -565,7 +565,7 @@ describe('Data Validation Utilities', () => {
         estimatedTotalAssets: 1000000,
         estimatedTotalLiabilities: 1500000,
         equity: -500000, // Negative equity
-        balanceSheetDifference: 0
+        balanceSheetDifference: 0,
       };
 
       const result = validateBalanceSheetConsistency(periodData);

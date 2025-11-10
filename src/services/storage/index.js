@@ -116,5 +116,5 @@ export const storage = {
   
   async restore(backupFile) {
     return storageManager.restore(backupFile);
-  }
+  },
 };

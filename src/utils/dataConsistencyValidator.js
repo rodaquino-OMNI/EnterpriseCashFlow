@@ -34,7 +34,7 @@ export function validateInternalSSOTConsistency(periodData, periodLabel) {
     issues.push({
       type: 'SSOT_WC_VALUE', periodLabel, severity: 'CRITICAL_ERROR',
       message: `SSOT - Valor do Capital de Giro inconsistente. Componentes: ${formatCurrency(calculatedWCValueFromComponents)}, Armazenado: ${formatCurrency(periodData.workingCapitalValue)}`,
-      expected: calculatedWCValueFromComponents, actual: periodData.workingCapitalValue
+      expected: calculatedWCValueFromComponents, actual: periodData.workingCapitalValue,
     });
   }
 
@@ -48,7 +48,7 @@ export function validateInternalSSOTConsistency(periodData, periodLabel) {
     issues.push({
       type: 'SSOT_WC_DAYS', periodLabel, severity: 'CRITICAL_ERROR',
       message: `SSOT - Ciclo de Caixa (WC Days) inconsistente. Componentes: ${formatDays(calculatedWCDaysFromComponents)}, Armazenado: ${formatDays(periodData.wcDays)}`,
-      expected: calculatedWCDaysFromComponents, actual: periodData.wcDays
+      expected: calculatedWCDaysFromComponents, actual: periodData.wcDays,
     });
   }
   
@@ -59,7 +59,7 @@ export function validateInternalSSOTConsistency(periodData, periodLabel) {
   const storedDifference = periodData.balanceSheetDifference || 0;
   
   if (Math.abs(assets - (liabilities + equity) - storedDifference) > tolerance) {
-      issues.push({
+    issues.push({
       type: 'SSOT_BS_EQUATION', periodLabel, severity: 'CRITICAL_ERROR',
       message: `SSOT - Equação do Balanço (A = L + E + Diff) não fecha com valores armazenados. A:${formatCurrency(assets)}, L:${formatCurrency(liabilities)}, E:${formatCurrency(equity)}, Diff Armazenada:${formatCurrency(storedDifference)}. Cálculo (A-(L+E)): ${formatCurrency(assets - (liabilities + equity))}`,
     });
@@ -73,7 +73,7 @@ export function validateInternalSSOTConsistency(periodData, periodLabel) {
     issues.push({
       type: 'SSOT_CASH_RECONCILIATION', periodLabel, severity: 'CRITICAL_ERROR',
       message: `SSOT - Reconciliação de Caixa Final inconsistente. Calculado DFC (Abertura+Variação): ${formatCurrency(dfcCalculatedClosingCash)}, Caixa Final Armazenado: ${formatCurrency(periodData.closingCash)}`,
-      expected: dfcCalculatedClosingCash, actual: periodData.closingCash
+      expected: dfcCalculatedClosingCash, actual: periodData.closingCash,
     });
   }
   

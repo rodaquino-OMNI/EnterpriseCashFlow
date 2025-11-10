@@ -54,7 +54,7 @@ export const Grid = forwardRef(({
     7: '1.75rem',
     8: '2rem',
     9: '2.25rem',
-    10: '2.5rem'
+    10: '2.5rem',
   };
 
   // Generate responsive classes
@@ -79,13 +79,13 @@ export const Grid = forwardRef(({
     maxWidth: '1200px',
     margin: '0 auto',
     padding: `0 ${designTokens.spacing[4]}`,
-    ...style
+    ...style,
   } : style;
 
   // Base styles for item
   const itemStyles = item ? {
     gridColumn: xs ? `span ${xs}` : 'span 12',
-    ...style
+    ...style,
   } : style;
 
   // Determine final styles
@@ -96,7 +96,7 @@ export const Grid = forwardRef(({
     container ? 'grid-container' : '',
     item ? 'grid-item' : '',
     generateResponsiveClasses(),
-    className
+    className,
   ].filter(Boolean).join(' ');
 
   // Filter out custom props from DOM props
@@ -189,7 +189,7 @@ Grid.propTypes = {
   xl: PropTypes.number,
   children: PropTypes.node,
   className: PropTypes.string,
-  style: PropTypes.object
+  style: PropTypes.object,
 };
 
 /**
@@ -224,7 +224,7 @@ export const GridColumn = forwardRef(({
           styles.gridColumn = `span ${value}`;
         } else {
           styles[`@media (min-width: ${designTokens.breakpoints[breakpoint]})`] = {
-            gridColumn: `span ${value}`
+            gridColumn: `span ${value}`,
           };
         }
       });
@@ -240,7 +240,7 @@ export const GridColumn = forwardRef(({
           if (mediaQuery) {
             styles[mediaQuery] = {
               ...styles[mediaQuery],
-              gridColumnStart: value + 1
+              gridColumnStart: value + 1,
             };
           } else {
             styles.gridColumnStart = value + 1;
@@ -258,7 +258,7 @@ export const GridColumn = forwardRef(({
   
   const columnStyles = {
     ...responsiveStyles,
-    ...style
+    ...style,
   };
 
   return (
@@ -280,13 +280,13 @@ export const GridColumn = forwardRef(({
           }
           
           ${Object.entries(responsiveStyles)
-            .filter(([key]) => key.startsWith('@media'))
-            .map(([mediaQuery, styles]) => `
+      .filter(([key]) => key.startsWith('@media'))
+      .map(([mediaQuery, styles]) => `
               ${mediaQuery} {
                 .grid-column {
                   ${Object.entries(styles)
-                    .map(([prop, value]) => `${prop.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value};`)
-                    .join('\n                  ')}
+      .map(([prop, value]) => `${prop.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${value};`)
+      .join('\n                  ')}
                 }
               }
             `).join('\n          ')}
@@ -307,8 +307,8 @@ GridColumn.propTypes = {
       md: PropTypes.number,
       lg: PropTypes.number,
       xl: PropTypes.number,
-      '2xl': PropTypes.number
-    })
+      '2xl': PropTypes.number,
+    }),
   ]),
   offset: PropTypes.oneOfType([
     PropTypes.number,
@@ -318,12 +318,12 @@ GridColumn.propTypes = {
       md: PropTypes.number,
       lg: PropTypes.number,
       xl: PropTypes.number,
-      '2xl': PropTypes.number
-    })
+      '2xl': PropTypes.number,
+    }),
   ]),
   children: PropTypes.node,
   className: PropTypes.string,
-  style: PropTypes.object
+  style: PropTypes.object,
 };
 
 /**
@@ -359,7 +359,7 @@ export const Flex = forwardRef(({
     sm: designTokens.spacing[3],
     md: designTokens.spacing[4],
     lg: designTokens.spacing[6],
-    xl: designTokens.spacing[8]
+    xl: designTokens.spacing[8],
   };
 
   // Base flex styles
@@ -370,7 +370,7 @@ export const Flex = forwardRef(({
     alignItems: typeof align === 'string' ? align : align.xs || 'stretch',
     flexWrap: typeof wrap === 'string' ? wrap : wrap.xs || 'nowrap',
     gap: gapSizes[gap],
-    ...style
+    ...style,
   };
 
   return (
@@ -388,8 +388,8 @@ export const Flex = forwardRef(({
       <style>
         {`
           ${typeof direction === 'object' ? Object.entries(direction)
-            .filter(([bp]) => bp !== 'xs')
-            .map(([bp, value]) => `
+      .filter(([bp]) => bp !== 'xs')
+      .map(([bp, value]) => `
               @media (min-width: ${designTokens.breakpoints[bp]}) {
                 .flex-container {
                   flex-direction: ${value};
@@ -398,8 +398,8 @@ export const Flex = forwardRef(({
             `).join('') : ''}
           
           ${typeof justify === 'object' ? Object.entries(justify)
-            .filter(([bp]) => bp !== 'xs')
-            .map(([bp, value]) => `
+      .filter(([bp]) => bp !== 'xs')
+      .map(([bp, value]) => `
               @media (min-width: ${designTokens.breakpoints[bp]}) {
                 .flex-container {
                   justify-content: ${value};
@@ -408,8 +408,8 @@ export const Flex = forwardRef(({
             `).join('') : ''}
           
           ${typeof align === 'object' ? Object.entries(align)
-            .filter(([bp]) => bp !== 'xs')
-            .map(([bp, value]) => `
+      .filter(([bp]) => bp !== 'xs')
+      .map(([bp, value]) => `
               @media (min-width: ${designTokens.breakpoints[bp]}) {
                 .flex-container {
                   align-items: ${value};
@@ -418,8 +418,8 @@ export const Flex = forwardRef(({
             `).join('') : ''}
           
           ${typeof wrap === 'object' ? Object.entries(wrap)
-            .filter(([bp]) => bp !== 'xs')
-            .map(([bp, value]) => `
+      .filter(([bp]) => bp !== 'xs')
+      .map(([bp, value]) => `
               @media (min-width: ${designTokens.breakpoints[bp]}) {
                 .flex-container {
                   flex-wrap: ${value};
@@ -437,24 +437,24 @@ Flex.displayName = 'Flex';
 Flex.propTypes = {
   direction: PropTypes.oneOfType([
     PropTypes.oneOf(['row', 'row-reverse', 'column', 'column-reverse']),
-    PropTypes.object
+    PropTypes.object,
   ]),
   justify: PropTypes.oneOfType([
     PropTypes.oneOf(['flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly']),
-    PropTypes.object
+    PropTypes.object,
   ]),
   align: PropTypes.oneOfType([
     PropTypes.oneOf(['stretch', 'flex-start', 'flex-end', 'center', 'baseline']),
-    PropTypes.object
+    PropTypes.object,
   ]),
   wrap: PropTypes.oneOfType([
     PropTypes.oneOf(['nowrap', 'wrap', 'wrap-reverse']),
-    PropTypes.object
+    PropTypes.object,
   ]),
   gap: PropTypes.oneOf(['xs', 'sm', 'md', 'lg', 'xl']),
   children: PropTypes.node,
   className: PropTypes.string,
-  style: PropTypes.object
+  style: PropTypes.object,
 };
 
 /**
@@ -482,7 +482,7 @@ export const Container = forwardRef(({
     md: '768px',
     lg: '1024px',
     xl: '1280px',
-    fluid: '100%'
+    fluid: '100%',
   };
 
   const containerStyles = {
@@ -490,7 +490,7 @@ export const Container = forwardRef(({
     maxWidth: containerSizes[size],
     margin: '0 auto',
     padding: `0 ${designTokens.spacing[4]}`,
-    ...style
+    ...style,
   };
 
   return (
@@ -523,7 +523,7 @@ Container.propTypes = {
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl', 'fluid']),
   children: PropTypes.node,
   className: PropTypes.string,
-  style: PropTypes.object
+  style: PropTypes.object,
 };
 
 export default Grid;

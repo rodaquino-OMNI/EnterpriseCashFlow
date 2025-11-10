@@ -12,7 +12,7 @@ const EnhancedAIPanel = ({
   financialData, 
   companyInfo,
   onAnalysisComplete,
-  className = '' 
+  className = '', 
 }) => {
   const [selectedAnalyses, setSelectedAnalyses] = useState([]);
   const [apiKeys, setApiKeys] = useState({});
@@ -22,7 +22,7 @@ const EnhancedAIPanel = ({
 
   const aiService = useEnhancedAiService({
     defaultProvider: selectedProvider,
-    autoInitialize: false
+    autoInitialize: false,
   });
 
   // Initialize AI service when API keys are provided
@@ -43,7 +43,7 @@ const EnhancedAIPanel = ({
   // Get recommendations when financial data changes
   const recommendations = aiService.getRecommendedAnalyses({ 
     calculatedData: financialData, 
-    companyInfo 
+    companyInfo, 
   });
 
   /**
@@ -71,14 +71,14 @@ const EnhancedAIPanel = ({
 
     const financialDataBundle = {
       calculatedData: financialData,
-      companyInfo
+      companyInfo,
     };
 
     try {
       const result = await aiService.batchAnalyze(
         selectedAnalyses,
         financialDataBundle,
-        { language: 'pt-BR' }
+        { language: 'pt-BR' },
       );
 
       setResults(result.results);
@@ -99,18 +99,18 @@ const EnhancedAIPanel = ({
 
     const financialDataBundle = {
       calculatedData: financialData,
-      companyInfo
+      companyInfo,
     };
 
     try {
       const insights = await aiService.generateInsights(
         financialDataBundle,
-        focusAreas
+        focusAreas,
       );
 
       setResults(prev => ({
         ...prev,
-        insights
+        insights,
       }));
     } catch (error) {
       console.error('Insight generation failed:', error);
@@ -124,7 +124,7 @@ const EnhancedAIPanel = ({
     setSelectedAnalyses(prev => 
       prev.includes(analysisType)
         ? prev.filter(t => t !== analysisType)
-        : [...prev, analysisType]
+        : [...prev, analysisType],
     );
   };
 
@@ -210,8 +210,8 @@ const EnhancedAIPanel = ({
                       </div>
                       <span className={`px-2 py-1 text-xs rounded ${
                         rec.priority === 'critical' ? 'bg-red-100 text-red-800' :
-                        rec.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                        'bg-blue-100 text-blue-800'
+                          rec.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                            'bg-blue-100 text-blue-800'
                       }`}>
                         {rec.priority}
                       </span>

@@ -23,7 +23,7 @@ const DesignSystemDemo = () => {
     email: '',
     amount: '',
     description: '',
-    category: ''
+    category: '',
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -32,12 +32,12 @@ const DesignSystemDemo = () => {
   // Accessibility hooks
   const { containerRef, activate, deactivate } = useFocusManagement({
     trapFocus: false,
-    restoreOnUnmount: true
+    restoreOnUnmount: true,
   });
 
   const { announce } = useAnnouncement({
     politeness: 'polite',
-    timeout: 3000
+    timeout: 3000,
   });
 
   // Handle input changes
@@ -45,14 +45,14 @@ const DesignSystemDemo = () => {
     const value = e.target.value;
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error when user starts typing
     if (formErrors[field]) {
       setFormErrors(prev => ({
         ...prev,
-        [field]: null
+        [field]: null,
       }));
     }
   };
@@ -64,7 +64,7 @@ const DesignSystemDemo = () => {
     // Email validation
     const emailResult = composeValidators(
       validators.required,
-      validators.email
+      validators.email,
     )(formData.email);
     if (emailResult !== true) {
       errors.email = emailResult;
@@ -73,7 +73,7 @@ const DesignSystemDemo = () => {
     // Amount validation
     const amountResult = composeValidators(
       validators.required,
-      validators.currency
+      validators.currency,
     )(formData.amount);
     if (amountResult !== true) {
       errors.amount = amountResult;
@@ -82,7 +82,7 @@ const DesignSystemDemo = () => {
     // Description validation
     const descriptionResult = composeValidators(
       validators.required,
-      validators.minLength(10)
+      validators.minLength(10),
     )(formData.description);
     if (descriptionResult !== true) {
       errors.description = descriptionResult;
@@ -116,7 +116,7 @@ const DesignSystemDemo = () => {
         email: '',
         amount: '',
         description: '',
-        category: ''
+        category: '',
       });
     } catch (error) {
       announce('Error submitting form. Please try again.');
@@ -131,7 +131,7 @@ const DesignSystemDemo = () => {
       email: '',
       amount: '',
       description: '',
-      category: ''
+      category: '',
     });
     setFormErrors({});
     announce('Form has been reset');
@@ -145,44 +145,44 @@ const DesignSystemDemo = () => {
       padding: designTokens.spacing[6],
       fontFamily: designTokens.typography.fontFamily.sans.join(', '),
       backgroundColor: designTokens.colors.white,
-      minHeight: '100vh'
+      minHeight: '100vh',
     },
     header: {
       marginBottom: designTokens.spacing[8],
-      textAlign: 'center'
+      textAlign: 'center',
     },
     title: {
       fontSize: designTokens.typography.fontSize['3xl'][0],
       fontWeight: designTokens.typography.fontWeight.bold,
       color: designTokens.colors.secondary[900],
       marginBottom: designTokens.spacing[4],
-      lineHeight: designTokens.typography.lineHeight.tight
+      lineHeight: designTokens.typography.lineHeight.tight,
     },
     subtitle: {
       fontSize: designTokens.typography.fontSize.lg[0],
       color: designTokens.colors.secondary[600],
-      lineHeight: designTokens.typography.lineHeight.normal
+      lineHeight: designTokens.typography.lineHeight.normal,
     },
     buttonGroup: {
       display: 'flex',
       gap: designTokens.spacing[3],
       justifyContent: 'center',
       marginTop: designTokens.spacing[6],
-      flexWrap: 'wrap'
+      flexWrap: 'wrap',
     },
     demoSection: {
       marginBottom: designTokens.spacing[8],
       padding: designTokens.spacing[6],
       border: `1px solid ${designTokens.colors.secondary[200]}`,
       borderRadius: designTokens.borderRadius.lg,
-      backgroundColor: designTokens.colors.secondary[50]
+      backgroundColor: designTokens.colors.secondary[50],
     },
     sectionTitle: {
       fontSize: designTokens.typography.fontSize.xl[0],
       fontWeight: designTokens.typography.fontWeight.semibold,
       color: designTokens.colors.secondary[800],
-      marginBottom: designTokens.spacing[4]
-    }
+      marginBottom: designTokens.spacing[4],
+    },
   };
 
   return (
@@ -286,7 +286,7 @@ const DesignSystemDemo = () => {
                   placeholder="Enter transaction description"
                   validator={composeValidators(
                     validators.required,
-                    validators.minLength(10)
+                    validators.minLength(10),
                   )}
                   validateOnBlur
                   error={!!formErrors.description}
@@ -405,7 +405,7 @@ const DesignSystemDemo = () => {
         <ul style={{ 
           marginLeft: designTokens.spacing[6], 
           color: designTokens.colors.secondary[700],
-          lineHeight: designTokens.typography.lineHeight.relaxed
+          lineHeight: designTokens.typography.lineHeight.relaxed,
         }}>
           <li>Proper ARIA attributes and labels</li>
           <li>Keyboard navigation support</li>

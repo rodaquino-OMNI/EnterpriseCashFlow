@@ -13,7 +13,7 @@ function App() {
   const [companyInfo, setCompanyInfo] = useState({ 
     name: '', 
     reportTitle: 'Financial Analysis', 
-    periodType: 'QUARTERLY'  // Default to quarterly analysis
+    periodType: 'QUARTERLY',  // Default to quarterly analysis
   });
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [userUploadedData, setUserUploadedData] = useState([]);
@@ -53,7 +53,7 @@ function App() {
       setHtml2pdfInstance(() => html2pdf.default);
       return html2pdf.default;
     } catch (error) {
-      console.error("Failed to load HTML2PDF library:", error);
+      console.error('Failed to load HTML2PDF library:', error);
       setHtml2pdfError(error);
       return null;
     }
@@ -71,7 +71,7 @@ function App() {
       // Auto-proceed to calculate
       handleCalculateFinancials(data);
     } catch (error) {
-      console.error("Error parsing Excel file:", error);
+      console.error('Error parsing Excel file:', error);
       setErrorMessage(`Error parsing Excel file: ${error.message}`);
       setLoadingState(prev => ({ ...prev, loadingData: false }));
     }
@@ -89,7 +89,7 @@ function App() {
       // Auto-proceed to calculate
       handleCalculateFinancials(data);
     } catch (error) {
-      console.error("Error parsing PDF file:", error);
+      console.error('Error parsing PDF file:', error);
       setErrorMessage(`Error parsing PDF file: ${error.message}`);
       setLoadingState(prev => ({ ...prev, loadingData: false }));
     }
@@ -118,7 +118,7 @@ function App() {
       setCalculatedData(calculatedResults);
       setAppState('report'); // Auto-switch to report view when calculation is done
     } catch (error) {
-      console.error("Calculation error:", error);
+      console.error('Calculation error:', error);
       setErrorMessage(`Error calculating financials: ${error.message}`);
     } finally {
       setLoadingState(prev => ({ ...prev, calculatingData: false, loadingData: false }));
@@ -153,7 +153,7 @@ function App() {
   const updateApiKey = (provider, key) => {
     setApiKeys(prev => ({
       ...prev,
-      [provider]: key
+      [provider]: key,
     }));
   };
   
@@ -168,7 +168,7 @@ function App() {
     loadingState, 
     excelParsingStatus?.loading, 
     pdfParsingStatus?.loading, 
-    isCalculating // Fixed dependency array
+    isCalculating, // Fixed dependency array
   ]);
   
   return (

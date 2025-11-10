@@ -17,7 +17,7 @@ export default function ExcelUploadProgress({
   currentStep,
   qualityAnalysis,
   recommendations,
-  onClose
+  onClose,
 }) {
   if (!isVisible) return null;
 
@@ -40,7 +40,7 @@ export default function ExcelUploadProgress({
         {/* Progress Bar */}
         <div className="mb-6">
           <div className="flex justify-between text-sm text-slate-600 mb-1">
-            <span>{currentStep || (isComplete ? "Concluído!" : "Iniciando...")}</span>
+            <span>{currentStep || (isComplete ? 'Concluído!' : 'Iniciando...')}</span>
             <span className="font-medium text-blue-600">{progress}%</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
@@ -60,7 +60,7 @@ export default function ExcelUploadProgress({
                 <span className="text-slate-500">Preenchimento (Obrigatórios):</span>
                 <span className={`ml-2 font-bold ${
                   (qualityAnalysis.requiredCompleteness || 0) >= 80 ? 'text-green-600' : 
-                  (qualityAnalysis.requiredCompleteness || 0) >= 50 ? 'text-orange-500' : 'text-red-600'
+                    (qualityAnalysis.requiredCompleteness || 0) >= 50 ? 'text-orange-500' : 'text-red-600'
                 }`}>
                   {qualityAnalysis.requiredCompleteness || 0}%
                 </span>
@@ -75,8 +75,8 @@ export default function ExcelUploadProgress({
                 <span className="text-slate-500">Score de Qualidade Estimado:</span>
                 <span className={`ml-2 font-extrabold text-lg ${
                   (qualityAnalysis.qualityScore || 0) >= 90 ? 'text-green-500' :
-                  (qualityAnalysis.qualityScore || 0) >= 70 ? 'text-sky-500' :
-                  (qualityAnalysis.qualityScore || 0) >= 50 ? 'text-yellow-500' : 'text-red-500'
+                    (qualityAnalysis.qualityScore || 0) >= 70 ? 'text-sky-500' :
+                      (qualityAnalysis.qualityScore || 0) >= 50 ? 'text-yellow-500' : 'text-red-500'
                 }`}>
                   {qualityAnalysis.qualityScore || 0} / 100
                 </span>
@@ -93,9 +93,9 @@ export default function ExcelUploadProgress({
               {recommendations.slice(0, 3).map((rec, index) => (
                 <div key={index} className={`p-2.5 rounded-md text-sm border-l-4 ${
                   rec.type === 'success' ? 'bg-green-50 border-green-500 text-green-700' :
-                  rec.type === 'warning' ? 'bg-orange-50 border-orange-500 text-orange-700' :
-                  rec.type === 'alert' ? 'bg-red-50 border-red-500 text-red-700' :
-                  'bg-blue-50 border-blue-500 text-blue-700'
+                    rec.type === 'warning' ? 'bg-orange-50 border-orange-500 text-orange-700' :
+                      rec.type === 'alert' ? 'bg-red-50 border-red-500 text-red-700' :
+                        'bg-blue-50 border-blue-500 text-blue-700'
                 }`}>
                   <strong className="font-medium">{rec.title}:</strong> {rec.message}
                 </div>
@@ -105,9 +105,9 @@ export default function ExcelUploadProgress({
         )}
 
         {isComplete && !recommendations?.length && qualityAnalysis && (
-            <div className="mt-4 text-sm text-green-600 bg-green-50 p-3 rounded-md border border-green-200">
+          <div className="mt-4 text-sm text-green-600 bg-green-50 p-3 rounded-md border border-green-200">
                 Dados parecem bons! Prossiga para gerar o relatório detalhado.
-            </div>
+          </div>
         )}
       </div>
     </div>

@@ -242,7 +242,7 @@ export class AuditLogger {
 
     if (criteria.action) {
       results = results.filter(entry => 
-        entry.data.action && entry.data.action.includes(criteria.action)
+        entry.data.action && entry.data.action.includes(criteria.action),
       );
     }
 
@@ -360,7 +360,7 @@ export class AuditLogger {
     cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
 
     this.auditLog = this.auditLog.filter(entry => 
-      new Date(entry.timestamp) > cutoffDate
+      new Date(entry.timestamp) > cutoffDate,
     );
   }
 

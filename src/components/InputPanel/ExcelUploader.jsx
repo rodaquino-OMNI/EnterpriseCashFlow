@@ -12,6 +12,8 @@ import { PERIOD_TYPES } from '../../utils/constants';
  * excelJsError: Error | null;
  * currentAppNumberOfPeriods: number;
  * currentAppPeriodType: import('../../types/financial').PeriodTypeOption;
+ * onNumberOfPeriodsChange: (periods: number) => void;
+ * onPeriodTypeChange: (periodType: import('../../types/financial').PeriodTypeOption) => void;
  * }} props
  */
 export default function ExcelUploader({
@@ -22,6 +24,8 @@ export default function ExcelUploader({
   excelJsError,
   currentAppNumberOfPeriods,
   currentAppPeriodType,
+  onNumberOfPeriodsChange,
+  onPeriodTypeChange,
 }) {
   const fileInputRef = useRef(null);
 
@@ -31,7 +35,7 @@ export default function ExcelUploader({
       onFileUpload(file);
     }
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -44,6 +48,60 @@ export default function ExcelUploader({
       <h2 className="text-xl font-semibold text-slate-700 mb-6 text-center">
         Entrada de Dados via Excel (Upload Adaptativo)
       </h2>
+
+      {/* Period Configuration Controls */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+        <h3 className="text-base font-semibold text-slate-700 mb-3 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          Configurar Template Excel:
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Number of Periods Control */}
+          <div>
+            <label htmlFor="numberOfPeriodsExcel" className="block text-sm font-medium text-slate-700 mb-2">
+              Número de Períodos (2-6):
+            </label>
+            <select
+              id="numberOfPeriodsExcel"
+              value={currentAppNumberOfPeriods}
+              onChange={(e) => onNumberOfPeriodsChange(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            >
+              {[2, 3, 4, 5, 6].map((n) => (
+                <option key={n} value={n}>
+                  {n} {n === 1 ? 'período' : 'períodos'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Period Type Control */}
+          <div>
+            <label htmlFor="periodTypeExcel" className="block text-sm font-medium text-slate-700 mb-2">
+              Tipo de Período:
+            </label>
+            <select
+              id="periodTypeExcel"
+              value={currentAppPeriodType}
+              onChange={(e) => onPeriodTypeChange(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            >
+              <option value="anos">Anos</option>
+              <option value="trimestres">Trimestres</option>
+              <option value="meses">Meses</option>
+            </select>
+          </div>
+        </div>
+        <p className="text-xs text-slate-600 mt-3 flex items-start">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>O template será gerado com a configuração acima. Após o upload, o sistema detectará automaticamente se você adicionou mais períodos ou alterou o tipo.</span>
+        </p>
+      </div>
+
       <ExcelTemplateSelector
         onTemplateDownloadRequest={onTemplateDownloadRequest} // Renamed prop
         isLoading={isExcelJsLoading} // Template download depends on ExcelJS loading

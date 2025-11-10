@@ -154,7 +154,7 @@ export class ResponseParser {
       if (match) {
         items.push({
           number: parseInt(match[1]),
-          text: match[2].trim()
+          text: match[2].trim(),
         });
       }
     }
@@ -226,7 +226,7 @@ export class ResponseParser {
     const currencyPatterns = [
       { regex: /R\$\s*([\d.,]+)/g, currency: 'BRL' },
       { regex: /\$\s*([\d.,]+)/g, currency: 'USD' },
-      { regex: /€\s*([\d.,]+)/g, currency: 'EUR' }
+      { regex: /€\s*([\d.,]+)/g, currency: 'EUR' },
     ];
 
     // Percentage patterns
@@ -345,7 +345,7 @@ export class ResponseParser {
       'cash', 'caixa',
       'debt', 'divida',
       'assets', 'ativos',
-      'equity', 'patrimonio'
+      'equity', 'patrimonio',
     ];
 
     const lowerContext = context.toLowerCase();

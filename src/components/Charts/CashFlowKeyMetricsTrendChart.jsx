@@ -18,10 +18,10 @@ export default function CashFlowKeyMetricsTrendChart({ calculatedData, periodTyp
 
     const chartData = calculatedData.map((period, index) => ({
       name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
-      "FCO": period.operatingCashFlow || 0,
-      "FCL": period.freeCashFlow || 0,
-      "Var. Caixa": period.netChangeInCash || 0,
-      "Saldo Caixa": period.closingCash || 0
+      'FCO': period.operatingCashFlow || 0,
+      'FCL': period.freeCashFlow || 0,
+      'Var. Caixa': period.netChangeInCash || 0,
+      'Saldo Caixa': period.closingCash || 0,
     }));
 
     return (
@@ -51,7 +51,7 @@ export default function CashFlowKeyMetricsTrendChart({ calculatedData, periodTyp
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />

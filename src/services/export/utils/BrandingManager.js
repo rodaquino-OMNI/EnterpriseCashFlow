@@ -15,7 +15,7 @@ export class BrandingManager {
         opacity: 0.1,
         angle: -45,
         font: '50px Arial',
-        color: 'rgba(0, 0, 0, 0.1)'
+        color: 'rgba(0, 0, 0, 0.1)',
       },
       colors: {
         primary: '#007bff',
@@ -25,18 +25,18 @@ export class BrandingManager {
         warning: '#ffc107',
         info: '#17a2b8',
         light: '#f8f9fa',
-        dark: '#343a40'
+        dark: '#343a40',
       },
       fonts: {
         heading: 'Arial, sans-serif',
         body: 'Arial, sans-serif',
-        mono: 'Courier New, monospace'
+        mono: 'Courier New, monospace',
       },
       header: {
         enabled: true,
         height: 60,
         backgroundColor: '#f8f9fa',
-        borderColor: '#dee2e6'
+        borderColor: '#dee2e6',
       },
       footer: {
         enabled: true,
@@ -46,10 +46,10 @@ export class BrandingManager {
         content: {
           left: '',
           center: '',
-          right: 'Page {page} of {total}'
-        }
+          right: 'Page {page} of {total}',
+        },
       },
-      ...options
+      ...options,
     };
   }
 
@@ -92,7 +92,7 @@ export class BrandingManager {
       height: 20,
       x: pageWidth - 50,
       y: 10,
-      ...logo
+      ...logo,
     };
     
     // Position calculations
@@ -135,7 +135,7 @@ export class BrandingManager {
           config.x,
           config.y,
           config.width,
-          config.height
+          config.height,
         );
       }
     }
@@ -208,7 +208,7 @@ export class BrandingManager {
           for (let dy = -pageHeight; dy < pageHeight * 2; dy += step) {
             pdf.text(watermark.text, dx, dy, {
               angle: watermark.angle || -45,
-              align: 'center'
+              align: 'center',
             });
           }
         }
@@ -220,7 +220,7 @@ export class BrandingManager {
     pdf.text(watermark.text, x, y, {
       angle: watermark.angle || 0,
       align: 'center',
-      baseline: 'middle'
+      baseline: 'middle',
     });
     
     pdf.restoreGraphicsState();
@@ -270,7 +270,7 @@ export class BrandingManager {
       x,
       y,
       width,
-      height
+      height,
     );
     
     pdf.restoreGraphicsState();
@@ -468,15 +468,15 @@ export class BrandingManager {
       t: 's',
       s: {
         font: { bold: true, sz: 16 },
-        alignment: { horizontal: 'center' }
-      }
+        alignment: { horizontal: 'center' },
+      },
     };
     
     // Merge cells for company name
     if (!worksheet['!merges']) worksheet['!merges'] = [];
     worksheet['!merges'].push({
       s: { r: 0, c: 0 },
-      e: { r: 0, c: range.e.c }
+      e: { r: 0, c: range.e.c },
     });
     
     // Add report title
@@ -485,14 +485,14 @@ export class BrandingManager {
       t: 's',
       s: {
         font: { bold: true, sz: 14 },
-        alignment: { horizontal: 'center' }
-      }
+        alignment: { horizontal: 'center' },
+      },
     };
     
     // Merge cells for title
     worksheet['!merges'].push({
       s: { r: 1, c: 0 },
-      e: { r: 1, c: range.e.c }
+      e: { r: 1, c: range.e.c },
     });
     
     // Update range
@@ -516,7 +516,7 @@ export class BrandingManager {
       if (worksheet[cell]) {
         if (!worksheet[cell].s) worksheet[cell].s = {};
         worksheet[cell].s.fill = { fgColor: { rgb: colors.primary.replace('#', '') } };
-        worksheet[cell].s.font = { color: { rgb: "FFFFFF" }, bold: true };
+        worksheet[cell].s.font = { color: { rgb: 'FFFFFF' }, bold: true };
       }
     }
   }
@@ -612,7 +612,7 @@ export class BrandingManager {
   getBranding(customBranding = {}) {
     return {
       ...this.defaultBranding,
-      ...customBranding
+      ...customBranding,
     };
   }
 

@@ -94,13 +94,13 @@ export default function ReportGeneratorApp() {
     isLoading: false, 
     error: null, 
     currentProviderConfig: {},
-    setSelectedProviderKey: () => {}
+    setSelectedProviderKey: () => {},
   };
 
   const aiAnalysisManager = useAiAnalysis(aiService, apiKeys, selectedAiProviderKey) || {
     isLoading: () => false,
     errors: {},
-    clearAllAnalyses: () => {}
+    clearAllAnalyses: () => {},
   };
 
   const aiExtractResult = useAiDataExtraction(aiService) || {};
@@ -142,24 +142,24 @@ export default function ReportGeneratorApp() {
       excelJsErrorHook, html2pdfErrorHook, pdfjsErrorHook,
       excelParsingErrorHook, pdfTextParsingErrorHook,
       calcErrorHook, aiExtractionErrorHook, aiService.error,
-      ...Object.values(aiAnalysisManager.errors || {}).filter(Boolean)
+      ...Object.values(aiAnalysisManager.errors || {}).filter(Boolean),
     ].filter(Boolean);
 
     if (hookErrors.length > 0) {
       const combinedMessage = hookErrors.map(e => e.message).join('; \n');
       if (appError?.message !== combinedMessage) {
-        setAppError(new Error(combinedMessage || "Ocorreu um erro desconhecido."));
+        setAppError(new Error(combinedMessage || 'Ocorreu um erro desconhecido.'));
       }
     } else if (!validationErrorDetails && appError) {
       setAppError(null);
     }
   }, [excelJsErrorHook, html2pdfErrorHook, pdfjsErrorHook, excelParsingErrorHook,
-      pdfTextParsingErrorHook, calcErrorHook, aiExtractionErrorHook,
-      aiService.error, aiAnalysisManager.errors, validationErrorDetails, appError]);
+    pdfTextParsingErrorHook, calcErrorHook, aiExtractionErrorHook,
+    aiService.error, aiAnalysisManager.errors, validationErrorDetails, appError]);
 
   useEffect(() => {
     try { localStorage.setItem('aiApiKeys_ReportGen_v3', JSON.stringify(apiKeys)); }
-    catch (e) { console.warn("Não foi possível salvar chaves API no localStorage:", e); }
+    catch (e) { console.warn('Não foi possível salvar chaves API no localStorage:', e); }
   }, [apiKeys]);
 
   const handleApiKeyChange = useCallback((providerKey, key) => {
@@ -184,7 +184,7 @@ export default function ReportGeneratorApp() {
       setNumberOfPeriods(DEFAULT_PERIODS_EXCEL);
       // Automatically load ExcelJS when Excel method is selected
       loadExcelJS().catch(err => {
-        console.error("Failed to load ExcelJS:", err);
+        console.error('Failed to load ExcelJS:', err);
         setAppError(err);
       });
     }
@@ -194,11 +194,11 @@ export default function ReportGeneratorApp() {
   const handleManualInputChange = useCallback((periodIndex, fieldKey, value) => {
     setCurrentInputData(prevData =>
       prevData.map((pd, idx) =>
-        idx === periodIndex ? { ...pd, [fieldKey]: value === '' ? null : Number(value) } : pd
-      )
+        idx === periodIndex ? { ...pd, [fieldKey]: value === '' ? null : Number(value) } : pd,
+      ),
     );
     if (validationErrorDetails) setValidationErrorDetails(null);
-    if (appError?.message.includes("validação")) setAppError(null);
+    if (appError?.message.includes('validação')) setAppError(null);
   }, [validationErrorDetails, appError]);
 
   const handleManualSubmit = async () => {
@@ -207,7 +207,7 @@ export default function ReportGeneratorApp() {
     const validationErrs = validateAllFields(currentInputData);
     if (validationErrs.length > 0) {
       setValidationErrorDetails(validationErrs);
-      setAppError(new Error("Erros de validação nos dados de entrada manual. Corrija os campos destacados."));
+      setAppError(new Error('Erros de validação nos dados de entrada manual. Corrija os campos destacados.'));
       return;
     }
     try {
@@ -220,7 +220,7 @@ export default function ReportGeneratorApp() {
     setAppError(null);
     try {
       const excel = await loadExcelJS();
-      if (!excel) { setAppError(new Error(excelJsErrorHook?.message || "ExcelJS não carregado.")); return; }
+      if (!excel) { setAppError(new Error(excelJsErrorHook?.message || 'ExcelJS não carregado.')); return; }
 
       let wb;
       let fileName = 'Template_Financeiro_Personalizado.xlsx';
@@ -238,7 +238,7 @@ export default function ReportGeneratorApp() {
           fileName = `Template_Basico_Drivers_${currentNumP}_Periodos.xlsx`;
           break;
         default:
-          throw new Error("Tipo de template não suportado para download.");
+          throw new Error('Tipo de template não suportado para download.');
       }
 
       const buf = await wb.xlsx.writeBuffer();
@@ -247,7 +247,7 @@ export default function ReportGeneratorApp() {
       const a = document.createElement('a'); a.href = url; a.download = fileName;
       document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove();
 
-    } catch (err) { console.error("Error downloading template:", err); setAppError(err); }
+    } catch (err) { console.error('Error downloading template:', err); setAppError(err); }
   };
 
   const handleExcelFileUpload = async (file) => {
@@ -258,7 +258,7 @@ export default function ReportGeneratorApp() {
     
     try {
       const parseResult = await parseSmartExcelFile(file, periodType);
-      console.log("Smart Parser Result:", parseResult);
+      console.log('Smart Parser Result:', parseResult);
       
       // Check if there's a period type mismatch
       if (parseResult.detectedPeriodType && parseResult.detectedPeriodType !== periodType) {
@@ -271,7 +271,7 @@ export default function ReportGeneratorApp() {
       await processParsedExcelData(parseResult);
       
     } catch (err) {
-      console.error("Error in handleExcelFileUpload:", err);
+      console.error('Error in handleExcelFileUpload:', err);
     }
   };
 
@@ -280,11 +280,11 @@ export default function ReportGeneratorApp() {
       data: parsedInputData,
       detectedPeriods,
       detectedPeriodType,
-      warnings: parseWarnings
+      warnings: parseWarnings,
     } = parseResult;
 
     if (parseWarnings && parseWarnings.length > 0) {
-      console.warn("Parse warnings:", parseWarnings);
+      console.warn('Parse warnings:', parseWarnings);
     }
 
     // Update app state
@@ -298,7 +298,7 @@ export default function ReportGeneratorApp() {
     const validationErrs = validateAllFields(parsedInputData);
     if (validationErrs.length > 0) {
       setValidationErrorDetails(validationErrs);
-      setAppError(new Error("Dados do Excel carregados, mas contêm erros de validação. Verifique os campos destacados."));
+      setAppError(new Error('Dados do Excel carregados, mas contêm erros de validação. Verifique os campos destacados.'));
       return;
     }
 
@@ -313,7 +313,7 @@ export default function ReportGeneratorApp() {
       // Update the period type in the parse result
       const updatedParseResult = {
         ...pendingExcelParseResult,
-        detectedPeriodType: confirmedPeriodType
+        detectedPeriodType: confirmedPeriodType,
       };
       
       await processParsedExcelData(updatedParseResult);
@@ -340,14 +340,14 @@ export default function ReportGeneratorApp() {
     setValidationErrorDetails(null);
     setCalculatedData([]);
     aiAnalysisManager.clearAllAnalyses();
-    setExtractionProgress({ stage: "Extraindo texto", progress: 0 });
+    setExtractionProgress({ stage: 'Extraindo texto', progress: 0 });
     
     try {
       const extractedText = await extractTextFromPdf(file);
-      setExtractionProgress({ stage: "Analisando dados com IA", progress: 50 });
+      setExtractionProgress({ stage: 'Analisando dados com IA', progress: 50 });
       
       if (!extractedText) {
-        throw new Error("Não foi possível extrair texto do PDF");
+        throw new Error('Não foi possível extrair texto do PDF');
       }
       
       const apiKey = apiKeys[selectedAiProviderKey] || '';
@@ -355,22 +355,22 @@ export default function ReportGeneratorApp() {
         extractedText, 
         pdfNumberOfPeriods, 
         pdfPeriodType,
-        apiKey
+        apiKey,
       );
       
-      setExtractionProgress({ stage: "Calculando indicadores", progress: 80 });
+      setExtractionProgress({ stage: 'Calculando indicadores', progress: 80 });
       
       if (extractedData && extractedData.length > 0) {
         setCurrentInputData(extractedData);
         const result = await calculate(extractedData, pdfPeriodType);
         setCalculatedData(result);
-        setExtractionProgress({ stage: "Concluído", progress: 100 });
+        setExtractionProgress({ stage: 'Concluído', progress: 100 });
         setTimeout(() => setExtractionProgress(null), 1500);
       } else {
-        throw new Error("Não foi possível extrair dados financeiros do PDF");
+        throw new Error('Não foi possível extrair dados financeiros do PDF');
       }
     } catch (error) {
-      console.error("Erro ao processar arquivo PDF:", error);
+      console.error('Erro ao processar arquivo PDF:', error);
       setExtractionProgress(null);
     }
   };
@@ -379,7 +379,7 @@ export default function ReportGeneratorApp() {
     name: companyName,
     reportTitle,
     periodType,
-    numberOfPeriods: calculatedData.length > 0 ? calculatedData.length : numberOfPeriods
+    numberOfPeriods: calculatedData.length > 0 ? calculatedData.length : numberOfPeriods,
   }), [companyName, reportTitle, periodType, calculatedData, numberOfPeriods]);
 
   return (
@@ -415,6 +415,8 @@ export default function ReportGeneratorApp() {
           excelJsError={excelJsErrorHook}
           currentAppNumberOfPeriods={numberOfPeriods}
           currentAppPeriodType={periodType}
+          onNumberOfPeriodsChange={setNumberOfPeriods}
+          onPeriodTypeChange={setPeriodType}
         />
       )}
       {inputMethod === 'manual' && (

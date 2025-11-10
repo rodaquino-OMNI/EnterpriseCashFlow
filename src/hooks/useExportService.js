@@ -30,7 +30,7 @@ export function useExportService(options = {}) {
         setLastExport({
           fileName: result.fileName,
           format: exportOptions.format || 'pdf',
-          timestamp: new Date()
+          timestamp: new Date(),
         });
         
         // Update statistics
@@ -61,7 +61,7 @@ export function useExportService(options = {}) {
         ...batchOptions,
         onProgress: (progress) => {
           setExportProgress(progress);
-        }
+        },
       });
       
       if (!result.success) {
@@ -107,7 +107,7 @@ export function useExportService(options = {}) {
   const exportWithTemplate = useCallback(async (data, templateId, exportOptions = {}) => {
     return await exportReport(data, {
       ...exportOptions,
-      templateId
+      templateId,
     });
   }, [exportReport]);
   
@@ -239,6 +239,6 @@ export function useExportService(options = {}) {
     exporting,
     exportProgress,
     exportError,
-    lastExport
+    lastExport,
   };
 }

@@ -15,7 +15,7 @@ export class DataImportService {
       allowedFormats: config.allowedFormats || ['json', 'csv', 'excel', 'xlsx'],
       strictValidation: config.strictValidation !== false,
       autoCorrect: config.autoCorrect !== false,
-      ...config
+      ...config,
     };
     
     this.validators = new Map();
@@ -277,7 +277,7 @@ export class DataImportService {
   async _importFinancialCSV(rows, options) {
     const headers = rows[0];
     const data = {
-      periods: []
+      periods: [],
     };
     
     // Find period columns
@@ -298,8 +298,8 @@ export class DataImportService {
           incomeStatement: {},
           balanceSheet: {},
           cashFlow: {},
-          workingCapital: {}
-        }
+          workingCapital: {},
+        },
       });
     });
     
@@ -396,7 +396,7 @@ export class DataImportService {
     const result = {
       project: null,
       scenarios: [],
-      reports: []
+      reports: [],
     };
     
     // Import project data
@@ -418,7 +418,7 @@ export class DataImportService {
         if (scenarioData.length > 0) {
           const scenario = this._transformScenario({
             name: sheetName.replace('Scenario_', ''),
-            data: { periods: scenarioData }
+            data: { periods: scenarioData },
           });
           
           result.scenarios.push(scenario);
@@ -443,7 +443,7 @@ export class DataImportService {
    */
   async _importFinancialExcel(workbook, options) {
     const data = {
-      periods: []
+      periods: [],
     };
     
     // Get period count from first financial sheet
@@ -463,8 +463,8 @@ export class DataImportService {
           incomeStatement: {},
           balanceSheet: {},
           cashFlow: {},
-          workingCapital: {}
-        }
+          workingCapital: {},
+        },
       });
     }
     
@@ -472,7 +472,7 @@ export class DataImportService {
     this._importFinancialSheet(
       workbook.Sheets['Income Statement'],
       data.periods,
-      'incomeStatement'
+      'incomeStatement',
     );
     
     // Import Balance Sheet
@@ -480,7 +480,7 @@ export class DataImportService {
       this._importFinancialSheet(
         workbook.Sheets['Balance Sheet'],
         data.periods,
-        'balanceSheet'
+        'balanceSheet',
       );
     }
     
@@ -489,7 +489,7 @@ export class DataImportService {
       this._importFinancialSheet(
         workbook.Sheets['Cash Flow'],
         data.periods,
-        'cashFlow'
+        'cashFlow',
       );
     }
     
@@ -535,7 +535,7 @@ export class DataImportService {
         'depreciation': 'depreciation',
         'interest expense': 'interestExpense',
         'tax expense': 'taxExpense',
-        'net income': 'netIncome'
+        'net income': 'netIncome',
       },
       balanceSheet: {
         'cash': 'cash',
@@ -545,7 +545,7 @@ export class DataImportService {
         'accounts payable': 'accountsPayable',
         'short-term debt': 'shortTermDebt',
         'long-term debt': 'longTermDebt',
-        'total equity': 'equity'
+        'total equity': 'equity',
       },
       cashFlow: {
         'operating cash flow': 'operatingCashFlow',
@@ -553,8 +553,8 @@ export class DataImportService {
         'financing cash flow': 'financingCashFlow',
         'free cash flow': 'freeCashFlow',
         'beginning cash': 'beginningCash',
-        'ending cash': 'endingCash'
-      }
+        'ending cash': 'endingCash',
+      },
     };
     
     const mapping = mappings[statementType] || {};
@@ -631,7 +631,7 @@ export class DataImportService {
     return createProject({
       ...data,
       createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-      updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date()
+      updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
     });
   }
 
@@ -649,7 +649,7 @@ export class DataImportService {
     return createScenario({
       ...data,
       createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-      updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date()
+      updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
     });
   }
 
@@ -667,7 +667,7 @@ export class DataImportService {
     return createReport({
       ...data,
       createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-      generatedAt: data.generatedAt ? new Date(data.generatedAt) : new Date()
+      generatedAt: data.generatedAt ? new Date(data.generatedAt) : new Date(),
     });
   }
 
@@ -705,7 +705,7 @@ export class DataImportService {
     
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

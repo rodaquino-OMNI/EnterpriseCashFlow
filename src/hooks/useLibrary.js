@@ -69,6 +69,6 @@ export function useLibrary(libraryNameGlobal) {
     isLoading,
     error,
     reset,
-    isAvailable: !!library // Convenience flag
+    isAvailable: !!library, // Convenience flag
   };
 }

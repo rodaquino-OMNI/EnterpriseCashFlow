@@ -1,10 +1,10 @@
 // src/components/InputPanel/ManualDataEntry.jsx
 import React, { useState } from 'react';
 import { 
-    fieldDefinitions, 
-    getFieldKeys, 
-    FIELD_CATEGORIES, 
-    isOverrideField 
+  fieldDefinitions, 
+  getFieldKeys, 
+  FIELD_CATEGORIES, 
+  isOverrideField, 
 } from '../../utils/fieldDefinitions';
 import { PERIOD_TYPES, MIN_PERIODS_MANUAL, MAX_PERIODS } from '../../utils/constants';
 
@@ -30,7 +30,7 @@ export default function ManualDataEntry({
   onInputChange,
   onSubmit,
   isLoading,
-  validationErrors
+  validationErrors,
 }) {
   const [expandedOverrides, setExpandedOverrides] = useState({
     pl: false,
@@ -63,16 +63,16 @@ export default function ManualDataEntry({
       <td key={`${fieldKey}-${periodIndex}`} className="p-1.5 border border-slate-300">
         <input
           type="number"
-          step={def.type === 'percentage' || def.type === 'days' ? "0.01" : "any"}
-          placeholder={isDisabled ? "N/A" : "0"}
+          step={def.type === 'percentage' || def.type === 'days' ? '0.01' : 'any'}
+          placeholder={isDisabled ? 'N/A' : '0'}
           disabled={isDisabled}
           title={def.note || def.label}
           value={isDisabled ? '' : (currentValue === null || typeof currentValue === 'undefined' ? '' : currentValue)}
           onChange={(e) => onInputChange(periodIndex, fieldKey, e.target.value)}
           className={`w-full p-2 border rounded-md text-sm text-right transition focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
             isDisabled ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 
-            fieldErrorMsg ? 'border-red-500 bg-red-50' : 
-            isOverridden ? 'border-green-400 bg-green-50 font-semibold' : 'border-slate-200 hover:border-slate-300'
+              fieldErrorMsg ? 'border-red-500 bg-red-50' : 
+                isOverridden ? 'border-green-400 bg-green-50 font-semibold' : 'border-slate-200 hover:border-slate-300'
           }`}
           aria-invalid={!!fieldErrorMsg}
           aria-describedby={fieldErrorMsg ? `${fieldKey}-${periodIndex}-error` : undefined}
@@ -89,10 +89,10 @@ export default function ManualDataEntry({
     const isExpanded = !isCollapsible || expandedOverrides[sectionKeyForToggle];
 
     const overrideCount = isCollapsible ? fieldKeysToShow.reduce((count, key) => {
-        return count + (inputData?.some(period => {
-            const val = period[key];
-            return val !== null && val !== undefined && val !== '';
-        }) ? 1 : 0);
+      return count + (inputData?.some(period => {
+        const val = period[key];
+        return val !== null && val !== undefined && val !== '';
+      }) ? 1 : 0);
     }, 0) : 0;
 
 
@@ -214,7 +214,7 @@ export default function ManualDataEntry({
       </div>
 
       {/* Driver Fields Section */}
-      {renderSectionTable("📋 Dados Principais / Drivers Essenciais", driverFieldKeys)}
+      {renderSectionTable('📋 Dados Principais / Drivers Essenciais', driverFieldKeys)}
       
       {/* Override Sections */}
       {overrideSections.map(section => (
@@ -223,7 +223,7 @@ export default function ManualDataEntry({
             section.title,
             getFieldKeys(section.category),
             true,
-            section.key
+            section.key,
           )}
         </div>
       ))}

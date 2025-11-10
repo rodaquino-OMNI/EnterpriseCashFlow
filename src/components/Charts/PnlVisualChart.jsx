@@ -28,7 +28,7 @@ export default function PnlVisualChart({ calculatedData, periodIndex = 0 }) {
       { name: 'Res. Fin.', value: Math.abs(period.netInterestExpenseIncome || 0), type: period.netInterestExpenseIncome >= 0 ? 'income' : 'cost' },
       { name: 'PBT', value: period.pbt || 0, type: 'profit' },
       { name: 'IR', value: period.incomeTax || 0, type: 'cost' },
-      { name: 'Lucro Líq.', value: period.netProfit || 0, type: 'final' }
+      { name: 'Lucro Líq.', value: period.netProfit || 0, type: 'final' },
     ];
 
     const getBarColor = (type) => {
@@ -70,7 +70,7 @@ export default function PnlVisualChart({ calculatedData, periodIndex = 0 }) {
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Bar dataKey="value">

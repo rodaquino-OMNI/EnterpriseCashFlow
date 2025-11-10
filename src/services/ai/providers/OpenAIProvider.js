@@ -20,12 +20,12 @@ export class OpenAIProvider extends BaseProvider {
         'gpt-4-turbo',
         'gpt-4',
         'gpt-3.5-turbo',
-        'gpt-4-vision-preview'
+        'gpt-4-vision-preview',
       ],
       rateLimit: {
         requestsPerMinute: 500,
-        tokensPerMinute: 150000
-      }
+        tokensPerMinute: 150000,
+      },
     };
   }
 
@@ -43,7 +43,7 @@ export class OpenAIProvider extends BaseProvider {
       presence_penalty: request.parameters?.presencePenalty ?? 0,
       response_format: request.parameters?.responseFormat === ResponseFormat.JSON 
         ? { type: 'json_object' } 
-        : undefined
+        : undefined,
     };
 
     try {
@@ -55,7 +55,7 @@ export class OpenAIProvider extends BaseProvider {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(requestBody),
-            signal: controller.signal
+            signal: controller.signal,
           });
 
           clearTimeout(timeoutId);
@@ -87,8 +87,8 @@ export class OpenAIProvider extends BaseProvider {
           tokensUsed: response.usage?.total_tokens || 0,
           responseTime,
           usage: response.usage,
-          finishReason: choice.finish_reason
-        }
+          finishReason: choice.finish_reason,
+        },
       };
     } catch (error) {
       console.error('OpenAI API error:', error);
@@ -114,8 +114,8 @@ Important:
       parameters: {
         temperature: 0.1,
         responseFormat: ResponseFormat.JSON,
-        ...options.parameters
-      }
+        ...options.parameters,
+      },
     };
 
     try {
@@ -129,8 +129,8 @@ Important:
         metadata: {
           provider: 'openai',
           model: response.metadata.model,
-          tokensUsed: response.metadata.tokensUsed
-        }
+          tokensUsed: response.metadata.tokensUsed,
+        },
       };
     } catch (error) {
       return {
@@ -138,7 +138,7 @@ Important:
         data: [],
         confidence: 0,
         error: error.message,
-        metadata: { provider: 'openai' }
+        metadata: { provider: 'openai' },
       };
     }
   }
@@ -149,18 +149,18 @@ Important:
     if (request.systemPrompt) {
       messages.push({
         role: 'system',
-        content: request.systemPrompt
+        content: request.systemPrompt,
       });
     } else {
       messages.push({
         role: 'system',
-        content: 'You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.'
+        content: 'You are a helpful financial analyst assistant. Use clear, precise language and keep responses focused on the financial data provided.',
       });
     }
 
     messages.push({
       role: 'user',
-      content: request.prompt
+      content: request.prompt,
     });
 
     return messages;
@@ -169,7 +169,7 @@ Important:
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.apiKey}`
+      'Authorization': `Bearer ${this.apiKey}`,
     };
 
     if (this.organizationId) {

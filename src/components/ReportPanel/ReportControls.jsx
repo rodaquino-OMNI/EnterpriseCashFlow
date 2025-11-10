@@ -31,13 +31,13 @@ export default function ReportControls({
   isAiCFDeepDiveLoading,
   html2pdfError,
   aiError,
-  canAnalyzeVariances
+  canAnalyzeVariances,
 }) {
   const isAnyAiLoading = isAiSummaryLoading || isAiVarianceLoading || isAiRiskLoading || isAiCFDeepDiveLoading;
   const isAnyActionLoading = isPdfLoading || isAnyAiLoading;
   const [showAiHelpInfo, setShowAiHelpInfo] = useState(false);
 
-  const commonButtonClasses = "px-5 py-2.5 text-white font-medium rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition duration-150 disabled:opacity-60 disabled:cursor-not-allowed w-full sm:w-auto text-sm";
+  const commonButtonClasses = 'px-5 py-2.5 text-white font-medium rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition duration-150 disabled:opacity-60 disabled:cursor-not-allowed w-full sm:w-auto text-sm';
   const spinner = (
     <div className="flex items-center justify-center space-x-2">
       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
@@ -50,11 +50,11 @@ export default function ReportControls({
     // If there's an error already, clear console to make new errors more visible
     if (aiError) {
       console.clear();
-      console.log("Starting new AI request, previous errors cleared");
+      console.log('Starting new AI request, previous errors cleared');
     }
 
     // Track button press in console for debugging
-    console.log("AI report button clicked:", action);
+    console.log('AI report button clicked:', action);
     
     // Call the appropriate action function
     action();
@@ -97,7 +97,7 @@ export default function ReportControls({
           onClick={() => handleAiButtonClick(onGenerateAiVariance)} 
           disabled={isAnyActionLoading || !canAnalyzeVariances}
           className={`${commonButtonClasses} bg-teal-500 hover:bg-teal-600 focus:ring-teal-500`}
-          title={!canAnalyzeVariances ? "Requer pelo menos 2 períodos de dados." : ""}
+          title={!canAnalyzeVariances ? 'Requer pelo menos 2 períodos de dados.' : ''}
         >
           {isAiVarianceLoading ? spinner : 'Análise de Variações IA 📈'}
         </button>
@@ -124,7 +124,7 @@ export default function ReportControls({
           className={`${commonButtonClasses} bg-green-600 hover:bg-green-700 focus:ring-green-500 lg:col-span-1`}
         >
           {isPdfLoading ? (
-             <div className="flex items-center justify-center space-x-2">
+            <div className="flex items-center justify-center space-x-2">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               <span>Gerando PDF...</span>
             </div>

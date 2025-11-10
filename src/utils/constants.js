@@ -25,13 +25,13 @@ export const HEADER_PATTERNS = [
   'Campo', // From our template
   'Field Key', 
   'Item',
-  'Chave Interna'
+  'Chave Interna',
 ];
 
 export const PERIOD_TYPES = {
   anos: { label: 'Anos', days: 365.0, shortLabel: 'Ano', pluralLabel: 'Anos' },
   trimestres: { label: 'Trimestres', days: 91.25, shortLabel: 'Trim.', pluralLabel: 'Trimestres' },
-  meses: { label: 'Meses', days: 30.4167, shortLabel: 'Mês', pluralLabel: 'Meses' }
+  meses: { label: 'Meses', days: 30.4167, shortLabel: 'Mês', pluralLabel: 'Meses' },
 };
 
 export const MAX_PERIODS = 6;
@@ -40,7 +40,7 @@ export const DEFAULT_PERIODS_MANUAL = 3;
 export const DEFAULT_PERIODS_EXCEL = 2;
 
 export const DEFAULT_AI_PROVIDER = 'gemini';
-export const GENAI_API_KEY = ""; 
+export const GENAI_API_KEY = ''; 
 
 // NEW: Excel Template Types
 export const TEMPLATE_TYPES = {

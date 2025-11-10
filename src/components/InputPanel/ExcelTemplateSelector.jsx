@@ -14,7 +14,7 @@ export default function ExcelTemplateSelector({
   onTemplateDownloadRequest,
   isLoading,
   currentNumberOfPeriods,
-  currentPeriodTypeLabel
+  currentPeriodTypeLabel,
 }) {
   const defaultTemplate = TEMPLATE_CONFIGS[TEMPLATE_TYPES.SMART_ADAPTIVE] ? TEMPLATE_TYPES.SMART_ADAPTIVE : Object.keys(TEMPLATE_CONFIGS)[0];
   const [selectedTemplateKey, setSelectedTemplateKey] = useState(defaultTemplate);
@@ -35,9 +35,9 @@ export default function ExcelTemplateSelector({
               key={key}
               className={`p-4 border-2 rounded-lg text-left transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2
                 ${isSelected 
-                  ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-300' 
-                  : 'border-slate-200 hover:border-slate-300 bg-slate-50'
-                }`}
+              ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-300' 
+              : 'border-slate-200 hover:border-slate-300 bg-slate-50'
+            }`}
               onClick={() => setSelectedTemplateKey(key)}
               aria-pressed={isSelected}
             >
@@ -45,9 +45,9 @@ export default function ExcelTemplateSelector({
                 <h4 className={`font-semibold ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>{config.name}</h4>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                   config.complexity === 'Simples' ? 'bg-green-100 text-green-800 border border-green-200' :
-                  config.complexity === 'Intermediário' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                  config.complexity === 'Avançado' ? 'bg-red-100 text-red-800 border border-red-200' :
-                  'bg-blue-100 text-blue-800 border border-blue-200'
+                    config.complexity === 'Intermediário' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                      config.complexity === 'Avançado' ? 'bg-red-100 text-red-800 border border-red-200' :
+                        'bg-blue-100 text-blue-800 border border-blue-200'
                 }`}>
                   {config.complexity}
                 </span>
@@ -72,7 +72,7 @@ export default function ExcelTemplateSelector({
             : `Baixar ${TEMPLATE_CONFIGS[selectedTemplateKey]?.name || 'Template'}`
           }
         </button>
-         <p className="text-xs text-slate-500 mt-3">
+        <p className="text-xs text-slate-500 mt-3">
             O template selecionado será gerado para <strong>{currentNumberOfPeriods} período(s)</strong> do tipo "<strong>{currentPeriodTypeLabel}</strong>".
         </p>
       </div>

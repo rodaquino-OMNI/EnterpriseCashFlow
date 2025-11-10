@@ -1,0 +1,17 @@
+# Test files - completely exclude from linting in VS Code
+**/__tests__/**
+**/__mocks__/**
+**/*.test.js
+**/*.test.jsx
+**/*.spec.js
+**/*.spec.jsx
+**/setupTests.js
+
+# Build and dependencies
+build/
+dist/
+coverage/
+node_modules/
+
+# Configuration
+*.config.js

@@ -21,7 +21,7 @@ export function useAiDocumentExtraction(options = {}) {
   const aiService = useEnhancedAiService({
     defaultProvider: options.provider || AIProviderType.GEMINI,
     autoInitialize: true,
-    providers: options.providers || {}
+    providers: options.providers || {},
   });
 
   /**
@@ -48,7 +48,7 @@ export function useAiDocumentExtraction(options = {}) {
     try {
       const result = await extractorRef.current.extractFromExcel(
         excelContent,
-        extractionOptions
+        extractionOptions,
       );
 
       // Validate extracted data
@@ -85,7 +85,7 @@ export function useAiDocumentExtraction(options = {}) {
     try {
       const result = await extractorRef.current.extractFromPDF(
         pdfText,
-        extractionOptions
+        extractionOptions,
       );
 
       // Validate extracted data
@@ -122,7 +122,7 @@ export function useAiDocumentExtraction(options = {}) {
     try {
       const result = await extractorRef.current.smartExtract(
         content,
-        extractionOptions
+        extractionOptions,
       );
 
       // Validate extracted data
@@ -151,7 +151,7 @@ export function useAiDocumentExtraction(options = {}) {
     content,
     documentType,
     analysisTypes,
-    options = {}
+    options = {},
   ) => {
     try {
       // First extract data
@@ -175,13 +175,13 @@ export function useAiDocumentExtraction(options = {}) {
       const analysisResults = await aiService.batchAnalyze(
         analysisTypes,
         financialData,
-        options.analysis
+        options.analysis,
       );
 
       return {
         extraction: extractionResult,
         analysis: analysisResults,
-        validation: validationResult
+        validation: validationResult,
       };
     } catch (err) {
       setError(err);
@@ -203,7 +203,7 @@ export function useAiDocumentExtraction(options = {}) {
       dataQuality: validationResult.dataQuality,
       errorCount: validationResult.errors.length,
       warningCount: validationResult.warnings.length,
-      provider: extractionResults.metadata?.provider
+      provider: extractionResults.metadata?.provider,
     };
   }, [extractionResults, validationResult]);
 
@@ -261,7 +261,7 @@ export function useAiDocumentExtraction(options = {}) {
     
     // AI service access
     aiService,
-    isReady: aiService.isInitialized
+    isReady: aiService.isInitialized,
   };
 }
 
@@ -272,7 +272,7 @@ export function useAiDocumentExtraction(options = {}) {
 function convertExtractedToFinancialData(extractedData) {
   const calculatedData = extractedData.map((period, index) => ({
     periodNumber: index + 1,
-    ...period.data
+    ...period.data,
   }));
 
   return {
@@ -281,8 +281,8 @@ function convertExtractedToFinancialData(extractedData) {
       name: 'Extracted Company',
       reportTitle: 'AI Extracted Financial Data',
       periodType: 'monthly',
-      numberOfPeriods: extractedData.length
-    }
+      numberOfPeriods: extractedData.length,
+    },
   };
 }
 

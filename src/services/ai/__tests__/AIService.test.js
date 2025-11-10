@@ -22,12 +22,12 @@ describe('AIService', () => {
     mockProvider = {
       complete: jest.fn(),
       extractData: jest.fn(),
-      healthCheck: jest.fn()
+      healthCheck: jest.fn(),
     };
 
     // Mock template
     mockTemplate = {
-      generate: jest.fn().mockReturnValue('Generated prompt')
+      generate: jest.fn().mockReturnValue('Generated prompt'),
     };
 
     AIProviderFactory.create = jest.fn().mockReturnValue(mockProvider);
@@ -36,7 +36,7 @@ describe('AIService', () => {
     // Mock ResponseParser
     ResponseParser.parseMarkdownSections = jest.fn().mockReturnValue({
       introduction: 'Intro text',
-      analysis: 'Analysis text'
+      analysis: 'Analysis text',
     });
     ResponseParser.extractFinancialMetrics = jest.fn().mockReturnValue([]);
     ResponseParser.extractNumberedList = jest.fn().mockReturnValue([]);
@@ -54,7 +54,7 @@ describe('AIService', () => {
     it('should create service with custom config', () => {
       const config = {
         defaultProvider: AIProviderType.OPENAI,
-        cacheTimeout: 30 * 60 * 1000
+        cacheTimeout: 30 * 60 * 1000,
       };
       const service = new AIService(config);
       expect(service.currentProvider).toBe(AIProviderType.OPENAI);
@@ -64,8 +64,8 @@ describe('AIService', () => {
     it('should initialize providers when provided in config', () => {
       const config = {
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       };
       const service = new AIService(config);
       expect(AIProviderFactory.create).toHaveBeenCalledWith(AIProviderType.GEMINI, { apiKey: 'test-key' });
@@ -77,7 +77,7 @@ describe('AIService', () => {
       const service = new AIService();
       const configs = {
         [AIProviderType.GEMINI]: { apiKey: 'gemini-key' },
-        [AIProviderType.OPENAI]: { apiKey: 'openai-key' }
+        [AIProviderType.OPENAI]: { apiKey: 'openai-key' },
       };
 
       service.initializeProviders(configs);
@@ -96,7 +96,7 @@ describe('AIService', () => {
       });
 
       const configs = {
-        [AIProviderType.GEMINI]: { apiKey: 'test-key' }
+        [AIProviderType.GEMINI]: { apiKey: 'test-key' },
       };
 
       service.initializeProviders(configs);
@@ -111,8 +111,8 @@ describe('AIService', () => {
       const service = new AIService({
         providers: {
           [AIProviderType.GEMINI]: { apiKey: 'key1' },
-          [AIProviderType.OPENAI]: { apiKey: 'key2' }
-        }
+          [AIProviderType.OPENAI]: { apiKey: 'key2' },
+        },
       });
 
       service.setProvider(AIProviderType.OPENAI);
@@ -132,8 +132,8 @@ describe('AIService', () => {
     it('should return current provider instance', () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const provider = service.getCurrentProvider();
@@ -153,21 +153,21 @@ describe('AIService', () => {
     it('should perform financial analysis successfully', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
         calculatedData: [
           { netProfit: 100000 },
-          { netProfit: 120000 }
-        ]
+          { netProfit: 120000 },
+        ],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Analysis result',
-        metadata: { provider: 'gemini' }
+        metadata: { provider: 'gemini' },
       });
 
       const result = await service.analyzeFinancial('profitability', financialData);
@@ -182,18 +182,18 @@ describe('AIService', () => {
     it('should use cache when available', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Analysis result',
-        metadata: {}
+        metadata: {},
       });
 
       // First call - not cached
@@ -208,18 +208,18 @@ describe('AIService', () => {
     it('should skip cache when requested', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Analysis result',
-        metadata: {}
+        metadata: {},
       });
 
       // First call
@@ -233,51 +233,51 @@ describe('AIService', () => {
     it('should handle analysis errors', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockRejectedValue(new Error('API Error'));
 
       await expect(
-        service.analyzeFinancial('profitability', financialData)
+        service.analyzeFinancial('profitability', financialData),
       ).rejects.toThrow('Analysis failed: API Error');
     });
 
     it('should use custom temperature and maxTokens', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Analysis result',
-        metadata: {}
+        metadata: {},
       });
 
       await service.analyzeFinancial('profitability', financialData, {
         temperature: 0.7,
-        maxTokens: 5000
+        maxTokens: 5000,
       });
 
       expect(mockProvider.complete).toHaveBeenCalledWith(
         expect.objectContaining({
           parameters: expect.objectContaining({
             temperature: 0.7,
-            maxTokens: 5000
-          })
-        })
+            maxTokens: 5000,
+          }),
+        }),
       );
     });
   });
@@ -286,14 +286,14 @@ describe('AIService', () => {
     it('should extract data from document successfully', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       mockProvider.extractData.mockResolvedValue({
         success: true,
         data: [{ revenue: 1000000 }],
-        confidence: 0.95
+        confidence: 0.95,
       });
 
       const result = await service.extractData('Document content', 'pdf', { fields: ['revenue'] });
@@ -307,8 +307,8 @@ describe('AIService', () => {
     it('should handle extraction errors gracefully', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       mockProvider.extractData.mockRejectedValue(new Error('Extraction failed'));
@@ -325,18 +325,18 @@ describe('AIService', () => {
     it('should generate insights successfully', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Generated insights',
-        metadata: { provider: 'gemini' }
+        metadata: { provider: 'gemini' },
       });
 
       const result = await service.generateInsights(financialData, ['profitability', 'growth']);
@@ -351,19 +351,19 @@ describe('AIService', () => {
     it('should handle insight generation errors', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockRejectedValue(new Error('Generation failed'));
 
       await expect(
-        service.generateInsights(financialData)
+        service.generateInsights(financialData),
       ).rejects.toThrow('Insight generation failed: Generation failed');
     });
   });
@@ -372,23 +372,23 @@ describe('AIService', () => {
     it('should analyze multiple types successfully', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Analysis result',
-        metadata: {}
+        metadata: {},
       });
 
       const result = await service.batchAnalyze(
         ['profitability', 'liquidity'],
-        financialData
+        financialData,
       );
 
       expect(result.results).toHaveProperty('profitability');
@@ -399,13 +399,13 @@ describe('AIService', () => {
     it('should handle partial failures in batch analysis', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete
@@ -414,7 +414,7 @@ describe('AIService', () => {
 
       const result = await service.batchAnalyze(
         ['profitability', 'liquidity'],
-        financialData
+        financialData,
       );
 
       expect(result.results).toHaveProperty('profitability');
@@ -483,18 +483,18 @@ describe('AIService', () => {
     it('should clear cache', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
+        },
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Analysis result',
-        metadata: {}
+        metadata: {},
       });
 
       // Create cached item
@@ -509,19 +509,19 @@ describe('AIService', () => {
     it('should expire cached items after timeout', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'test-key' }
+          [AIProviderType.GEMINI]: { apiKey: 'test-key' },
         },
-        cacheTimeout: 100 // 100ms for testing
+        cacheTimeout: 100, // 100ms for testing
       });
 
       const financialData = {
         companyInfo: { name: 'Test Company' },
-        calculatedData: [{ netProfit: 100000 }]
+        calculatedData: [{ netProfit: 100000 }],
       };
 
       mockProvider.complete.mockResolvedValue({
         content: 'Analysis result',
-        metadata: {}
+        metadata: {},
       });
 
       // First call - creates cache
@@ -542,8 +542,8 @@ describe('AIService', () => {
       const service = new AIService({
         providers: {
           [AIProviderType.GEMINI]: { apiKey: 'key1' },
-          [AIProviderType.OPENAI]: { apiKey: 'key2' }
-        }
+          [AIProviderType.OPENAI]: { apiKey: 'key2' },
+        },
       });
 
       mockProvider.healthCheck.mockResolvedValue(true);
@@ -557,8 +557,8 @@ describe('AIService', () => {
     it('should handle provider health check failures', async () => {
       const service = new AIService({
         providers: {
-          [AIProviderType.GEMINI]: { apiKey: 'key1' }
-        }
+          [AIProviderType.GEMINI]: { apiKey: 'key1' },
+        },
       });
 
       mockProvider.healthCheck.mockRejectedValue(new Error('Health check failed'));

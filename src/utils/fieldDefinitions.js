@@ -14,7 +14,7 @@ export const FIELD_CATEGORIES = {
   DRIVER_OPTIONAL: 'Driver',
   OVERRIDE_PL: 'P&L Override',
   OVERRIDE_BS: 'BS Override', 
-  OVERRIDE_CF: 'CF Override'
+  OVERRIDE_CF: 'CF Override',
 };
 
 /**
@@ -57,8 +57,8 @@ const validatePositive = (value, context, fieldName) => {
 };
 
 const validateNonNegative = (value, context, fieldName) => { // Alias for clarity in some cases
-    return validatePositive(value, context, fieldName);
-}
+  return validatePositive(value, context, fieldName);
+};
 
 const validatePercentage = (value, context, fieldName, min = -100, max = 100) => {
   if (value !== null && (Number(value) < min || Number(value) > max)) {
@@ -68,17 +68,17 @@ const validatePercentage = (value, context, fieldName, min = -100, max = 100) =>
 };
 
 const validateRequired = (value, context, fieldName) => {
-    if (value === null || typeof value === 'undefined' || String(value).trim() === '') {
-        return `${fieldName} é obrigatório.`;
-    }
-    return null;
+  if (value === null || typeof value === 'undefined' || String(value).trim() === '') {
+    return `${fieldName} é obrigatório.`;
+  }
+  return null;
 };
 
 const validateRequiredIfFirstPeriod = (value, context, fieldName) => {
-    if (context.periodIndex === 0 && (value === null || typeof value === 'undefined' || String(value).trim() === '')) {
-        return `${fieldName} é obrigatório para o primeiro período.`;
-    }
-    return null;
+  if (context.periodIndex === 0 && (value === null || typeof value === 'undefined' || String(value).trim() === '')) {
+    return `${fieldName} é obrigatório para o primeiro período.`;
+  }
+  return null;
 };
 
 /** @type {Record<string, FieldDefinition>} */
@@ -86,67 +86,67 @@ export const fieldDefinitions = {
   // === CORE DRIVER INPUTS ===
   'revenue': {
     label: 'Receita Líquida', type: 'currency', group: 'P&L Driver', required: true,
-    validation: (v,c) => validatePositive(v,c,'Receita'), dependencies: ['cogs', 'grossProfit', 'arDaysDerived']
+    validation: (v,c) => validatePositive(v,c,'Receita'), dependencies: ['cogs', 'grossProfit', 'arDaysDerived'],
   },
   'grossMarginPercentage': {
     label: 'Margem Bruta %', type: 'percentage', group: 'P&L Driver', required: true, note: 'Ex: 40 para 40%',
-    validation: (v,c) => validatePercentage(v,c,'Margem Bruta', -50, 100), dependencies: ['cogs', 'grossProfit']
+    validation: (v,c) => validatePercentage(v,c,'Margem Bruta', -50, 100), dependencies: ['cogs', 'grossProfit'],
   },
   'operatingExpenses': {
     label: 'Despesas Operacionais (SG&A)', type: 'currency', group: 'P&L Driver', required: true,
-    validation: (v,c) => validatePositive(v,c,'Despesas Operacionais'), dependencies: ['ebitda']
+    validation: (v,c) => validatePositive(v,c,'Despesas Operacionais'), dependencies: ['ebitda'],
   },
   'depreciationAndAmortisation': {
     label: 'Depreciação e Amortização (D&A)', type: 'currency', group: 'P&L Driver',
-    validation: (v,c) => validatePositive(v,c,'D&A'), dependencies: ['ebit', 'operatingCashFlow']
+    validation: (v,c) => validatePositive(v,c,'D&A'), dependencies: ['ebit', 'operatingCashFlow'],
   },
   'netInterestExpenseIncome': {
     label: 'Resultado Financeiro Líquido', type: 'currency', group: 'P&L Driver', note: '(-) para despesa',
-    dependencies: ['pbt']
+    dependencies: ['pbt'],
   },
   'incomeTaxRatePercentage': {
     label: 'Alíquota IR Efetiva %', type: 'percentage', group: 'P&L Driver', note: 'Ex: 25 para 25%',
-    validation: (v,c) => validatePercentage(v,c,'Alíquota IR', 0, 100), dependencies: ['incomeTax']
+    validation: (v,c) => validatePercentage(v,c,'Alíquota IR', 0, 100), dependencies: ['incomeTax'],
   },
   'dividendsPaid': {
     label: 'Dividendos Pagos', type: 'currency', group: 'CF Driver',
-    validation: (v,c) => validatePositive(v,c,'Dividendos'), dependencies: ['retainedProfit', 'cashFlowFromFinancing']
+    validation: (v,c) => validatePositive(v,c,'Dividendos'), dependencies: ['retainedProfit', 'cashFlowFromFinancing'],
   },
   'extraordinaryItems': {
     label: 'Itens Extraordinários (Líquido)', type: 'currency', group: 'P&L Driver', note: '(-) para perda',
-    dependencies: ['pbt']
+    dependencies: ['pbt'],
   },
   'capitalExpenditures': {
     label: 'CAPEX (Investimentos)', type: 'currency', group: 'CF Driver',
-    validation: (v,c) => validatePositive(v,c,'CAPEX'), dependencies: ['netCashFlowBeforeFinancing', 'netFixedAssets'] // Also impacts NFA roll-forward if implemented
+    validation: (v,c) => validatePositive(v,c,'CAPEX'), dependencies: ['netCashFlowBeforeFinancing', 'netFixedAssets'], // Also impacts NFA roll-forward if implemented
   },
   'openingCash': {
     label: 'Caixa Inicial (1º Período)', type: 'currency', group: 'BS Driver', firstPeriodOnly: true, required: true,
-    validation: (v,c) => validateRequiredIfFirstPeriod(v,c,'Caixa Inicial') || validateNonNegative(v,c,'Caixa Inicial')
+    validation: (v,c) => validateRequiredIfFirstPeriod(v,c,'Caixa Inicial') || validateNonNegative(v,c,'Caixa Inicial'),
   },
   'accountsReceivableValueAvg': {
     label: 'Contas a Receber (Valor Médio)', type: 'currency', group: 'BS Driver', required: true,
-    validation: (v,c) => validateRequired(v,c,'Contas a Receber (Médio)') || validatePositive(v,c,'Contas a Receber (Médio)'), dependencies: ['arDaysDerived', 'workingCapitalValue']
+    validation: (v,c) => validateRequired(v,c,'Contas a Receber (Médio)') || validatePositive(v,c,'Contas a Receber (Médio)'), dependencies: ['arDaysDerived', 'workingCapitalValue'],
   },
   'inventoryValueAvg': {
     label: 'Estoques (Valor Médio)', type: 'currency', group: 'BS Driver', required: true,
-    validation: (v,c) => validateRequired(v,c,'Estoques (Valor Médio)') || validatePositive(v,c,'Estoques (Valor Médio)'), dependencies: ['inventoryDaysDerived', 'workingCapitalValue']
+    validation: (v,c) => validateRequired(v,c,'Estoques (Valor Médio)') || validatePositive(v,c,'Estoques (Valor Médio)'), dependencies: ['inventoryDaysDerived', 'workingCapitalValue'],
   },
   'accountsPayableValueAvg': {
     label: 'Contas a Pagar (Valor Médio)', type: 'currency', group: 'BS Driver', required: true,
-    validation: (v,c) => validateRequired(v,c,'Contas a Pagar (Valor Médio)') || validatePositive(v,c,'Contas a Pagar (Valor Médio)'), dependencies: ['apDaysDerived', 'workingCapitalValue']
+    validation: (v,c) => validateRequired(v,c,'Contas a Pagar (Valor Médio)') || validatePositive(v,c,'Contas a Pagar (Valor Médio)'), dependencies: ['apDaysDerived', 'workingCapitalValue'],
   },
   'netFixedAssets': { // This is saldo final
     label: 'Ativo Imobilizado Líquido (Saldo Final)', type: 'currency', group: 'BS Driver', required: true,
-    validation: (v,c) => validateRequired(v,c,'Ativo Imobilizado Líquido') || validatePositive(v,c,'Ativo Imobilizado Líquido'), dependencies: ['estimatedTotalAssets']
+    validation: (v,c) => validateRequired(v,c,'Ativo Imobilizado Líquido') || validatePositive(v,c,'Ativo Imobilizado Líquido'), dependencies: ['estimatedTotalAssets'],
   },
   'totalBankLoans': { // This is saldo final
     label: 'Empréstimos Bancários Totais (Saldo Final)', type: 'currency', group: 'BS Driver', required: true,
-    validation: (v,c) => validateRequired(v,c,'Empréstimos Bancários') || validatePositive(v,c,'Empréstimos Bancários'), dependencies: ['estimatedTotalLiabilities', 'changeInDebt']
+    validation: (v,c) => validateRequired(v,c,'Empréstimos Bancários') || validatePositive(v,c,'Empréstimos Bancários'), dependencies: ['estimatedTotalLiabilities', 'changeInDebt'],
   },
   'initialEquity': { // Saldo inicial do PL
     label: 'Patrimônio Líquido (Saldo Inicial)', type: 'currency', group: 'BS Driver', firstPeriodOnly: true, required: true,
-    validation: (v,c) => validateRequiredIfFirstPeriod(v,c,'PL Inicial') // Equity can be negative
+    validation: (v,c) => validateRequiredIfFirstPeriod(v,c,'PL Inicial'), // Equity can be negative
   },
 
   // === P&L OVERRIDE FIELDS ===
@@ -249,7 +249,7 @@ export const validateAllFields = (periodsData) => {
         const context = {
           periodData: period,
           allPeriodsInputData: periodsData,
-          periodIndex: periodIndex
+          periodIndex: periodIndex,
         };
         const errorMessage = def.validation(value, context);
         if (errorMessage) {

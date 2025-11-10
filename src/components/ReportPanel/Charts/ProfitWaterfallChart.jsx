@@ -29,7 +29,7 @@ export default function ProfitWaterfallChart({ calculatedData, periodIndex = 0 }
       { name: 'Res. Fin.', value: period.netInterestExpenseIncome || 0, cumulative: (period.ebit || 0) + (period.netInterestExpenseIncome || 0), type: period.netInterestExpenseIncome >= 0 ? 'positive' : 'negative' },
       { name: 'PBT', value: 0, cumulative: period.pbt || 0, type: 'milestone' },
       { name: 'IR', value: -(period.incomeTax || 0), cumulative: (period.pbt || 0) - (period.incomeTax || 0), type: 'negative' },
-      { name: 'Lucro Líq.', value: 0, cumulative: period.netProfit || 0, type: 'final' }
+      { name: 'Lucro Líq.', value: 0, cumulative: period.netProfit || 0, type: 'final' },
     ];
 
     const getBarColor = (type) => {
@@ -71,7 +71,7 @@ export default function ProfitWaterfallChart({ calculatedData, periodIndex = 0 }
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Bar dataKey="cumulative">

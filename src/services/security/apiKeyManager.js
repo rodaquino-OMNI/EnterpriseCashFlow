@@ -108,7 +108,7 @@ export class ApiKeyManager {
   getApiKey(service) {
     // Find active key for service
     const keyData = Array.from(this.keys.values()).find(
-      key => key.service === service && key.active
+      key => key.service === service && key.active,
     );
 
     if (!keyData) {

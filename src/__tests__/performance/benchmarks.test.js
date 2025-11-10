@@ -9,7 +9,7 @@ import {
   calculateCashFlow,
   calculateWorkingCapitalMetrics,
   calculateFinancialRatios,
-  calculateBalanceSheet
+  calculateBalanceSheet,
 } from '../../utils/calculations';
 import { validateFinancialData, runAllValidations } from '../../utils/dataValidation';
 import { useExcelParser } from '../../hooks/useExcelParser';
@@ -54,7 +54,7 @@ describe('Performance Benchmarks', () => {
         operatingExpenses: 3000000,
         depreciation: 200000,
         financialRevenue: 50000,
-        financialExpenses: 150000
+        financialExpenses: 150000,
       };
 
       const perf = await measurePerformance(() => calculateIncomeStatement(data));
@@ -71,26 +71,26 @@ describe('Performance Benchmarks', () => {
         incomeStatement: {
           netIncome: 1000000,
           depreciation: 200000,
-          revenue: 10000000
+          revenue: 10000000,
         },
         workingCapital: {
           accountsReceivableValue: 1500000,
           inventoryValue: 1000000,
-          accountsPayableValue: 800000
+          accountsPayableValue: 800000,
         },
-        capex: 500000
+        capex: 500000,
       };
 
       const previousPeriod = {
         workingCapital: {
           accountsReceivableValue: 1400000,
           inventoryValue: 950000,
-          accountsPayableValue: 750000
-        }
+          accountsPayableValue: 750000,
+        },
       };
 
       const perf = await measurePerformance(() => 
-        calculateCashFlow(currentPeriod, previousPeriod)
+        calculateCashFlow(currentPeriod, previousPeriod),
       );
       
       console.log('Cash Flow Calculation Performance:', perf);
@@ -103,7 +103,7 @@ describe('Performance Benchmarks', () => {
       const periodsData = generateRandomFinancialData({ periods: 12 });
 
       const perf = await measurePerformance(() => 
-        processFinancialData(periodsData, 'MONTHLY')
+        processFinancialData(periodsData, 'MONTHLY'),
       );
       
       console.log('Multi-Period Processing Performance (12 periods):', perf);
@@ -132,7 +132,7 @@ describe('Performance Benchmarks', () => {
         incomeStatement: {
           revenue: 10000000,
           netIncome: 1000000,
-          ebit: 1500000
+          ebit: 1500000,
         },
         balanceSheet: {
           currentAssets: 5000000,
@@ -140,11 +140,11 @@ describe('Performance Benchmarks', () => {
           totalAssets: 10000000,
           currentLiabilities: 3000000,
           totalLiabilities: 4000000,
-          equity: 6000000
+          equity: 6000000,
         },
         cashFlow: {
-          operatingCashFlow: 1200000
-        }
+          operatingCashFlow: 1200000,
+        },
       };
 
       const perf = await measurePerformance(() => calculateFinancialRatios(data));
@@ -173,7 +173,7 @@ describe('Performance Benchmarks', () => {
         apDaysDerived: 60,
         closingCash: 1000000,
         ebit: 1500000,
-        netCashFlowBeforeFinancing: 800000
+        netCashFlowBeforeFinancing: 800000,
       }));
 
       const perf = await measurePerformance(() => validateFinancialData(calculatedData));
@@ -201,7 +201,7 @@ describe('Performance Benchmarks', () => {
         apDaysDerived: 60,
         closingCash: 500000 + Math.random() * 1000000,
         ebit: data.revenue * 0.15,
-        netCashFlowBeforeFinancing: data.revenue * 0.1
+        netCashFlowBeforeFinancing: data.revenue * 0.1,
       }));
 
       const perf = await measurePerformance(() => runAllValidations(calculatedData));
@@ -220,7 +220,7 @@ describe('Performance Benchmarks', () => {
         getRow: jest.fn((rowNum) => {
           if (rowNum === 1) {
             return {
-              values: [undefined, 'Descrição', 'Período 1', 'Período 2', 'Período 3', 'Período 4']
+              values: [undefined, 'Descrição', 'Período 1', 'Período 2', 'Período 3', 'Período 4'],
             };
           }
           return { values: [] };
@@ -229,20 +229,20 @@ describe('Performance Benchmarks', () => {
           // Simulate 100 rows of financial data
           for (let i = 2; i <= 101; i++) {
             callback({
-              values: [undefined, `Field ${i}`, 1000000, 1100000, 1200000, 1300000]
+              values: [undefined, `Field ${i}`, 1000000, 1100000, 1200000, 1300000],
             }, i);
           }
         }),
-        rowCount: 101
+        rowCount: 101,
       };
 
       const mockExcelJS = {
         Workbook: jest.fn(() => ({
           worksheets: [mockWorksheet],
           xlsx: {
-            load: jest.fn().mockResolvedValue(true)
-          }
-        }))
+            load: jest.fn().mockResolvedValue(true),
+          },
+        })),
       };
 
       const { result } = renderHook(() => useExcelParser(mockExcelJS));
@@ -293,7 +293,7 @@ describe('Performance Benchmarks', () => {
   describe('Concurrent Processing Performance', () => {
     it('should handle concurrent calculations efficiently', async () => {
       const datasets = Array.from({ length: 10 }, () => 
-        generateRandomFinancialData({ periods: 12 })
+        generateRandomFinancialData({ periods: 12 }),
       );
 
       const start = performance.now();
@@ -304,8 +304,8 @@ describe('Performance Benchmarks', () => {
           new Promise(resolve => {
             const result = processFinancialData(data, 'MONTHLY');
             resolve(result);
-          })
-        )
+          }),
+        ),
       );
       
       const end = performance.now();
@@ -325,7 +325,7 @@ describe('Performance Benchmarks', () => {
         cashFlow: [],
         workingCapital: [],
         ratios: [],
-        validation: []
+        validation: [],
       };
 
       // Profile each calculation type
@@ -338,7 +338,7 @@ describe('Performance Benchmarks', () => {
       // Cash Flow
       const periodData = {
         incomeStatement: calculateIncomeStatement(data),
-        workingCapital: { accountsReceivableValue: 100000, inventoryValue: 50000, accountsPayableValue: 30000 }
+        workingCapital: { accountsReceivableValue: 100000, inventoryValue: 50000, accountsPayableValue: 30000 },
       };
       perf = await measurePerformance(() => calculateCashFlow(periodData, null), 1000);
       performanceProfile.cashFlow = perf;
@@ -346,7 +346,7 @@ describe('Performance Benchmarks', () => {
       // Working Capital
       perf = await measurePerformance(() => calculateWorkingCapitalMetrics({
         ...data,
-        incomeStatement: { revenue: 1000000, cogs: 600000 }
+        incomeStatement: { revenue: 1000000, cogs: 600000 },
       }), 1000);
       performanceProfile.workingCapital = perf;
       
@@ -368,7 +368,7 @@ describe('Performance Benchmarks', () => {
         { revenue: 2500000, grossMarginPercent: 35, operatingExpenses: 600000 },
         { revenue: 2750000, grossMarginPercent: 36, operatingExpenses: 650000 },
         { revenue: 3000000, grossMarginPercent: 37, operatingExpenses: 700000 },
-        { revenue: 3250000, grossMarginPercent: 38, operatingExpenses: 750000 }
+        { revenue: 3250000, grossMarginPercent: 38, operatingExpenses: 750000 },
       ];
 
       const start = performance.now();
@@ -394,7 +394,7 @@ describe('Performance Benchmarks', () => {
         capex: 2000000,
         accountsReceivableDays: 60,
         inventoryDays: 45,
-        accountsPayableDays: 75
+        accountsPayableDays: 75,
       }));
 
       const start = performance.now();

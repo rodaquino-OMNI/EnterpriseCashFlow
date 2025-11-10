@@ -35,7 +35,7 @@ export function useEnhancedAiService(config = {}) {
       const service = new AIService({
         defaultProvider: config.defaultProvider || AIProviderType.GEMINI,
         cacheTimeout: config.cacheTimeout,
-        providers
+        providers,
       });
 
       // Store provider configs
@@ -79,7 +79,7 @@ export function useEnhancedAiService(config = {}) {
   const analyzeFinancial = useCallback(async (
     analysisType,
     financialData,
-    options = {}
+    options = {},
   ) => {
     if (!aiService) {
       // Fallback to legacy service
@@ -87,7 +87,7 @@ export function useEnhancedAiService(config = {}) {
         analysisType,
         financialData,
         options,
-        providerConfigs.current[legacyService.selectedProviderKey]?.apiKey
+        providerConfigs.current[legacyService.selectedProviderKey]?.apiKey,
       );
     }
 
@@ -98,7 +98,7 @@ export function useEnhancedAiService(config = {}) {
       const result = await aiService.analyzeFinancial(
         analysisType,
         financialData,
-        options
+        options,
       );
 
       // Update history
@@ -106,7 +106,7 @@ export function useEnhancedAiService(config = {}) {
         type: analysisType,
         provider: aiService.currentProvider,
         timestamp: new Date().toISOString(),
-        success: true
+        success: true,
       }]);
 
       return result;
@@ -119,7 +119,7 @@ export function useEnhancedAiService(config = {}) {
         provider: aiService.currentProvider,
         timestamp: new Date().toISOString(),
         success: false,
-        error: err.message
+        error: err.message,
       }]);
 
       throw err;
@@ -135,7 +135,7 @@ export function useEnhancedAiService(config = {}) {
     content,
     documentType,
     schema,
-    options = {}
+    options = {},
   ) => {
     if (!aiService) {
       setError(new Error('AI service not initialized'));
@@ -150,7 +150,7 @@ export function useEnhancedAiService(config = {}) {
         content,
         documentType,
         schema,
-        options
+        options,
       );
 
       return result;
@@ -168,7 +168,7 @@ export function useEnhancedAiService(config = {}) {
   const generateInsights = useCallback(async (
     financialData,
     focusAreas = [],
-    options = {}
+    options = {},
   ) => {
     if (!aiService) {
       setError(new Error('AI service not initialized'));
@@ -182,7 +182,7 @@ export function useEnhancedAiService(config = {}) {
       const result = await aiService.generateInsights(
         financialData,
         focusAreas,
-        options
+        options,
       );
 
       return result;
@@ -200,7 +200,7 @@ export function useEnhancedAiService(config = {}) {
   const batchAnalyze = useCallback(async (
     analysisTypes,
     financialData,
-    options = {}
+    options = {},
   ) => {
     if (!aiService) {
       setError(new Error('AI service not initialized'));
@@ -214,7 +214,7 @@ export function useEnhancedAiService(config = {}) {
       const result = await aiService.batchAnalyze(
         analysisTypes,
         financialData,
-        options
+        options,
       );
 
       return result;
@@ -266,7 +266,7 @@ export function useEnhancedAiService(config = {}) {
     recommendations.push({
       type: AnalysisType.EXECUTIVE_SUMMARY,
       priority: 'high',
-      reason: 'Provides comprehensive overview'
+      reason: 'Provides comprehensive overview',
     });
 
     // Recommend variance analysis if multiple periods
@@ -274,7 +274,7 @@ export function useEnhancedAiService(config = {}) {
       recommendations.push({
         type: AnalysisType.VARIANCE_ANALYSIS,
         priority: 'high',
-        reason: 'Multiple periods available for comparison'
+        reason: 'Multiple periods available for comparison',
       });
     }
 
@@ -283,7 +283,7 @@ export function useEnhancedAiService(config = {}) {
       recommendations.push({
         type: AnalysisType.CASH_FLOW_ANALYSIS,
         priority: 'critical',
-        reason: 'Cash flow concerns detected'
+        reason: 'Cash flow concerns detected',
       });
     }
 
@@ -293,7 +293,7 @@ export function useEnhancedAiService(config = {}) {
       recommendations.push({
         type: AnalysisType.RISK_ASSESSMENT,
         priority: 'high',
-        reason: 'Financial risk indicators detected'
+        reason: 'Financial risk indicators detected',
       });
     }
 
@@ -313,7 +313,7 @@ export function useEnhancedAiService(config = {}) {
           total: 0,
           successful: 0,
           failed: 0,
-          averageResponseTime: 0
+          averageResponseTime: 0,
         };
       }
       
@@ -373,6 +373,6 @@ export function useEnhancedAiService(config = {}) {
     clearCache,
     
     // Legacy compatibility
-    legacyService
+    legacyService,
   };
 }

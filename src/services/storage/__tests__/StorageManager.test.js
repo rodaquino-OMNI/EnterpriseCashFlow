@@ -30,7 +30,7 @@ describe('StorageManager', () => {
       getAll: jest.fn().mockResolvedValue([]),
       remove: jest.fn().mockResolvedValue(undefined),
       query: jest.fn().mockResolvedValue([]),
-      clear: jest.fn().mockResolvedValue(undefined)
+      clear: jest.fn().mockResolvedValue(undefined),
     };
     IndexedDBService.mockImplementation(() => mockIndexedDB);
 
@@ -41,7 +41,7 @@ describe('StorageManager', () => {
       get: jest.fn().mockResolvedValue(null),
       getAll: jest.fn().mockResolvedValue([]),
       remove: jest.fn().mockResolvedValue(undefined),
-      clear: jest.fn().mockResolvedValue(undefined)
+      clear: jest.fn().mockResolvedValue(undefined),
     };
     LocalStorageService.mockImplementation(() => mockLocalStorage);
 
@@ -50,8 +50,8 @@ describe('StorageManager', () => {
       initialize: jest.fn().mockResolvedValue(undefined),
       createSecureStorage: jest.fn((storage) => ({
         ...storage,
-        encrypted: true
-      }))
+        encrypted: true,
+      })),
     };
     EncryptionService.mockImplementation(() => mockEncryption);
 
@@ -59,7 +59,7 @@ describe('StorageManager', () => {
     mockAutoSave = {
       initialize: jest.fn().mockResolvedValue(undefined),
       triggerSave: jest.fn(),
-      unregister: jest.fn()
+      unregister: jest.fn(),
     };
     AutoSaveService.mockImplementation(() => mockAutoSave);
   });
@@ -75,7 +75,7 @@ describe('StorageManager', () => {
     it('should create storage manager with custom config', () => {
       const manager = new StorageManager({
         encryptionEnabled: false,
-        autoSaveEnabled: false
+        autoSaveEnabled: false,
       });
       expect(manager.config.encryptionEnabled).toBe(false);
       expect(manager.config.autoSaveEnabled).toBe(false);
@@ -237,7 +237,7 @@ describe('StorageManager', () => {
       it('should retrieve all projects', async () => {
         const projects = [
           { id: 'proj-1', name: 'Project 1' },
-          { id: 'proj-2', name: 'Project 2' }
+          { id: 'proj-2', name: 'Project 2' },
         ];
         mockIndexedDB.getAll.mockResolvedValue(projects);
 
@@ -314,7 +314,7 @@ describe('StorageManager', () => {
 
         expect(project.scenarioIds).toContain('scen-1');
         expect(mockIndexedDB.set).toHaveBeenCalledWith('projects', expect.objectContaining({
-          scenarioIds: ['scen-1']
+          scenarioIds: ['scen-1'],
         }));
       });
 
@@ -345,7 +345,7 @@ describe('StorageManager', () => {
       it('should retrieve all scenarios', async () => {
         const scenarios = [
           { id: 'scen-1', projectId: 'proj-1' },
-          { id: 'scen-2', projectId: 'proj-1' }
+          { id: 'scen-2', projectId: 'proj-1' },
         ];
         mockIndexedDB.getAll.mockResolvedValue(scenarios);
 
@@ -421,7 +421,7 @@ describe('StorageManager', () => {
 
         expect(project.reportIds).toContain('rep-1');
         expect(mockIndexedDB.set).toHaveBeenCalledWith('projects', expect.objectContaining({
-          reportIds: ['rep-1']
+          reportIds: ['rep-1'],
         }));
       });
     });

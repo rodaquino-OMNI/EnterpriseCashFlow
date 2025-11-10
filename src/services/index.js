@@ -11,7 +11,7 @@ export {
   PerformanceMonitor,
   AuditLogger,
   MetricsCollector,
-  SecurityMonitor
+  SecurityMonitor,
 } from './monitoring';
 
 // Security Services
@@ -21,7 +21,7 @@ export {
   securityHeaders,
   DataValidator,
   ApiKeyManager,
-  SecurityHeaders
+  SecurityHeaders,
 } from './security';
 
 // Export Services
@@ -32,7 +32,7 @@ export {
   BatchExportService,
   TemplateManager,
   ChartExporter,
-  BrandingManager
+  BrandingManager,
 } from './export';
 
 // Initialize services on import

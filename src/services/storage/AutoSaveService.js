@@ -17,7 +17,7 @@ export class AutoSaveService {
       saveIndicator: config.saveIndicator !== false,
       versioning: config.versioning !== false,
       maxVersions: config.maxVersions || 10,
-      ...config
+      ...config,
     };
     
     this.saveQueue = new Map();
@@ -53,7 +53,7 @@ export class AutoSaveService {
   register(key, dataProvider, options = {}) {
     const config = {
       ...this.config,
-      ...options
+      ...options,
     };
     
     // Store the data provider
@@ -61,7 +61,7 @@ export class AutoSaveService {
       dataProvider,
       config,
       lastSaved: null,
-      version: 0
+      version: 0,
     });
     
     // Initialize save state
@@ -69,7 +69,7 @@ export class AutoSaveService {
       status: 'idle',
       error: null,
       lastSaved: null,
-      isDirty: false
+      isDirty: false,
     });
     
     // Return unregister function
@@ -159,7 +159,7 @@ export class AutoSaveService {
       status: 'unknown',
       error: null,
       lastSaved: null,
-      isDirty: false
+      isDirty: false,
     };
   }
 
@@ -195,7 +195,7 @@ export class AutoSaveService {
       if (saved && saved.data) {
         this._updateSaveState(key, {
           lastSaved: saved.timestamp,
-          isDirty: false
+          isDirty: false,
         });
         
         return saved.data;
@@ -258,7 +258,7 @@ export class AutoSaveService {
           type: 'version-restored',
           key,
           versionId,
-          data: version.data
+          data: version.data,
         });
       }
       
@@ -267,7 +267,7 @@ export class AutoSaveService {
       throw new StorageError(
         'Failed to restore version',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -319,7 +319,7 @@ export class AutoSaveService {
           this._updateSaveState(key, {
             status: 'idle',
             isDirty: false,
-            error: 'No data to save'
+            error: 'No data to save',
           });
           return;
         }
@@ -332,7 +332,7 @@ export class AutoSaveService {
           if (!resolved) {
             this._updateSaveState(key, {
               status: 'conflict',
-              error: 'Save conflict'
+              error: 'Save conflict',
             });
             return;
           }
@@ -351,7 +351,7 @@ export class AutoSaveService {
           data,
           timestamp: new Date(),
           version: callback.version + 1,
-          checksum: await this._calculateChecksum(data)
+          checksum: await this._calculateChecksum(data),
         };
         
         // Save to storage
@@ -366,14 +366,14 @@ export class AutoSaveService {
           status: 'saved',
           lastSaved: callback.lastSaved,
           isDirty: false,
-          error: null
+          error: null,
         });
         
         // Notify listeners
         this._notifyListeners({
           type: 'save-complete',
           key,
-          timestamp: callback.lastSaved
+          timestamp: callback.lastSaved,
         });
         
         return;
@@ -384,13 +384,13 @@ export class AutoSaveService {
         if (retries >= maxRetries) {
           this._updateSaveState(key, {
             status: 'error',
-            error: error.message
+            error: error.message,
           });
           
           this._notifyListeners({
             type: 'save-error',
             key,
-            error
+            error,
           });
           
           throw error;
@@ -482,7 +482,7 @@ export class AutoSaveService {
         entityId: key,
         data: current.data,
         timestamp: new Date(),
-        version: current.version
+        version: current.version,
       };
       
       await this.storage.set('autoSave', versionData);
@@ -548,7 +548,7 @@ export class AutoSaveService {
     this._notifyListeners({
       type: 'state-change',
       key,
-      state: newState
+      state: newState,
     });
   }
 

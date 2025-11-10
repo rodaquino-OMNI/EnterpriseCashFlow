@@ -241,11 +241,11 @@ Form.propTypes = {
       type: PropTypes.string,
       required: PropTypes.bool,
       defaultValue: PropTypes.any,
-      props: PropTypes.object
-    }))
+      props: PropTypes.object,
+    })),
   }),
   className: PropTypes.string,
-  style: PropTypes.object
+  style: PropTypes.object,
 };
 
 Field.propTypes = {
@@ -257,30 +257,30 @@ Field.propTypes = {
   required: PropTypes.bool,
   onChange: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
-  className: PropTypes.string
+  className: PropTypes.string,
 };
 
 FormLayout.propTypes = {
   children: PropTypes.node,
-  className: PropTypes.string
+  className: PropTypes.string,
 };
 
 FormActions.propTypes = {
   children: PropTypes.node,
-  className: PropTypes.string
+  className: PropTypes.string,
 };
 
 FormSubmit.propTypes = {
   children: PropTypes.node,
   disabled: PropTypes.bool,
   loading: PropTypes.bool,
-  className: PropTypes.string
+  className: PropTypes.string,
 };
 
 FormReset.propTypes = {
   children: PropTypes.node,
   onClick: PropTypes.func,
-  className: PropTypes.string
+  className: PropTypes.string,
 };
 
 // Export all components

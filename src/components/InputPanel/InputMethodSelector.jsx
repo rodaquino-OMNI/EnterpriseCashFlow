@@ -19,7 +19,7 @@ export default function InputMethodSelector({
   onCompanyNameChange,
   reportTitle,
   onReportTitleChange,
-  includesPdfOption = true
+  includesPdfOption = true,
 }) {
   return (
     <section className="mb-8 p-6 bg-white rounded-xl shadow-lg border border-slate-200">

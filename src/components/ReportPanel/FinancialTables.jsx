@@ -33,7 +33,7 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       {label: '(=) Lucro Antes dos Impostos (LAIR)', key: 'pbt', format: formatTableCurrency, isBold: true, isSubtotal: true},
       {label: '(-) Imposto de Renda', key: 'incomeTax', format: formatTableCurrency},
       {label: '(=) Lucro Líquido', key: 'netProfit', format: formatTableCurrency, isBold: true, isTotal: true},
-      {label: '→ Margem Líquida %', key: 'netProfitPct', format: formatPercentage, isCalculated: true}
+      {label: '→ Margem Líquida %', key: 'netProfitPct', format: formatPercentage, isCalculated: true},
     ];
 
     // Working Capital Table Configuration  
@@ -50,7 +50,7 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       {label: 'Contas a Receber / Receita %', key: 'arPer100Revenue', format: formatPercentage},
       {label: 'Estoques / Receita %', key: 'inventoryPer100Revenue', format: formatPercentage},
       {label: 'Contas a Pagar / CPV %', key: 'apPer100Revenue', format: formatPercentage, note: 'vs CPV'},
-      {label: 'Capital de Giro / Receita %', key: 'wcPer100Revenue', format: formatPercentage}
+      {label: 'Capital de Giro / Receita %', key: 'wcPer100Revenue', format: formatPercentage},
     ];
 
     // Cash Flow Table Configuration
@@ -73,7 +73,7 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       {label: 'Estoques (Média)', key: 'inventoryValueAvg', format: formatTableCurrency},
       {label: '(=) Ativo Circulante (Estimado)', key: 'estimatedCurrentAssets', format: formatTableCurrency, isBold: true, isSubtotal: true},
       {label: 'Ativo Fixo Líquido', key: 'netFixedAssets', format: formatTableCurrency},
-      {label: '(=) ATIVO TOTAL (Estimado)', key: 'estimatedTotalAssets', format: formatTableCurrency, isBold: true, isTotal: true}
+      {label: '(=) ATIVO TOTAL (Estimado)', key: 'estimatedTotalAssets', format: formatTableCurrency, isBold: true, isTotal: true},
     ];
 
     const balanceSheetLiabilityEquityItems = [
@@ -83,10 +83,10 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       {label: '(=) Passivo Total (Estimado)', key: 'estimatedTotalLiabilities', format: formatTableCurrency, isBold: true, isSubtotal: true},
       {label: 'Patrimônio Líquido (Calculado)', key: 'equity', format: formatTableCurrency, isBold: true, isSubtotal: true},
       {label: '(=) TOTAL PASSIVO + P.L.', key: 'estimatedTotalLiabilitiesAndEquity', format: formatTableCurrency, isBold: true, isTotal: true, 
-       note: 'Calculado: Passivo Total + Patrimônio Líquido'},
+        note: 'Calculado: Passivo Total + Patrimônio Líquido'},
       {label: ' ', key: 'spacer1', isSpacer: true},
       {label: 'Diferença de Balanço (A-(L+E))', key: 'balanceSheetDifference', format: formatTableCurrency, isHighlight: true, 
-       note: 'Deve ser próximo de zero para balanço fechado'}
+        note: 'Deve ser próximo de zero para balanço fechado'},
     ];
 
     return {
@@ -94,11 +94,11 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       'Capital de Giro e Prazos': workingCapitalItems,
       'Demonstração de Fluxo de Caixa (DFC)': cashFlowItems,
       'Balanço Patrimonial (Estimado)': [
-        {isHeader: true, label: "ATIVOS"},
+        {isHeader: true, label: 'ATIVOS'},
         ...balanceSheetAssetItems,
-        {isHeader: true, label: "PASSIVOS E PATRIMÔNIO LÍQUIDO"},
-        ...balanceSheetLiabilityEquityItems
-      ]
+        {isHeader: true, label: 'PASSIVOS E PATRIMÔNIO LÍQUIDO'},
+        ...balanceSheetLiabilityEquityItems,
+      ],
     };
   }, [formatTableCurrency]);
 
@@ -220,7 +220,7 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       {Object.entries(tableConfigs).map(([title, items], index) => 
         <div key={`table-${index}-${title}`}>
           {renderTable(title, items)}
-        </div>
+        </div>,
       )}
     </section>
   );

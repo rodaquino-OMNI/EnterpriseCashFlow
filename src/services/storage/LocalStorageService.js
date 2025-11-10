@@ -25,7 +25,7 @@ export class LocalStorageService extends StorageService {
       if (!this._isLocalStorageSupported()) {
         throw new StorageError(
           'LocalStorage is not supported in this browser',
-          StorageErrorCode.INITIALIZATION_FAILED
+          StorageErrorCode.INITIALIZATION_FAILED,
         );
       }
 
@@ -41,7 +41,7 @@ export class LocalStorageService extends StorageService {
       throw new StorageError(
         'Failed to initialize LocalStorage',
         StorageErrorCode.INITIALIZATION_FAILED,
-        error
+        error,
       );
     }
   }
@@ -61,7 +61,7 @@ export class LocalStorageService extends StorageService {
         data,
         timestamp: Date.now(),
         version: this.config.version,
-        compressed: false
+        compressed: false,
       };
 
       if (options.expiresIn) {
@@ -87,7 +87,7 @@ export class LocalStorageService extends StorageService {
       if (newSize > this.maxSize) {
         throw new StorageError(
           'Storage quota exceeded',
-          StorageErrorCode.QUOTA_EXCEEDED
+          StorageErrorCode.QUOTA_EXCEEDED,
         );
       }
 
@@ -98,13 +98,13 @@ export class LocalStorageService extends StorageService {
         throw new StorageError(
           'Storage quota exceeded',
           StorageErrorCode.QUOTA_EXCEEDED,
-          error
+          error,
         );
       }
       throw new StorageError(
         'Failed to store data',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -122,7 +122,7 @@ export class LocalStorageService extends StorageService {
       if (!item) {
         throw new StorageError(
           `Key not found: ${key}`,
-          StorageErrorCode.KEY_NOT_FOUND
+          StorageErrorCode.KEY_NOT_FOUND,
         );
       }
 
@@ -133,7 +133,7 @@ export class LocalStorageService extends StorageService {
         await this.remove(key);
         throw new StorageError(
           `Key expired: ${key}`,
-          StorageErrorCode.KEY_NOT_FOUND
+          StorageErrorCode.KEY_NOT_FOUND,
         );
       }
 
@@ -151,7 +151,7 @@ export class LocalStorageService extends StorageService {
       throw new StorageError(
         'Failed to retrieve data',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -170,7 +170,7 @@ export class LocalStorageService extends StorageService {
       throw new StorageError(
         'Failed to remove data',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -192,7 +192,7 @@ export class LocalStorageService extends StorageService {
       throw new StorageError(
         'Failed to clear data',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -220,7 +220,7 @@ export class LocalStorageService extends StorageService {
       throw new StorageError(
         'Failed to get keys',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -258,7 +258,7 @@ export class LocalStorageService extends StorageService {
       throw new StorageError(
         'Failed to get storage size',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -348,7 +348,7 @@ export class LocalStorageService extends StorageService {
     await Promise.all(
       keys
         .filter(key => key.startsWith('session_'))
-        .map(key => this.remove(key))
+        .map(key => this.remove(key)),
     );
   }
 
@@ -366,7 +366,7 @@ export class LocalStorageService extends StorageService {
       sizeLimit: this.maxSize,
       usagePercentage: (size / this.maxSize) * 100,
       keysByType: {},
-      expiredKeys: 0
+      expiredKeys: 0,
     };
 
     // Analyze keys
@@ -454,30 +454,30 @@ export class LocalStorageService extends StorageService {
       aiProvider: {
         defaultProvider: 'openai',
         apiKeys: {}, // Will be encrypted
-        preferences: {}
+        preferences: {},
       },
       exportSettings: {
         defaultFormat: 'excel',
         includeCharts: true,
-        includeAnalysis: true
+        includeAnalysis: true,
       },
       notifications: {
         enabled: true,
         types: {
           autoSave: true,
           analysisComplete: true,
-          errors: true
-        }
+          errors: true,
+        },
       },
       accessibility: {
         highContrast: false,
         reducedMotion: false,
-        screenReaderOptimized: false
+        screenReaderOptimized: false,
       },
       privacy: {
         analyticsEnabled: true,
-        crashReportingEnabled: true
-      }
+        crashReportingEnabled: true,
+      },
     };
   }
 

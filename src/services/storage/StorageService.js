@@ -16,7 +16,7 @@ export class StorageService {
     this.config = {
       namespace: 'enterpriseCashFlow',
       version: '1.0.0',
-      ...config
+      ...config,
     };
   }
 
@@ -130,7 +130,7 @@ export const StorageEventType = {
   GET: 'storage:get',
   REMOVE: 'storage:remove',
   CLEAR: 'storage:clear',
-  ERROR: 'storage:error'
+  ERROR: 'storage:error',
 };
 
 /**
@@ -157,5 +157,5 @@ export const StorageErrorCode = {
   DECRYPTION_FAILED: 'DECRYPTION_FAILED',
   MIGRATION_FAILED: 'MIGRATION_FAILED',
   PERMISSION_DENIED: 'PERMISSION_DENIED',
-  UNKNOWN_ERROR: 'UNKNOWN_ERROR'
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 };

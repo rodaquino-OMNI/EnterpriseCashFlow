@@ -24,32 +24,32 @@ export default function CashFlowWaterfallChart({ calculatedData, periodIndex = 0
         name: 'Caixa Inicial', 
         value: previousPeriod?.closingCash || period.openingCash || 0, 
         cumulative: previousPeriod?.closingCash || period.openingCash || 0, 
-        type: 'start' 
+        type: 'start', 
       },
       { 
         name: 'FCO', 
         value: period.operatingCashFlow || 0, 
         cumulative: (previousPeriod?.closingCash || period.openingCash || 0) + (period.operatingCashFlow || 0), 
-        type: period.operatingCashFlow >= 0 ? 'positive' : 'negative' 
+        type: period.operatingCashFlow >= 0 ? 'positive' : 'negative', 
       },
       { 
         name: 'CAPEX', 
         value: -(period.capitalExpenditures || 0), 
         cumulative: (previousPeriod?.closingCash || period.openingCash || 0) + (period.operatingCashFlow || 0) - (period.capitalExpenditures || 0), 
-        type: 'negative' 
+        type: 'negative', 
       },
       { 
         name: 'Fin. Líquido', 
         value: period.cashFlowFromFinancing || 0, 
         cumulative: (previousPeriod?.closingCash || period.openingCash || 0) + (period.operatingCashFlow || 0) - (period.capitalExpenditures || 0) + (period.cashFlowFromFinancing || 0), 
-        type: period.cashFlowFromFinancing >= 0 ? 'positive' : 'negative' 
+        type: period.cashFlowFromFinancing >= 0 ? 'positive' : 'negative', 
       },
       { 
         name: 'Caixa Final', 
         value: 0, 
         cumulative: period.closingCash || 0, 
-        type: 'final' 
-      }
+        type: 'final', 
+      },
     ];
 
     const getBarColor = (type) => {
@@ -90,7 +90,7 @@ export default function CashFlowWaterfallChart({ calculatedData, periodIndex = 0
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Bar dataKey="cumulative">

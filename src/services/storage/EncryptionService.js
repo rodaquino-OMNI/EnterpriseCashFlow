@@ -26,7 +26,7 @@ export class EncryptionService {
     if (!this.crypto || !this.crypto.subtle) {
       throw new StorageError(
         'Web Crypto API is not available',
-        StorageErrorCode.INITIALIZATION_FAILED
+        StorageErrorCode.INITIALIZATION_FAILED,
       );
     }
   }
@@ -45,7 +45,7 @@ export class EncryptionService {
         new TextEncoder().encode(password),
         'PBKDF2',
         false,
-        ['deriveBits', 'deriveKey']
+        ['deriveBits', 'deriveKey'],
       );
 
       // Derive encryption key
@@ -54,21 +54,21 @@ export class EncryptionService {
           name: 'PBKDF2',
           salt,
           iterations: this.iterations,
-          hash: 'SHA-256'
+          hash: 'SHA-256',
         },
         passwordKey,
         {
           name: this.algorithm,
-          length: this.keyLength
+          length: this.keyLength,
         },
         false,
-        ['encrypt', 'decrypt']
+        ['encrypt', 'decrypt'],
       );
     } catch (error) {
       throw new StorageError(
         'Failed to derive encryption key',
         StorageErrorCode.ENCRYPTION_FAILED,
-        error
+        error,
       );
     }
   }
@@ -96,10 +96,10 @@ export class EncryptionService {
       const encryptedBytes = await this.crypto.subtle.encrypt(
         {
           name: this.algorithm,
-          iv
+          iv,
         },
         key,
-        dataBytes
+        dataBytes,
       );
 
       // Return encrypted data with metadata
@@ -108,13 +108,13 @@ export class EncryptionService {
         salt: this._arrayBufferToBase64(salt),
         iv: this._arrayBufferToBase64(iv),
         algorithm: this.algorithm,
-        iterations: this.iterations
+        iterations: this.iterations,
       };
     } catch (error) {
       throw new StorageError(
         'Failed to encrypt data',
         StorageErrorCode.ENCRYPTION_FAILED,
-        error
+        error,
       );
     }
   }
@@ -139,10 +139,10 @@ export class EncryptionService {
       const decryptedBytes = await this.crypto.subtle.decrypt(
         {
           name: encryptedData.algorithm || this.algorithm,
-          iv
+          iv,
         },
         key,
-        encryptedBytes
+        encryptedBytes,
       );
 
       // Convert bytes to JSON
@@ -152,7 +152,7 @@ export class EncryptionService {
       throw new StorageError(
         'Failed to decrypt data',
         StorageErrorCode.DECRYPTION_FAILED,
-        error
+        error,
       );
     }
   }
@@ -202,7 +202,7 @@ export class EncryptionService {
         const encrypted = await this.encrypt(obj[field], password);
         result[field] = {
           _encrypted: true,
-          ...encrypted
+          ...encrypted,
         };
       }
     }
@@ -391,7 +391,7 @@ export class SecureStorageWrapper {
 export const SENSITIVE_FIELDS = {
   user: ['apiKeys', 'password', 'tokens'],
   financial: ['bankAccount', 'taxId', 'ssn'],
-  personal: ['email', 'phone', 'address']
+  personal: ['email', 'phone', 'address'],
 };
 
 /**
@@ -403,6 +403,6 @@ export function isSensitiveField(fieldName) {
   const lowerFieldName = fieldName.toLowerCase();
   
   return Object.values(SENSITIVE_FIELDS).some(fields =>
-    fields.some(field => lowerFieldName.includes(field.toLowerCase()))
+    fields.some(field => lowerFieldName.includes(field.toLowerCase())),
   );
 }

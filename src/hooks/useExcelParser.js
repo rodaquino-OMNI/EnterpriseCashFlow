@@ -284,7 +284,7 @@ export function useExcelParser(excelJS) {
       'patrimônio líquido': 'initialEquity',
       'pl inicial': 'initialEquity',
       'pl': 'initialEquity',
-      'capital social': 'initialEquity'
+      'capital social': 'initialEquity',
     };
     
     for (const [pattern, fieldKey] of Object.entries(mappings)) {
@@ -345,6 +345,6 @@ export function useExcelParser(excelJS) {
   return {
     parseExcelData,
     isParsing,
-    parsingError
+    parsingError,
   };
 }

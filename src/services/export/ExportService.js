@@ -25,7 +25,7 @@ export class ExportService {
     this.options = {
       autoDownload: true,
       includeTimestamp: true,
-      ...options
+      ...options,
     };
   }
 
@@ -44,7 +44,7 @@ export class ExportService {
         data = await this.applyTemplate(data, exportOptions.templateId);
         exportOptions = {
           ...exportOptions,
-          ...data.exportOptions
+          ...data.exportOptions,
         };
       }
       
@@ -81,7 +81,7 @@ export class ExportService {
       console.error('Export error:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -96,7 +96,7 @@ export class ExportService {
     const batchOptions = {
       ...this.options,
       ...options,
-      branding: this.brandingManager.getBranding(options.branding)
+      branding: this.brandingManager.getBranding(options.branding),
     };
     
     return await this.batchService.exportBatch(reports, batchOptions);
@@ -225,7 +225,7 @@ export class ExportService {
   updateBranding(branding) {
     const updated = {
       ...this.brandingManager.getBranding(),
-      ...branding
+      ...branding,
     };
     this.brandingManager.saveBranding(updated);
   }
@@ -239,7 +239,7 @@ export class ExportService {
   async preview(data, options = {}) {
     const previewOptions = {
       ...options,
-      autoDownload: false
+      autoDownload: false,
     };
     
     const result = await this.export(data, previewOptions);
@@ -286,7 +286,7 @@ export class ExportService {
         icon: 'file-pdf',
         mimeType: 'application/pdf',
         extension: 'pdf',
-        features: ['watermark', 'headers', 'footers', 'charts', 'tables']
+        features: ['watermark', 'headers', 'footers', 'charts', 'tables'],
       },
       {
         id: ExportFormat.EXCEL,
@@ -295,8 +295,8 @@ export class ExportService {
         icon: 'file-excel',
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         extension: 'xlsx',
-        features: ['formulas', 'multiple-sheets', 'auto-filter', 'conditional-formatting']
-      }
+        features: ['formulas', 'multiple-sheets', 'auto-filter', 'conditional-formatting'],
+      },
     ];
   }
 
@@ -347,7 +347,7 @@ export class ExportService {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -362,14 +362,14 @@ export class ExportService {
         totalExports: stats.totalExports || 0,
         byFormat: stats.byFormat || {},
         lastExport: stats.lastExport || null,
-        averageSize: stats.averageSize || 0
+        averageSize: stats.averageSize || 0,
       };
     } catch (error) {
       return {
         totalExports: 0,
         byFormat: {},
         lastExport: null,
-        averageSize: 0
+        averageSize: 0,
       };
     }
   }

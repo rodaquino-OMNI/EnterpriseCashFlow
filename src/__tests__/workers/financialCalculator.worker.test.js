@@ -115,7 +115,7 @@ describe('Financial Calculator Worker', () => {
             npv: expect.any(Number),
             profitabilityIndex: expect.any(Number),
           }),
-        })
+        }),
       );
     });
 
@@ -138,7 +138,7 @@ describe('Financial Calculator Worker', () => {
             irr: expect.any(Number),
             isValid: true,
           }),
-        })
+        }),
       );
     });
 
@@ -162,7 +162,7 @@ describe('Financial Calculator Worker', () => {
             paybackPeriod: expect.any(Number),
             isWithinProjectLife: true,
           }),
-        })
+        }),
       );
     });
 
@@ -188,7 +188,7 @@ describe('Financial Calculator Worker', () => {
             breakEvenRevenue: expect.any(Number),
             contributionMargin: expect.any(Number),
           }),
-        })
+        }),
       );
     });
 
@@ -215,7 +215,7 @@ describe('Financial Calculator Worker', () => {
             presentValues: expect.any(Array),
             totalPV: expect.any(Number),
           }),
-        })
+        }),
       );
     });
   });
@@ -252,7 +252,7 @@ describe('Financial Calculator Worker', () => {
         expect.objectContaining({
           success: true,
           data: largeDataset,
-        })
+        }),
       );
     });
 
@@ -297,7 +297,7 @@ describe('Financial Calculator Worker', () => {
             expect.objectContaining({ type: 'IRR' }),
             expect.objectContaining({ type: 'PAYBACK' }),
           ]),
-        })
+        }),
       );
     });
   });
@@ -332,7 +332,7 @@ describe('Financial Calculator Worker', () => {
           expect.objectContaining({
             success: false,
             error: expect.any(String),
-          })
+          }),
         );
       });
     });
@@ -351,7 +351,7 @@ describe('Financial Calculator Worker', () => {
         expect.objectContaining({
           success: false,
           error: expect.stringContaining('Unknown calculation type'),
-        })
+        }),
       );
     });
 
@@ -409,7 +409,7 @@ describe('Financial Calculator Worker', () => {
         expect.objectContaining({
           success: true,
           type: 'PROJECTION',
-        })
+        }),
       );
 
       // Send cleanup message
@@ -420,7 +420,7 @@ describe('Financial Calculator Worker', () => {
           success: true,
           type: 'CLEANUP',
           message: 'Resources cleaned up',
-        })
+        }),
       );
     });
   });

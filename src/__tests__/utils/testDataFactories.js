@@ -89,7 +89,7 @@ export const createMockFinancialDataArray = (count = 3, baseOverrides = {}) => {
       ...baseOverrides,
       id: `financial-${index + 1}`,
       period: `Q${index + 1} 2024`,
-    })
+    }),
   );
 };
 

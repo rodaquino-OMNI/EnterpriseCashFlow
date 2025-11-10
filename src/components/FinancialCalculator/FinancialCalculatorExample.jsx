@@ -70,12 +70,12 @@ const FinancialCalculatorExample = () => {
     debounce(async () => {
       const { result, performance } = await PerformanceMonitor.measureAsync(
         'Investment Metrics Calculation',
-        () => calculateInvestmentMetrics(investmentData)
+        () => calculateInvestmentMetrics(investmentData),
       );
       
       console.log(`Calculation completed in ${performance.durationMs}ms`);
     }, 500),
-    [investmentData, calculateInvestmentMetrics]
+    [investmentData, calculateInvestmentMetrics],
   );
 
   // Handle input changes

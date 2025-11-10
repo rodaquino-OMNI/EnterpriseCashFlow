@@ -21,16 +21,16 @@ jest.mock('../../hooks/useLibrary', () => ({
         
         get xlsx() { 
           return { 
-            writeBuffer: async () => new ArrayBuffer(0) 
+            writeBuffer: async () => new ArrayBuffer(0), 
           };
         }
-      }
+      },
     };
 
     const mockHtml2pdf = () => ({
       from: () => ({
-        save: () => Promise.resolve()
-      })
+        save: () => Promise.resolve(),
+      }),
     });
 
     const mockPdfjsLib = {
@@ -38,10 +38,10 @@ jest.mock('../../hooks/useLibrary', () => ({
         promise: Promise.resolve({
           numPages: 1,
           getPage: () => Promise.resolve({
-            getTextContent: () => Promise.resolve({ items: [] })
-          })
-        })
-      })
+            getTextContent: () => Promise.resolve({ items: [] }),
+          }),
+        }),
+      }),
     };
 
     // Return appropriate mock based on library name
@@ -57,17 +57,17 @@ jest.mock('../../hooks/useLibrary', () => ({
       isLoading: false,
       error: null,
       reset: jest.fn(),
-      isAvailable: true
+      isAvailable: true,
     };
-  })
+  }),
 }));
 
 jest.mock('../../hooks/useFinancialCalculator', () => ({
   useFinancialCalculator: jest.fn(() => ({
     calculate: jest.fn(),
     isCalculating: false,
-    calculationError: null
-  }))
+    calculationError: null,
+  })),
 }));
 
 jest.mock('../../hooks/useSmartExcelParser', () => ({
@@ -77,8 +77,8 @@ jest.mock('../../hooks/useSmartExcelParser', () => ({
     error: null,
     progress: 0,
     currentStep: '',
-    resetParser: jest.fn()
-  }))
+    resetParser: jest.fn(),
+  })),
 }));
 
 jest.mock('../../hooks/useAiService', () => ({
@@ -86,16 +86,16 @@ jest.mock('../../hooks/useAiService', () => ({
     isLoading: false,
     error: null,
     currentProviderConfig: {},
-    setSelectedProviderKey: jest.fn()
-  }))
+    setSelectedProviderKey: jest.fn(),
+  })),
 }));
 
 jest.mock('../../hooks/useAiAnalysis', () => ({
   useAiAnalysis: jest.fn(() => ({
     isLoading: jest.fn(() => false),
     errors: {},
-    clearAllAnalyses: jest.fn()
-  }))
+    clearAllAnalyses: jest.fn(),
+  })),
 }));
 
 jest.mock('../../hooks/usePdfParser', () => ({
@@ -103,8 +103,8 @@ jest.mock('../../hooks/usePdfParser', () => ({
     extractTextFromPdf: jest.fn(),
     isParsing: false,
     parsingError: null,
-    setParsingError: jest.fn()
-  }))
+    setParsingError: jest.fn(),
+  })),
 }));
 
 jest.mock('../../hooks/useAiDataExtraction', () => ({
@@ -112,8 +112,8 @@ jest.mock('../../hooks/useAiDataExtraction', () => ({
     extractFinancialData: jest.fn(),
     isExtracting: false,
     extractionError: null,
-    setExtractionError: jest.fn()
-  }))
+    setExtractionError: jest.fn(),
+  })),
 }));
 
 describe('Phase 2 Components Integration Tests', () => {
@@ -127,7 +127,7 @@ describe('Phase 2 Components Integration Tests', () => {
           <Grid item xs={12} md={6}>
             <div data-testid="grid-item-2">Content 2</div>
           </Grid>
-        </Grid>
+        </Grid>,
       );
 
       const container = document.querySelector('.grid-container');
@@ -145,12 +145,12 @@ describe('Phase 2 Components Integration Tests', () => {
         inputData: [
           { receita_liquida: 1000, custos_variaveis: 600 },
           { receita_liquida: 1100, custos_variaveis: 650 },
-          { receita_liquida: 1200, custos_variaveis: 700 }
+          { receita_liquida: 1200, custos_variaveis: 700 },
         ],
         onInputChange: jest.fn(),
         onSubmit: jest.fn(),
         isLoading: false,
-        validationErrors: null
+        validationErrors: null,
       };
 
       render(
@@ -158,7 +158,7 @@ describe('Phase 2 Components Integration Tests', () => {
           <Grid item xs={12}>
             <ManualDataEntry {...mockProps} />
           </Grid>
-        </Grid>
+        </Grid>,
       );
 
       expect(screen.getByText('Entrada Manual de Dados - Modo Adaptativo')).toBeInTheDocument();
@@ -181,7 +181,7 @@ describe('Phase 2 Components Integration Tests', () => {
           <Grid item xs={12} lg={4}>
             <div data-testid="sidebar">Sidebar</div>
           </Grid>
-        </Grid>
+        </Grid>,
       );
 
       expect(screen.getByTestId('nested-1')).toBeInTheDocument();
@@ -202,16 +202,16 @@ describe('Phase 2 Components Integration Tests', () => {
             label: 'Company Name',
             type: 'text',
             required: true,
-            validation: { minLength: 2 }
+            validation: { minLength: 2 },
           },
           {
             name: 'revenue',
             label: 'Revenue',
             type: 'number',
             required: true,
-            validation: { min: 0 }
-          }
-        ]
+            validation: { min: 0 },
+          },
+        ],
       };
 
       render(
@@ -220,7 +220,7 @@ describe('Phase 2 Components Integration Tests', () => {
           onSubmit={mockSubmit}
           onValidate={mockValidate}
           initialValues={{ companyName: '', revenue: '' }}
-        />
+        />,
       );
 
       // Test form rendering
@@ -230,10 +230,10 @@ describe('Phase 2 Components Integration Tests', () => {
 
       // Test form interaction
       fireEvent.change(screen.getByRole('textbox', { name: /Company Name/i }), {
-        target: { value: 'Test Company' }
+        target: { value: 'Test Company' },
       });
       fireEvent.change(screen.getByRole('spinbutton', { name: /Revenue/i }), {
-        target: { value: '1000' }
+        target: { value: '1000' },
       });
 
       fireEvent.click(screen.getByRole('button', { name: /submit/i }));
@@ -241,7 +241,7 @@ describe('Phase 2 Components Integration Tests', () => {
       await waitFor(() => {
         expect(mockSubmit).toHaveBeenCalledWith({
           companyName: 'Test Company',
-          revenue: '1000'
+          revenue: '1000',
         });
       });
     });
@@ -253,15 +253,15 @@ describe('Phase 2 Components Integration Tests', () => {
             name: 'field1',
             label: 'Field 1',
             type: 'text',
-            gridProps: { xs: 12, md: 6 }
+            gridProps: { xs: 12, md: 6 },
           },
           {
             name: 'field2',
             label: 'Field 2',
             type: 'text',
-            gridProps: { xs: 12, md: 6 }
-          }
-        ]
+            gridProps: { xs: 12, md: 6 },
+          },
+        ],
       };
 
       render(
@@ -273,7 +273,7 @@ describe('Phase 2 Components Integration Tests', () => {
               initialValues={{ field1: '', field2: '' }}
             />
           </Grid>
-        </Grid>
+        </Grid>,
       );
 
       expect(screen.getByLabelText('Field 1')).toBeInTheDocument();
@@ -288,9 +288,9 @@ describe('Phase 2 Components Integration Tests', () => {
             label: 'Email',
             type: 'email',
             required: true,
-            validation: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ }
-          }
-        ]
+            validation: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+          },
+        ],
       };
 
       render(
@@ -298,7 +298,7 @@ describe('Phase 2 Components Integration Tests', () => {
           config={formConfig}
           onSubmit={jest.fn()}
           initialValues={{ email: '' }}
-        />
+        />,
       );
 
       const emailInput = screen.getByRole('textbox', { name: /email/i });
@@ -372,11 +372,11 @@ describe('Phase 2 Components Integration Tests', () => {
         onPeriodTypeChange: jest.fn(),
         inputData: [
           { receita_liquida: null },
-          { receita_liquida: null }
+          { receita_liquida: null },
         ],
         onInputChange: jest.fn(),
         onSubmit: jest.fn(),
-        isLoading: false
+        isLoading: false,
       };
 
       // Test that ManualDataEntry still works without Grid wrapper
@@ -392,9 +392,9 @@ describe('Phase 2 Components Integration Tests', () => {
           {
             name: 'testField',
             label: 'Test Field',
-            type: 'text'
-          }
-        ]
+            type: 'text',
+          },
+        ],
       };
 
       // Test minimal configuration
@@ -402,7 +402,7 @@ describe('Phase 2 Components Integration Tests', () => {
         <Form
           config={basicFormConfig}
           onSubmit={jest.fn()}
-        />
+        />,
       );
 
       expect(screen.getByLabelText('Test Field')).toBeInTheDocument();
@@ -416,7 +416,7 @@ describe('Phase 2 Components Integration Tests', () => {
           <Grid item xs={12} role="region" aria-label="Content section">
             <div>Accessible content</div>
           </Grid>
-        </Grid>
+        </Grid>,
       );
 
       expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'Main content grid');
@@ -431,9 +431,9 @@ describe('Phase 2 Components Integration Tests', () => {
             label: 'Accessible Field',
             type: 'text',
             required: true,
-            helpText: 'This field is required'
-          }
-        ]
+            helpText: 'This field is required',
+          },
+        ],
       };
 
       render(
@@ -441,7 +441,7 @@ describe('Phase 2 Components Integration Tests', () => {
           config={formConfig}
           onSubmit={jest.fn()}
           initialValues={{ accessibleField: '' }}
-        />
+        />,
       );
 
       const input = screen.getByRole('textbox', { name: /accessible field/i });
@@ -455,7 +455,7 @@ describe('Phase 2 Components Integration Tests', () => {
           <Grid item xs={12} sm={6} md={4} lg={3}>
             <div data-testid="responsive-item">Responsive content</div>
           </Grid>
-        </Grid>
+        </Grid>,
       );
 
       // Test that responsive content is rendered
@@ -475,7 +475,7 @@ describe('Phase 2 Components Integration Tests', () => {
           <Grid item xs={12}>
             <div>Content</div>
           </Grid>
-        </Grid>
+        </Grid>,
       );
 
       // Should still render without crashing
@@ -488,7 +488,7 @@ describe('Phase 2 Components Integration Tests', () => {
         <Form
           config={{ fields: [] }}
           onSubmit={jest.fn()}
-        />
+        />,
       );
 
       // Should render submit button even with no fields
@@ -504,7 +504,7 @@ describe('Phase 2 Components Integration Tests', () => {
         inputData: null, // Test null data
         onInputChange: jest.fn(),
         onSubmit: jest.fn(),
-        isLoading: false
+        isLoading: false,
       };
 
       render(<ManualDataEntry {...mockProps} />);

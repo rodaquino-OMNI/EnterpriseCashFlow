@@ -25,7 +25,7 @@ export default function CashFlowComponentsChart({ data, calculatedData, periodTy
         name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
         operating: cashFlow.operatingCashFlow || 0,
         investing: cashFlow.investingCashFlow || 0,
-        financing: cashFlow.financingCashFlow || 0
+        financing: cashFlow.financingCashFlow || 0,
       };
     });
 
@@ -54,7 +54,7 @@ export default function CashFlowComponentsChart({ data, calculatedData, periodTy
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />

@@ -49,6 +49,32 @@
     "extends": [
       "react-app",
       "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/__tests__/**/*.js",
+          "**/__tests__/**/*.jsx",
+          "**/__mocks__/**/*.js",
+          "**/__mocks__/**/*.jsx",
+          "**/*.test.js",
+          "**/*.test.jsx",
+          "**/*.spec.js",
+          "**/*.spec.jsx",
+          "**/setupTests.js"
+        ],
+        "rules": {
+          "no-unused-vars": "off",
+          "no-console": "off",
+          "react/react-in-jsx-scope": "off",
+          "max-len": "off",
+          "no-useless-escape": "off",
+          "react-hooks/exhaustive-deps": "off",
+          "jsx-a11y/click-events-have-key-events": "off",
+          "jsx-a11y/no-static-element-interactions": "off",
+          "no-case-declarations": "off"
+        }
+      }
     ]
   },
   "browserslist": {

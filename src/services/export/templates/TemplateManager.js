@@ -62,7 +62,7 @@ export class TemplateManager {
   getAllTemplates() {
     return [
       ...Array.from(this.templates.values()),
-      ...Array.from(this.customTemplates.values())
+      ...Array.from(this.customTemplates.values()),
     ];
   }
 
@@ -95,7 +95,7 @@ export class TemplateManager {
       id: template.id || this.generateTemplateId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      isCustom: true
+      isCustom: true,
     };
     
     this.customTemplates.set(newTemplate.id, newTemplate);
@@ -121,7 +121,7 @@ export class TemplateManager {
       ...template,
       ...updates,
       id: templateId,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     
     this.customTemplates.set(templateId, updatedTemplate);
@@ -167,7 +167,7 @@ export class TemplateManager {
       name: newName || `${template.name} (Copy)`,
       isCustom: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     
     this.customTemplates.set(clonedTemplate.id, clonedTemplate);
@@ -203,10 +203,10 @@ export class TemplateManager {
       title: template.layout.title || data.title,
       metadata: {
         ...template.metadata,
-        ...data.metadata
+        ...data.metadata,
       },
       styling: template.styling,
-      branding: template.branding
+      branding: template.branding,
     };
     
     // Process sections
@@ -233,7 +233,7 @@ export class TemplateManager {
   processSection(section, data) {
     const processed = {
       ...section,
-      data: null
+      data: null,
     };
     
     switch (section.type) {
@@ -276,7 +276,7 @@ export class TemplateManager {
     return {
       text: summaryData.text || section.defaultText || '',
       highlights: summaryData.highlights || section.highlights || [],
-      metrics: summaryData.metrics || section.metrics || []
+      metrics: summaryData.metrics || section.metrics || [],
     };
   }
 
@@ -320,7 +320,7 @@ export class TemplateManager {
       headers: section.headers || tableData.headers,
       data: tableData.data || [],
       formatting: section.formatting || tableData.formatting,
-      totals: section.showTotals ? this.calculateTotals(tableData.data, section.totalColumns) : null
+      totals: section.showTotals ? this.calculateTotals(tableData.data, section.totalColumns) : null,
     };
     
     // Apply column visibility
@@ -362,9 +362,9 @@ export class TemplateManager {
       data: chartData.data || [],
       options: {
         ...section.chartOptions,
-        ...chartData.options
+        ...chartData.options,
       },
-      element: chartData.element // For existing chart elements
+      element: chartData.element, // For existing chart elements
     };
   }
 
@@ -392,12 +392,12 @@ export class TemplateManager {
     switch (transformation.type) {
       case 'filter':
         return sections.filter(section => 
-          transformation.condition(section)
+          transformation.condition(section),
         );
         
       case 'reorder':
         return transformation.order.map(id => 
-          sections.find(s => s.id === id)
+          sections.find(s => s.id === id),
         ).filter(Boolean);
         
       case 'merge':
@@ -445,7 +445,7 @@ export class TemplateManager {
     const merged = {
       ...newSection,
       id: newSection.id || `merged-${Date.now()}`,
-      data: toMerge.map(s => s.data)
+      data: toMerge.map(s => s.data),
     };
     
     return [...others, merged];
@@ -488,7 +488,7 @@ export class TemplateManager {
       id: this.generateTemplateId(),
       isCustom: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     
     this.customTemplates.set(imported.id, imported);

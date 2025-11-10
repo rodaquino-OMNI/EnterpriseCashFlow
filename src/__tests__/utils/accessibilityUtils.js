@@ -51,7 +51,7 @@ export const testAccessibility = async (container, options = {}) => {
  */
 export const testKeyboardNavigation = (element, expectedFocusableElements = []) => {
   const focusableElements = element.querySelectorAll(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
   );
 
   const results = {
@@ -160,7 +160,7 @@ export const testScreenReaderCompatibility = (element) => {
   // Check for keyboard support
   const tabIndex = element.getAttribute('tabindex');
   const isInteractive = ['button', 'a', 'input', 'select', 'textarea'].includes(
-    element.tagName.toLowerCase()
+    element.tagName.toLowerCase(),
   );
   
   if (isInteractive || tabIndex !== null) {

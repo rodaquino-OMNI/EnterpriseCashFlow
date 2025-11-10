@@ -19,10 +19,10 @@ export default function WorkingCapitalDaysTrendChart({ calculatedData, periodTyp
 
     const chartData = calculatedData.map((period, index) => ({
       name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
-      "PMR (Dias)": parseFloat(period.arDays?.toFixed(1)) || 0,
-      "PME (Dias)": parseFloat(period.invDays?.toFixed(1)) || 0,
-      "PMP (Dias)": parseFloat(period.apDays?.toFixed(1)) || 0,
-      "Ciclo Caixa (Dias)": parseFloat(period.wcDays?.toFixed(1)) || 0
+      'PMR (Dias)': parseFloat(period.arDays?.toFixed(1)) || 0,
+      'PME (Dias)': parseFloat(period.invDays?.toFixed(1)) || 0,
+      'PMP (Dias)': parseFloat(period.apDays?.toFixed(1)) || 0,
+      'Ciclo Caixa (Dias)': parseFloat(period.wcDays?.toFixed(1)) || 0,
     }));
 
     return (
@@ -52,7 +52,7 @@ export default function WorkingCapitalDaysTrendChart({ calculatedData, periodTyp
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />

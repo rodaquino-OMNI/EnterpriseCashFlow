@@ -1,0 +1,28 @@
+{
+  "extends": ["react-app", "react-app/jest"],
+  "rules": {},
+  "overrides": [
+    {
+      "files": [
+        "**/__tests__/**",
+        "**/__mocks__/**",
+        "**/*.test.js",
+        "**/*.test.jsx",
+        "**/*.spec.js",
+        "**/*.spec.jsx",
+        "**/setupTests.js"
+      ],
+      "rules": {
+        "no-unused-vars": 0,
+        "no-console": 0,
+        "react/react-in-jsx-scope": 0,
+        "max-len": 0,
+        "no-useless-escape": 0,
+        "react-hooks/exhaustive-deps": 0,
+        "jsx-a11y/click-events-have-key-events": 0,
+        "jsx-a11y/no-static-element-interactions": 0,
+        "no-case-declarations": 0
+      }
+    }
+  ]
+}

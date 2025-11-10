@@ -13,7 +13,7 @@ import {
   WorkingCapitalTimeline,
   BaseChart,
   MarginTrendChart,
-  CashFlowComponentsChart
+  CashFlowComponentsChart,
 } from '../Charts';
 import { createMockPeriodData } from '../../__tests__/utils/testDataFactories.comprehensive';
 
@@ -33,7 +33,7 @@ jest.mock('recharts', () => ({
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Tooltip: () => <div data-testid="tooltip" />,
   Legend: () => <div data-testid="legend" />,
-  ReferenceLine: ({ y }) => <div data-testid="reference-line" data-y={y} />
+  ReferenceLine: ({ y }) => <div data-testid="reference-line" data-y={y} />,
 }));
 
 describe('Chart Components', () => {
@@ -41,7 +41,7 @@ describe('Chart Components', () => {
     createMockPeriodData({ periodIndex: 0 }),
     createMockPeriodData({ periodIndex: 1 }),
     createMockPeriodData({ periodIndex: 2 }),
-    createMockPeriodData({ periodIndex: 3 })
+    createMockPeriodData({ periodIndex: 3 }),
   ];
 
   describe('BaseChart Component', () => {
@@ -49,7 +49,7 @@ describe('Chart Components', () => {
       render(
         <BaseChart title="Test Chart" height={400}>
           <div>Chart Content</div>
-        </BaseChart>
+        </BaseChart>,
       );
 
       expect(screen.getByText('Test Chart')).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('Chart Components', () => {
       render(
         <BaseChart title="Test Chart" subtitle="Chart Subtitle">
           <div>Content</div>
-        </BaseChart>
+        </BaseChart>,
       );
 
       expect(screen.getByText('Chart Subtitle')).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe('Chart Components', () => {
       render(
         <BaseChart title="Test" className="custom-class">
           <div>Content</div>
-        </BaseChart>
+        </BaseChart>,
       );
 
       const container = screen.getByText('Test').closest('.bg-white');
@@ -81,7 +81,7 @@ describe('Chart Components', () => {
       render(
         <BaseChart title="Test" loading={true}>
           <div>Content</div>
-        </BaseChart>
+        </BaseChart>,
       );
 
       expect(screen.getByText(/carregando/i)).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('Chart Components', () => {
       render(
         <BaseChart title="Test" error="Failed to load data">
           <div>Content</div>
-        </BaseChart>
+        </BaseChart>,
       );
 
       expect(screen.getByText(/failed to load data/i)).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('Chart Components', () => {
       render(
         <BaseChart title="Test" empty={true}>
           <div>Content</div>
-        </BaseChart>
+        </BaseChart>,
       );
 
       expect(screen.getByText(/sem dados/i)).toBeInTheDocument();
@@ -136,8 +136,8 @@ describe('Chart Components', () => {
         cashFlow: {
           workingCapitalChange: -20000,
           capex: 30000,
-          financingCashFlow: -10000
-        }
+          financingCashFlow: -10000,
+        },
       }];
 
       render(<CashFlowWaterfallChart data={customData} />);
@@ -179,8 +179,8 @@ describe('Chart Components', () => {
           operatingExpenses: 500000, // Will result in negative EBIT
           netFinancialResult: -50000,
           taxes: 0,
-          netIncome: -150000
-        }
+          netIncome: -150000,
+        },
       }];
 
       render(<ProfitWaterfallChart data={customData} />);
@@ -250,7 +250,7 @@ describe('Chart Components', () => {
       const fundingData = {
         debt: 2000000,
         equity: 3000000,
-        retainedEarnings: 1000000
+        retainedEarnings: 1000000,
       };
 
       render(<FundingStructureChart data={fundingData} />);
@@ -263,7 +263,7 @@ describe('Chart Components', () => {
       const fundingData = {
         debt: 2000000,
         equity: 3000000,
-        retainedEarnings: 1000000
+        retainedEarnings: 1000000,
       };
 
       render(<FundingStructureChart data={fundingData} />);
@@ -276,7 +276,7 @@ describe('Chart Components', () => {
       const fundingData = {
         debt: 0,
         equity: 1000000,
-        retainedEarnings: 0
+        retainedEarnings: 0,
       };
 
       render(<FundingStructureChart data={fundingData} />);
@@ -289,7 +289,7 @@ describe('Chart Components', () => {
       const fundingData = {
         debt: 0,
         equity: 0,
-        retainedEarnings: 0
+        retainedEarnings: 0,
       };
 
       render(<FundingStructureChart data={fundingData} />);
@@ -327,8 +327,8 @@ describe('Chart Components', () => {
           dso: 45,
           dio: 30,
           dpo: 60,
-          workingCapitalValue: 150000
-        }
+          workingCapitalValue: 150000,
+        },
       }];
 
       render(<WorkingCapitalTimeline data={customData} />);
@@ -345,7 +345,7 @@ describe('Chart Components', () => {
           <CashFlowWaterfallChart data={mockCalculatedData} />
           <MarginTrendChart data={mockCalculatedData} />
           <FundingStructureChart data={{ debt: 1000000, equity: 2000000 }} />
-        </>
+        </>,
       );
 
       const containers = screen.getAllByTestId('responsive-container');
@@ -356,7 +356,7 @@ describe('Chart Components', () => {
       render(
         <BaseChart title="Test" height={600}>
           <div style={{ height: '100%' }}>Content</div>
-        </BaseChart>
+        </BaseChart>,
       );
 
       const container = screen.getByTestId('responsive-container');
@@ -376,7 +376,7 @@ describe('Chart Components', () => {
         <>
           <MarginTrendChart data={mockCalculatedData} />
           <CashFlowComponentsChart data={mockCalculatedData} />
-        </>
+        </>,
       );
       
       const legends = screen.getAllByTestId('legend');
@@ -391,7 +391,7 @@ describe('Chart Components', () => {
           <CashFlowWaterfallChart data={[]} />
           <MarginTrendChart data={[]} />
           <WorkingCapitalTimeline data={[]} />
-        </>
+        </>,
       );
 
       const emptyMessages = screen.getAllByText(/sem dados/i);
@@ -403,7 +403,7 @@ describe('Chart Components', () => {
         <>
           <CashFlowWaterfallChart data={null} />
           <MarginTrendChart data={null} />
-        </>
+        </>,
       );
 
       const emptyMessages = screen.getAllByText(/sem dados/i);
@@ -431,7 +431,7 @@ describe('Chart Components', () => {
           <CashFlowWaterfallChart data={mockCalculatedData} />
           <MarginTrendChart data={mockCalculatedData} />
           <FundingStructureChart data={{ debt: 1000000, equity: 2000000 }} />
-        </>
+        </>,
       );
 
       expect(screen.getByText(/Análise de Fluxo de Caixa/i)).toBeInTheDocument();

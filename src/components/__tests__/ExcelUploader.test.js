@@ -33,6 +33,8 @@ describe('ExcelUploader Component', () => {
     excelJsError: null,
     currentAppNumberOfPeriods: 4,
     currentAppPeriodType: 'months',
+    onNumberOfPeriodsChange: jest.fn(),
+    onPeriodTypeChange: jest.fn(),
   };
 
   beforeEach(() => {

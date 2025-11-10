@@ -30,7 +30,7 @@ import {
   Treemap,
   RadialBarChart,
   RadialBar,
-  ComposedChart
+  ComposedChart,
 } from 'recharts';
 
 /**
@@ -48,7 +48,7 @@ CustomLayer.displayName = 'CustomLayer';
 export function RechartsWrapper({ children, fallbackHeight = '350px' }) {
   // Create a context with React reference to ensure proper integration
   const RechartsContext = React.createContext({
-    React
+    React,
   });
   
   return (
@@ -96,6 +96,6 @@ export function useRecharts() {
     RadialBarChart,
     RadialBar,
     ComposedChart,
-    Layer: CustomLayer // Always use our custom implementation
+    Layer: CustomLayer, // Always use our custom implementation
   };
 }

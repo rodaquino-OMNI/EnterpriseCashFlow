@@ -32,7 +32,7 @@ describe('ExportService', () => {
       expect(formats).toHaveLength(2);
       expect(formats.map(f => f.id)).toEqual([
         ExportFormat.PDF,
-        ExportFormat.EXCEL
+        ExportFormat.EXCEL,
       ]);
     });
   });
@@ -41,7 +41,7 @@ describe('ExportService', () => {
     it('should validate export data', () => {
       const validData = {
         title: 'Test Report',
-        tables: [{ data: [] }]
+        tables: [{ data: [] }],
       };
       
       const result = exportService.validateData(validData, ExportFormat.PDF);
@@ -61,7 +61,7 @@ describe('ExportService', () => {
     
     it('should warn about large data', () => {
       const largeData = {
-        content: 'x'.repeat(11 * 1024 * 1024) // 11MB
+        content: 'x'.repeat(11 * 1024 * 1024), // 11MB
       };
       
       const result = exportService.validateData(largeData, ExportFormat.PDF);
@@ -93,7 +93,7 @@ describe('ExportService', () => {
         name: 'Custom Report',
         description: 'Test custom template',
         category: 'custom',
-        sections: []
+        sections: [],
       };
       
       const created = exportService.createTemplate(customTemplate);
@@ -127,11 +127,11 @@ describe('ExportService', () => {
     it('should update branding configuration', () => {
       const newBranding = {
         colors: {
-          primary: '#ff0000'
+          primary: '#ff0000',
         },
         watermark: {
-          text: 'CONFIDENTIAL'
-        }
+          text: 'CONFIDENTIAL',
+        },
       };
       
       exportService.updateBranding(newBranding);
@@ -157,7 +157,7 @@ describe('ExportService', () => {
       
       exportService.updateStatistics({
         format: ExportFormat.PDF,
-        size: 1024 * 1024 // 1MB
+        size: 1024 * 1024, // 1MB
       });
       
       const updatedStats = exportService.getStatistics();
@@ -170,17 +170,17 @@ describe('ExportService', () => {
     it('should generate preview URL', async () => {
       const data = {
         title: 'Test Report',
-        content: 'Test content'
+        content: 'Test content',
       };
       
       // Mock the export service response
       exportService.pdfService.export = jest.fn().mockResolvedValue({
         success: true,
-        data: new Blob(['test'], { type: 'application/pdf' })
+        data: new Blob(['test'], { type: 'application/pdf' }),
       });
       
       const result = await exportService.preview(data, {
-        format: ExportFormat.PDF
+        format: ExportFormat.PDF,
       });
       
       expect(result.success).toBe(true);
@@ -228,15 +228,15 @@ describe('ExportService Integration', () => {
       title: 'Q4 2024 Financial Report',
       metadata: {
         period: 'Q4 2024',
-        currency: 'USD'
+        currency: 'USD',
       },
       summary: {
-        text: 'Strong performance in Q4 with revenue growth of 15%'
+        text: 'Strong performance in Q4 with revenue growth of 15%',
       },
       kpis: [
         { label: 'Revenue', value: 1000000, format: 'currency' },
         { label: 'Gross Margin', value: 0.45, format: 'percentage' },
-        { label: 'Operating Income', value: 150000, format: 'currency' }
+        { label: 'Operating Income', value: 150000, format: 'currency' },
       ],
       tables: [
         {
@@ -245,15 +245,15 @@ describe('ExportService Integration', () => {
           data: [
             { Item: 'Revenue', 'Q4 2024': 1000000, 'Q4 2023': 870000, Change: 130000 },
             { Item: 'COGS', 'Q4 2024': 550000, 'Q4 2023': 500000, Change: 50000 },
-            { Item: 'Gross Profit', 'Q4 2024': 450000, 'Q4 2023': 370000, Change: 80000 }
+            { Item: 'Gross Profit', 'Q4 2024': 450000, 'Q4 2023': 370000, Change: 80000 },
           ],
           formatting: {
             'Q4 2024': 'currency',
             'Q4 2023': 'currency',
-            'Change': 'currency'
-          }
-        }
-      ]
+            'Change': 'currency',
+          },
+        },
+      ],
     };
     
     const validation = exportService.validateData(reportData, ExportFormat.PDF);
@@ -268,14 +268,14 @@ describe('ExportService Integration', () => {
         id: 'report1',
         name: 'January Report',
         data: { title: 'January 2024', content: 'January data' },
-        format: ExportFormat.PDF
+        format: ExportFormat.PDF,
       },
       {
         id: 'report2',
         name: 'February Report',
         data: { title: 'February 2024', content: 'February data' },
-        format: ExportFormat.EXCEL
-      }
+        format: ExportFormat.EXCEL,
+      },
     ];
     
     // Mock the batch service
@@ -283,7 +283,7 @@ describe('ExportService Integration', () => {
       success: true,
       totalReports: 2,
       successfulExports: 2,
-      failedExports: 0
+      failedExports: 0,
     });
     
     const result = await exportService.exportBatch(reports);

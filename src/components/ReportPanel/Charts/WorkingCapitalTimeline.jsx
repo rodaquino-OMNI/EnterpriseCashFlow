@@ -12,7 +12,7 @@ import {
   Legend, 
   ResponsiveContainer, 
   Label, 
-  ReferenceLine 
+  ReferenceLine, 
 } from 'recharts';
 
 export default function WorkingCapitalTimeline({ calculatedData, periodType }) {
@@ -37,11 +37,11 @@ export default function WorkingCapitalTimeline({ calculatedData, periodType }) {
   const chartData = calculatedData.map((period, index) => {
     const dataPoint = {
       name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
-      "Cap. Giro": period.workingCapitalValue || 0,
-      "Var. Cap. Giro": period.workingCapitalChange || 0,
-      "A Receber": period.accountsReceivableValueAvg || 0,
-      "Estoque": period.inventoryValueAvg || 0,
-      "A Pagar": -(period.accountsPayableValueAvg || 0) // Negative to show as cash source
+      'Cap. Giro': period.workingCapitalValue || 0,
+      'Var. Cap. Giro': period.workingCapitalChange || 0,
+      'A Receber': period.accountsReceivableValueAvg || 0,
+      'Estoque': period.inventoryValueAvg || 0,
+      'A Pagar': -(period.accountsPayableValueAvg || 0), // Negative to show as cash source
     };
     console.log(`Period ${index + 1} data:`, dataPoint);
     return dataPoint;
@@ -76,7 +76,7 @@ export default function WorkingCapitalTimeline({ calculatedData, periodType }) {
                 backgroundColor: 'white', 
                 border: '1px solid #e2e8f0', 
                 borderRadius: '6px',
-                fontSize: '12px'
+                fontSize: '12px',
               }}
             />
             <Legend wrapperStyle={{ fontSize: '11px' }} />

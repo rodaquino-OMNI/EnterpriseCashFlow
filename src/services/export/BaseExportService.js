@@ -10,7 +10,7 @@ export class BaseExportService {
     this.options = {
       includeTimestamp: true,
       includeMetadata: true,
-      ...options
+      ...options,
     };
     
     // Initialize branding
@@ -23,9 +23,9 @@ export class BaseExportService {
         success: '#28a745',
         danger: '#dc3545',
         warning: '#ffc107',
-        info: '#17a2b8'
+        info: '#17a2b8',
       },
-      ...options.branding
+      ...options.branding,
     };
   }
 
@@ -58,7 +58,7 @@ export class BaseExportService {
     
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -95,7 +95,7 @@ export class BaseExportService {
       creator: 'Enterprise Cash Flow v2.0',
       creationDate: now,
       modificationDate: now,
-      ...options.metadata
+      ...options.metadata,
     };
   }
 
@@ -130,7 +130,7 @@ export class BaseExportService {
       style: 'currency',
       currency,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(value);
   }
 
@@ -187,7 +187,7 @@ export class BaseExportService {
     
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
+      maximumFractionDigits: decimals,
     }).format(value);
   }
 
@@ -200,7 +200,7 @@ export class BaseExportService {
     const mimeTypes = {
       [ExportFormat.PDF]: 'application/pdf',
       [ExportFormat.EXCEL]: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      [ExportFormat.CSV]: 'text/csv'
+      [ExportFormat.CSV]: 'text/csv',
     };
     
     return mimeTypes[format] || 'application/octet-stream';
@@ -236,8 +236,8 @@ export class BaseExportService {
       error: {
         message: error.message || 'Unknown error occurred',
         context,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 }

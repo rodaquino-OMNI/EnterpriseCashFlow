@@ -37,9 +37,9 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
     
     const defaultTemp =
       analysisType === ANALYSIS_TYPES.FINANCIAL_DATA_EXTRACTION ? 0.1 : 
-      providerConfig.name.toLowerCase().includes('claude') ? 0.3 :
-      providerConfig.name.toLowerCase().includes('gemini') ? 0.4 :
-      0.35;
+        providerConfig.name.toLowerCase().includes('claude') ? 0.3 :
+          providerConfig.name.toLowerCase().includes('gemini') ? 0.4 :
+            0.35;
     
     enhanced.temperature = options.temperature ?? defaultTemp;
     
@@ -51,7 +51,7 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
     
     enhanced.maxTokens = Math.min(
       options.maxTokens || defaultMaxTokens,
-      providerConfig.maxTokens || 8000
+      providerConfig.maxTokens || 8000,
     );
     
     if (!enhanced.model && providerConfig.defaultRequestConfig?.model) {
@@ -64,7 +64,7 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
     analysisType,
     financialDataBundle, // { calculatedData, companyInfo, pdfText? }
     options = {},
-    currentApiKey = '' // API key for the selected provider
+    currentApiKey = '', // API key for the selected provider
   ) => {
     // Generate a unique ID for this call to trace through logs
     const callId = `AI-${Date.now()}`;
@@ -94,7 +94,7 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
         analysisType,
         financialDataBundle,
         selectedProviderKey,
-        options
+        options,
       );
       
       const enhancedOptions = enhanceOptionsForProvider(options, currentProviderConfig, analysisType);
@@ -111,7 +111,7 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
         currentProviderConfig,
         standardizedPrompt,
         currentApiKey,
-        enhancedOptions
+        enhancedOptions,
       );
       
       // Log info about the response
@@ -119,14 +119,14 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
       console.log(`[${callId}] Raw response preview:`, 
         typeof rawResponseOrErrorString === 'string' 
           ? rawResponseOrErrorString.substring(0, 200) + '...'
-          : rawResponseOrErrorString
+          : rawResponseOrErrorString,
       );
       
       // Check if callFunction returned an error string (our convention)
       if (typeof rawResponseOrErrorString === 'string' &&
-         (rawResponseOrErrorString.startsWith("Erro:") || 
-          rawResponseOrErrorString.startsWith("Falha") || 
-          rawResponseOrErrorString.includes("API Key"))) {
+         (rawResponseOrErrorString.startsWith('Erro:') || 
+          rawResponseOrErrorString.startsWith('Falha') || 
+          rawResponseOrErrorString.includes('API Key'))) {
         throw new Error(rawResponseOrErrorString);
       }
       
@@ -155,7 +155,7 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
       
       // Create user-friendly error message without exposing system internals
       const userFriendlyError = new Error(
-        `Falha na análise ${analysisType}. Por favor, verifique sua conexão e tente novamente.`
+        `Falha na análise ${analysisType}. Por favor, verifique sua conexão e tente novamente.`,
       );
       setError(userFriendlyError);
       throw userFriendlyError;
@@ -177,7 +177,7 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
     return {
       totalAnalysesForProvider: analysisHistory.filter(a => a.provider === selectedProviderKey).length,
       averageRecentQuality: avgQuality,
-      recommendedProviderForGeneral: DEFAULT_AI_PROVIDER
+      recommendedProviderForGeneral: DEFAULT_AI_PROVIDER,
     };
   }, [analysisHistory, selectedProviderKey]);
 
@@ -190,6 +190,6 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
     selectedProviderKey,
     setSelectedProviderKey,
     analysisHistory,
-    getProviderInsights
+    getProviderInsights,
   };
 }

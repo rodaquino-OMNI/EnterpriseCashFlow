@@ -22,7 +22,7 @@ export default function PdfUploader({
   setPeriodTypeForExtraction,
   numberOfPeriodsForExtraction,
   setNumberOfPeriodsForExtraction,
-  extractionProgress
+  extractionProgress,
 }) {
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
@@ -33,7 +33,7 @@ export default function PdfUploader({
       handleFileProcess(file);
     }
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -52,8 +52,8 @@ export default function PdfUploader({
   const handleDrag = (e) => {
     e.preventDefault(); e.stopPropagation();
     if (isLoading) return;
-    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
-    else if (e.type === "dragleave") setDragActive(false);
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
   };
 
   const handleDrop = (e) => {

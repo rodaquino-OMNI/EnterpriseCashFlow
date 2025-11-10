@@ -25,7 +25,7 @@ export default function AssetCompositionChart({ calculatedData, periodIndex = -1
       { name: 'Contas a Receber', value: period.accountsReceivableValueAvg || 0, color: '#3b82f6' },
       { name: 'Estoque', value: period.inventoryValueAvg || 0, color: '#f59e0b' },
       { name: 'Outros Circulantes', value: Math.max(0, (period.estimatedCurrentAssets || 0) - (period.closingCash || 0) - (period.accountsReceivableValueAvg || 0) - (period.inventoryValueAvg || 0)), color: '#8b5cf6' },
-      { name: 'Ativo Fixo Líquido', value: period.netFixedAssets || 0, color: '#ef4444' }
+      { name: 'Ativo Fixo Líquido', value: period.netFixedAssets || 0, color: '#ef4444' },
     ].filter(item => item.value > 0);
 
     return (
@@ -55,7 +55,7 @@ export default function AssetCompositionChart({ calculatedData, periodIndex = -1
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />

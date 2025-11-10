@@ -31,7 +31,7 @@ export function useAiDataExtraction(aiService) {
     periodType, 
     numberOfPeriods, 
     apiKey,
-    providerKey
+    providerKey,
   ) => {
     if (!pdfText || typeof pdfText !== 'string' || pdfText.trim().length < 100) {
       const error = new Error('Texto do PDF muito curto, vazio ou inválido para extração.');
@@ -47,11 +47,11 @@ export function useAiDataExtraction(aiService) {
       const financialDataBundle = {
         pdfText: pdfText.slice(0, 50000), // Limit text size to avoid token limits
         companyInfo: {
-          name: "Empresa em Análise", // Generic name
-          reportTitle: "Extração de Dados Financeiros",
+          name: 'Empresa em Análise', // Generic name
+          reportTitle: 'Extração de Dados Financeiros',
           periodType: periodType,
-          numberOfPeriods: numberOfPeriods
-        }
+          numberOfPeriods: numberOfPeriods,
+        },
       };
 
       // Call AI to extract financial data
@@ -60,9 +60,9 @@ export function useAiDataExtraction(aiService) {
         financialDataBundle,
         {
           temperature: 0.1, // Lower temperature for more deterministic extraction
-          maxTokens: 4000 // Allow enough tokens for structured data
+          maxTokens: 4000, // Allow enough tokens for structured data
         },
-        apiKey
+        apiKey,
       );
 
       // Process and validate the extracted data
@@ -128,7 +128,7 @@ export function useAiDataExtraction(aiService) {
       setIsExtracting(false);
       return {
         data: processedData,
-        detectedPeriods: detectedPeriods
+        detectedPeriods: detectedPeriods,
       };
     } catch (err) {
       console.error('Erro na extração de dados via IA:', err);
@@ -142,6 +142,6 @@ export function useAiDataExtraction(aiService) {
     extractFinancialData,
     isExtracting,
     extractionError,
-    setExtractionError
+    setExtractionError,
   };
 }

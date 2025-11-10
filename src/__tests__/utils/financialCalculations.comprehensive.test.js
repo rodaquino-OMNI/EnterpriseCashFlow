@@ -217,7 +217,7 @@ describe('DEFECT #1: Balance Sheet Estimation - Asset Turnover Approach', () => 
 
       const difference = Math.abs(
         balanceSheet.totalAssets -
-        (balanceSheet.totalLiabilities + balanceSheet.equity)
+        (balanceSheet.totalLiabilities + balanceSheet.equity),
       );
 
       // Should balance within tolerance (0.01)
@@ -617,8 +617,8 @@ describe('DEFECT #5: Audit Trail System', () => {
 
       expect(incomeStatement.auditTrail.calculationSteps).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ step: expect.any(String), value: expect.any(Number) })
-        ])
+          expect.objectContaining({ step: expect.any(String), value: expect.any(Number) }),
+        ]),
       );
     });
   });

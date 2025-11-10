@@ -113,20 +113,20 @@ const Input = forwardRef(({
       height: '32px',
       padding: `${designTokens.spacing[1]} ${designTokens.spacing[2]}`,
       fontSize: designTokens.typography.fontSize.sm[0],
-      lineHeight: designTokens.typography.lineHeight.normal
+      lineHeight: designTokens.typography.lineHeight.normal,
     },
     md: {
       height: '40px',
       padding: `${designTokens.spacing[2]} ${designTokens.spacing[3]}`,
       fontSize: designTokens.typography.fontSize.base[0],
-      lineHeight: designTokens.typography.lineHeight.normal
+      lineHeight: designTokens.typography.lineHeight.normal,
     },
     lg: {
       height: '48px',
       padding: `${designTokens.spacing[3]} ${designTokens.spacing[4]}`,
       fontSize: designTokens.typography.fontSize.lg[0],
-      lineHeight: designTokens.typography.lineHeight.normal
-    }
+      lineHeight: designTokens.typography.lineHeight.normal,
+    },
   };
 
   // Variant configurations
@@ -135,20 +135,20 @@ const Input = forwardRef(({
       backgroundColor: designTokens.colors.white,
       border: `1px solid ${designTokens.colors.secondary[300]}`,
       focusBorderColor: designTokens.colors.primary[500],
-      focusBoxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`
+      focusBoxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`,
     },
     filled: {
       backgroundColor: designTokens.colors.secondary[50],
       border: `1px solid ${designTokens.colors.secondary[200]}`,
       focusBorderColor: designTokens.colors.primary[500],
-      focusBoxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`
+      focusBoxShadow: `0 0 0 2px ${designTokens.colors.primary[200]}`,
     },
     outline: {
       backgroundColor: 'transparent',
       border: `2px solid ${designTokens.colors.secondary[300]}`,
       focusBorderColor: designTokens.colors.primary[500],
-      focusBoxShadow: 'none'
-    }
+      focusBoxShadow: 'none',
+    },
   };
 
   const currentSize = sizeConfig[size];
@@ -177,27 +177,27 @@ const Input = forwardRef(({
     // Focus styles
     ...(isFocused && !disabled && !hasError && {
       borderColor: currentVariant.focusBorderColor,
-      boxShadow: currentVariant.focusBoxShadow
+      boxShadow: currentVariant.focusBoxShadow,
     }),
     
     // Error focus styles
     ...(isFocused && !disabled && hasError && {
       borderColor: designTokens.colors.semantic.error[600],
-      boxShadow: `0 0 0 2px ${designTokens.colors.semantic.error[200]}`
+      boxShadow: `0 0 0 2px ${designTokens.colors.semantic.error[200]}`,
     }),
     
     // Placeholder styles
     '::placeholder': {
       color: designTokens.colors.secondary[400],
-      opacity: 1
-    }
+      opacity: 1,
+    },
   };
 
   // Container styles for additional elements
   const containerStyles = {
     position: 'relative',
     display: 'inline-block',
-    width: '100%'
+    width: '100%',
   };
 
   return (
@@ -229,9 +229,9 @@ const Input = forwardRef(({
           
           .input-field:hover:not(:disabled):not(:focus) {
             border-color: ${hasError 
-              ? designTokens.colors.semantic.error[600] 
-              : designTokens.colors.secondary[400]
-            };
+      ? designTokens.colors.semantic.error[600] 
+      : designTokens.colors.secondary[400]
+    };
           }
           
           .input-field:disabled {
@@ -283,7 +283,7 @@ Input.displayName = 'Input';
 Input.propTypes = {
   type: PropTypes.oneOf([
     'text', 'email', 'password', 'number', 'tel', 'url', 'search', 'date', 
-    'datetime-local', 'month', 'time', 'week', 'color'
+    'datetime-local', 'month', 'time', 'week', 'color',
   ]),
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func,
@@ -300,7 +300,7 @@ Input.propTypes = {
   validateOnChange: PropTypes.bool,
   validateOnBlur: PropTypes.bool,
   className: PropTypes.string,
-  inputProps: PropTypes.object
+  inputProps: PropTypes.object,
 };
 
 /**
@@ -348,7 +348,7 @@ export const validators = {
     if (!value) return null;
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
     return phoneRegex.test(value.replace(/[\s\-\(\)]/g, '')) ? true : 'Please enter a valid phone number';
-  }
+  },
 };
 
 /**

@@ -20,37 +20,37 @@ export class SecurityHeaders {
         "'self'",
         "'unsafe-inline'", // Required for React in development
         "'unsafe-eval'", // Required for React DevTools
-        "https://cdn.jsdelivr.net", // For external libraries if needed
-        "https://unpkg.com",
+        'https://cdn.jsdelivr.net', // For external libraries if needed
+        'https://unpkg.com',
       ],
       'style-src': [
         "'self'",
         "'unsafe-inline'", // Required for inline styles
-        "https://fonts.googleapis.com",
+        'https://fonts.googleapis.com',
       ],
       'img-src': [
         "'self'",
-        "data:", // For base64 images
-        "blob:", // For blob URLs
-        "https:",
+        'data:', // For base64 images
+        'blob:', // For blob URLs
+        'https:',
       ],
       'font-src': [
         "'self'",
-        "https://fonts.gstatic.com",
+        'https://fonts.gstatic.com',
       ],
       'connect-src': [
         "'self'",
-        "https://api.openai.com", // OpenAI API
-        "https://api.anthropic.com", // Anthropic API
-        "https://generativelanguage.googleapis.com", // Google AI API
-        "https://gemini.google.com", // Gemini API
-        "wss:", // WebSocket connections
+        'https://api.openai.com', // OpenAI API
+        'https://api.anthropic.com', // Anthropic API
+        'https://generativelanguage.googleapis.com', // Google AI API
+        'https://gemini.google.com', // Gemini API
+        'wss:', // WebSocket connections
       ],
       'media-src': ["'self'"],
       'object-src': ["'none'"],
       'child-src': ["'self'"],
       'frame-src': ["'none'"],
-      'worker-src': ["'self'", "blob:"], // For web workers
+      'worker-src': ["'self'", 'blob:'], // For web workers
       'form-action': ["'self'"],
       'base-uri': ["'self'"],
       'manifest-src': ["'self'"],

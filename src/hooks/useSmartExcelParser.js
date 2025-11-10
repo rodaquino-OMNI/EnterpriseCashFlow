@@ -33,7 +33,7 @@ import { fieldDefinitions, getFieldKeys, FIELD_CATEGORIES } from '../utils/field
 
 async function detectAdvancedTemplateStructure(workbook) {
   const sheets = workbook.worksheets.map(ws => ({ name: ws.name, nameLower: ws.name.toLowerCase(), rowCount: ws.actualRowCount }));
-  let structure = { type: TEMPLATE_TYPES.BASIC_DRIVERS, version: '1.0', sheetNamesFound: sheets.map(s => s.name), sheetPaths: {} };
+  const structure = { type: TEMPLATE_TYPES.BASIC_DRIVERS, version: '1.0', sheetNamesFound: sheets.map(s => s.name), sheetPaths: {} };
 
   const instructionSheet = sheets.find(s => s.nameLower.includes('instruções') || s.nameLower.includes('instructions'));
   const driversSheet = sheets.find(s => s.nameLower.includes('drivers') || s.nameLower.includes('dados principais'));
@@ -49,22 +49,22 @@ async function detectAdvancedTemplateStructure(workbook) {
   } else {
     const mainSheet = sheets.find(s => s.rowCount > 0); // A sheet with some data
     if (mainSheet) {
-        const ws = workbook.getWorksheet(mainSheet.name);
-        const headerRowCell1Text = ws.getCell('A1').text?.toString().trim().toLowerCase();
-        if (headerRowCell1Text && HEADER_PATTERNS.some(pattern => headerRowCell1Text.includes(pattern.toLowerCase()))) {
-            structure.type = TEMPLATE_TYPES.BASIC_DRIVERS;
-            structure.version = '1.0'; // Legacy basic
-            structure.sheetPaths.mainData = mainSheet.name;
-        } else {
-            console.warn("Formato de template não totalmente reconhecido. Tentando parse genérico na primeira planilha com dados.");
-            structure.type = TEMPLATE_TYPES.BASIC_DRIVERS; // Fallback to attempt basic parse
-            structure.sheetPaths.mainData = mainSheet.name || workbook.worksheets[0]?.name;
-             if (!structure.sheetPaths.mainData) {
-                throw new Error("Nenhuma planilha com dados encontrada no arquivo Excel.");
-             }
+      const ws = workbook.getWorksheet(mainSheet.name);
+      const headerRowCell1Text = ws.getCell('A1').text?.toString().trim().toLowerCase();
+      if (headerRowCell1Text && HEADER_PATTERNS.some(pattern => headerRowCell1Text.includes(pattern.toLowerCase()))) {
+        structure.type = TEMPLATE_TYPES.BASIC_DRIVERS;
+        structure.version = '1.0'; // Legacy basic
+        structure.sheetPaths.mainData = mainSheet.name;
+      } else {
+        console.warn('Formato de template não totalmente reconhecido. Tentando parse genérico na primeira planilha com dados.');
+        structure.type = TEMPLATE_TYPES.BASIC_DRIVERS; // Fallback to attempt basic parse
+        structure.sheetPaths.mainData = mainSheet.name || workbook.worksheets[0]?.name;
+        if (!structure.sheetPaths.mainData) {
+          throw new Error('Nenhuma planilha com dados encontrada no arquivo Excel.');
         }
+      }
     } else {
-        throw new Error("Arquivo Excel não contém planilhas com dados.");
+      throw new Error('Arquivo Excel não contém planilhas com dados.');
     }
   }
   return structure;
@@ -88,24 +88,24 @@ async function detectSmartPeriodInfo(workbook, templateStructure, expectedPeriod
   
   // Fallback if no "Período X" headers
   if (periodInfo.headerColumnsCount === 0) {
-      const firstDataRow = mainSheet.getRow(2); // Check for data in row 2
-      let potentialPeriods = 0;
-      // Column D or E is usually where period data starts in our templates
-      const startColCheck = (templateStructure.type === TEMPLATE_TYPES.SMART_ADAPTIVE) ? 5 : 3;
-      for (let i = startColCheck; i < startColCheck + MAX_PERIODS; i++) {
-          if (firstDataRow.getCell(i).value !== null && typeof firstDataRow.getCell(i).value !== 'undefined') {
-              potentialPeriods++;
-          } else {
-              break; // Stop at first empty column
-          }
+    const firstDataRow = mainSheet.getRow(2); // Check for data in row 2
+    let potentialPeriods = 0;
+    // Column D or E is usually where period data starts in our templates
+    const startColCheck = (templateStructure.type === TEMPLATE_TYPES.SMART_ADAPTIVE) ? 5 : 3;
+    for (let i = startColCheck; i < startColCheck + MAX_PERIODS; i++) {
+      if (firstDataRow.getCell(i).value !== null && typeof firstDataRow.getCell(i).value !== 'undefined') {
+        potentialPeriods++;
+      } else {
+        break; // Stop at first empty column
       }
-      periodInfo.headerColumnsCount = potentialPeriods > 0 ? potentialPeriods : DEFAULT_PERIODS_EXCEL;
-      // Populate dummy periodHeaders if needed
-      if (periodInfo.periodHeaders.length === 0 && periodInfo.headerColumnsCount > 0) {
-          for (let i = 0; i < periodInfo.headerColumnsCount; i++) {
-              periodInfo.periodHeaders.push({text: `Período ${i+1} (Inferido)`, columnIndex: startColCheck + i });
-          }
+    }
+    periodInfo.headerColumnsCount = potentialPeriods > 0 ? potentialPeriods : DEFAULT_PERIODS_EXCEL;
+    // Populate dummy periodHeaders if needed
+    if (periodInfo.periodHeaders.length === 0 && periodInfo.headerColumnsCount > 0) {
+      for (let i = 0; i < periodInfo.headerColumnsCount; i++) {
+        periodInfo.periodHeaders.push({text: `Período ${i+1} (Inferido)`, columnIndex: startColCheck + i });
       }
+    }
   }
   periodInfo.headerColumnsCount = Math.min(periodInfo.headerColumnsCount, MAX_PERIODS);
 
@@ -119,7 +119,7 @@ async function detectSmartPeriodInfo(workbook, templateStructure, expectedPeriod
       for (let rowIdx = 2; rowIdx <= Math.min(mainSheet.actualRowCount, 20); rowIdx++) {
         const cell = mainSheet.getCell(rowIdx, currentPeriodColIndex);
         const value = cell.value;
-        if (value !== null && value !== undefined && String(value).trim() !== '' && value !== "[N/A]" && value !== "[Não Aplicável]") {
+        if (value !== null && value !== undefined && String(value).trim() !== '' && value !== '[N/A]' && value !== '[Não Aplicável]') {
           const numValue = Number(value.result !== undefined ? value.result : value); // Handle formula results
           if (!isNaN(numValue)) { // Allow 0 as valid data
             hasDataInThisPeriodColumn = true;
@@ -152,44 +152,44 @@ async function detectSmartPeriodInfo(workbook, templateStructure, expectedPeriod
 }
 
 function parseSheetDataIntoPeriods(sheet, periodsData, numPeriodsToParse, relevantFieldKeys, firstDataColumnIndex, warnings) {
-    if (!sheet) return;
-    sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-        if (rowNumber === 1) return; // Skip header
-        const fieldKey = row.getCell(1).text?.toString().trim();
-        if (!fieldKey || !relevantFieldKeys.includes(fieldKey)) return;
+  if (!sheet) return;
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return; // Skip header
+    const fieldKey = row.getCell(1).text?.toString().trim();
+    if (!fieldKey || !relevantFieldKeys.includes(fieldKey)) return;
 
-        const fieldDef = fieldDefinitions[fieldKey];
-        for (let periodIdx = 0; periodIdx < numPeriodsToParse; periodIdx++) {
-            if (fieldDef.firstPeriodOnly && periodIdx > 0) {
-                if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
-                continue;
-            }
-            const dataCell = row.getCell(firstDataColumnIndex + periodIdx);
-            const cellValueRaw = dataCell.value;
-            if (cellValueRaw === "[N/A]" || cellValueRaw === "[Não Aplicável]") {
-                if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
-                continue;
-            }
-            let actualValue = null;
-            if (typeof cellValueRaw === 'object' && cellValueRaw !== null && cellValueRaw.result !== undefined) actualValue = cellValueRaw.result;
-            else if (cellValueRaw !== null && typeof cellValueRaw !== 'undefined' && String(cellValueRaw).trim() !== "") actualValue = cellValueRaw;
+    const fieldDef = fieldDefinitions[fieldKey];
+    for (let periodIdx = 0; periodIdx < numPeriodsToParse; periodIdx++) {
+      if (fieldDef.firstPeriodOnly && periodIdx > 0) {
+        if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
+        continue;
+      }
+      const dataCell = row.getCell(firstDataColumnIndex + periodIdx);
+      const cellValueRaw = dataCell.value;
+      if (cellValueRaw === '[N/A]' || cellValueRaw === '[Não Aplicável]') {
+        if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
+        continue;
+      }
+      let actualValue = null;
+      if (typeof cellValueRaw === 'object' && cellValueRaw !== null && cellValueRaw.result !== undefined) actualValue = cellValueRaw.result;
+      else if (cellValueRaw !== null && typeof cellValueRaw !== 'undefined' && String(cellValueRaw).trim() !== '') actualValue = cellValueRaw;
             
-            if (actualValue !== null) {
-                const numValue = Number(String(actualValue).replace(',','')); // Handle if ExcelJS returns formatted number as string
-                if (!isNaN(numValue)) {
-                    // Overwrite only if current value is null (first sheet with data for this field wins)
-                    // Or implement specific override logic (e.g. override sheets always win over driver sheets)
-                     if (periodsData[periodIdx][fieldKey] === null || typeof periodsData[periodIdx][fieldKey] === 'undefined' || fieldDef.isOverride) {
-                        periodsData[periodIdx][fieldKey] = numValue;
-                    }
-                } else {
-                    if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
-                }
-            } else {
-                if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
-            }
+      if (actualValue !== null) {
+        const numValue = Number(String(actualValue).replace(',','')); // Handle if ExcelJS returns formatted number as string
+        if (!isNaN(numValue)) {
+          // Overwrite only if current value is null (first sheet with data for this field wins)
+          // Or implement specific override logic (e.g. override sheets always win over driver sheets)
+          if (periodsData[periodIdx][fieldKey] === null || typeof periodsData[periodIdx][fieldKey] === 'undefined' || fieldDef.isOverride) {
+            periodsData[periodIdx][fieldKey] = numValue;
+          }
+        } else {
+          if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
         }
-    });
+      } else {
+        if (periodsData[periodIdx][fieldKey] === undefined) periodsData[periodIdx][fieldKey] = null;
+      }
+    }
+  });
 }
 
 async function parseAdvancedStrategy(workbook, templateInfo, periodInfo) {
@@ -209,7 +209,7 @@ async function parseAdvancedStrategy(workbook, templateInfo, periodInfo) {
   if (driversSheet) {
     parseSheetDataIntoPeriods(driversSheet, periodsData, actualDataColCount, getFieldKeys([FIELD_CATEGORIES.DRIVER_REQUIRED, FIELD_CATEGORIES.DRIVER_OPTIONAL]), smartTemplateDataStartColumn, warnings);
   } else {
-    warnings.push("Planilha de Drivers Essenciais não encontrada.");
+    warnings.push('Planilha de Drivers Essenciais não encontrada.');
   }
 
   // 2. Parse Overrides (Override values will replace driver-based values if not null)
@@ -235,22 +235,22 @@ async function parseAdvancedStrategy(workbook, templateInfo, periodInfo) {
 }
 
 async function parseBasicStrategy(workbook, templateInfo, periodInfo) {
-    const { actualDataColCount } = periodInfo;
-    const allAppFieldKeys = getFieldKeys();
-    const periodsData = Array(actualDataColCount).fill(null).map(() => {
-        const p = {}; allAppFieldKeys.forEach(k => p[k] = null); return p;
-    });
-    const warnings = [];
-    const basicSheet = workbook.getWorksheet(templateInfo.sheetPaths.mainData);
+  const { actualDataColCount } = periodInfo;
+  const allAppFieldKeys = getFieldKeys();
+  const periodsData = Array(actualDataColCount).fill(null).map(() => {
+    const p = {}; allAppFieldKeys.forEach(k => p[k] = null); return p;
+  });
+  const warnings = [];
+  const basicSheet = workbook.getWorksheet(templateInfo.sheetPaths.mainData);
     
-    if (basicSheet) {
-        // In basic templates, data might start at column C (index 3)
-        // Key(A), Description(B), P1(C)...
-        parseSheetDataIntoPeriods(basicSheet, periodsData, actualDataColCount, getFieldKeys([FIELD_CATEGORIES.DRIVER_REQUIRED, FIELD_CATEGORIES.DRIVER_OPTIONAL]), 3, warnings);
-    } else {
-        warnings.push("Planilha de dados principal não encontrada para template básico.");
-    }
-    return { periods: periodsData, actualPeriods: actualDataColCount, periodType: periodInfo.detectedPeriodTypeFromFile, warnings };
+  if (basicSheet) {
+    // In basic templates, data might start at column C (index 3)
+    // Key(A), Description(B), P1(C)...
+    parseSheetDataIntoPeriods(basicSheet, periodsData, actualDataColCount, getFieldKeys([FIELD_CATEGORIES.DRIVER_REQUIRED, FIELD_CATEGORIES.DRIVER_OPTIONAL]), 3, warnings);
+  } else {
+    warnings.push('Planilha de dados principal não encontrada para template básico.');
+  }
+  return { periods: periodsData, actualPeriods: actualDataColCount, periodType: periodInfo.detectedPeriodTypeFromFile, warnings };
 }
 
 function analyzeDataQuality(parsedDataResult) {
@@ -279,20 +279,20 @@ function analyzeDataQuality(parsedDataResult) {
       if (period[key] !== null && period[key] !== undefined && period[key] !== '') filledOptionalFields++;
     });
     allOverrideKeys.forEach(key => {
-        if (period[key] !== null && period[key] !== undefined && period[key] !== '') overrideCount++;
-    })
+      if (period[key] !== null && period[key] !== undefined && period[key] !== '') overrideCount++;
+    });
   });
   
   const requiredCompleteness = totalRequiredFields > 0 ? (filledRequiredFields / totalRequiredFields) * 100 : 100;
   const optionalCompleteness = totalOptionalFields > 0 ? (filledOptionalFields / totalOptionalFields) * 100 : 0;
-  let score = requiredCompleteness * 0.6 + optionalCompleteness * 0.2 + Math.min(overrideCount * 1.5, 20);
+  const score = requiredCompleteness * 0.6 + optionalCompleteness * 0.2 + Math.min(overrideCount * 1.5, 20);
 
   return {
     requiredCompleteness: Math.round(requiredCompleteness),
     optionalCompleteness: Math.round(optionalCompleteness),
     overrideCount,
     totalDataPoints: filledRequiredFields + filledOptionalFields + overrideCount,
-    qualityScore: Math.min(Math.round(score), 100)
+    qualityScore: Math.min(Math.round(score), 100),
   };
 }
 
@@ -303,7 +303,7 @@ function generateSmartRecommendations(qualityAnalysis, parsedData) {
     recommendations.push({
       type: 'warning',
       title: 'Dados obrigatórios incompletos',
-      message: `${qualityAnalysis.requiredCompleteness}% dos campos obrigatórios foram preenchidos. Considere completar os dados essenciais para melhor precisão.`
+      message: `${qualityAnalysis.requiredCompleteness}% dos campos obrigatórios foram preenchidos. Considere completar os dados essenciais para melhor precisão.`,
     });
   }
   
@@ -311,7 +311,7 @@ function generateSmartRecommendations(qualityAnalysis, parsedData) {
     recommendations.push({
       type: 'info',
       title: 'Campos opcionais podem melhorar análise',
-      message: 'Preencher campos opcionais como D&A, impostos e CAPEX pode aumentar a precisão dos cálculos.'
+      message: 'Preencher campos opcionais como D&A, impostos e CAPEX pode aumentar a precisão dos cálculos.',
     });
   }
   
@@ -319,7 +319,7 @@ function generateSmartRecommendations(qualityAnalysis, parsedData) {
     recommendations.push({
       type: 'success',
       title: 'Overrides detectados',
-      message: `${qualityAnalysis.overrideCount} valores reais foram fornecidos e serão priorizados sobre os cálculos automáticos.`
+      message: `${qualityAnalysis.overrideCount} valores reais foram fornecidos e serão priorizados sobre os cálculos automáticos.`,
     });
   }
   
@@ -333,7 +333,7 @@ export function useSmartExcelParser(ExcelJSInstance) {
     setParsingState({ isParsing: true, error: null, progress: 0, currentStep: 'Carregando arquivo...' });
 
     if (!ExcelJSInstance) {
-      const err = new Error("Biblioteca ExcelJS não carregada.");
+      const err = new Error('Biblioteca ExcelJS não carregada.');
       setParsingState({ isParsing: false, error: err, progress: 0, currentStep: 'Erro' });
       throw err;
     }
@@ -368,7 +368,7 @@ export function useSmartExcelParser(ExcelJSInstance) {
         templateInfo: templateStructure, // Includes type and version
         qualityAnalysis,
         recommendations,
-        warnings: parsedDataResult.warnings || []
+        warnings: parsedDataResult.warnings || [],
       };
       
       setParsingState({ isParsing: false, error: null, progress: 100, currentStep: 'Concluído!' });
@@ -382,7 +382,7 @@ export function useSmartExcelParser(ExcelJSInstance) {
   }, [ExcelJSInstance]);
 
   const resetParser = useCallback(() => {
-      setParsingState({ isParsing: false, error: null, progress: 0, currentStep: '' });
+    setParsingState({ isParsing: false, error: null, progress: 0, currentStep: '' });
   },[]);
 
   return { parseFile, ...parsingState, resetParser };

@@ -34,13 +34,13 @@ export function validateBalanceSheetInternalConsistency(periodData) {
       type: 'BALANCO_INCONSISTENTE', category: 'Equilíbrio do Balanço Patrimonial',
       message: `Diferença de balanço significativa: ${formatCurrency(storedDifference)} (${assets !== 0 ? formatPercentage(Math.abs(storedDifference / assets) * 100) : 'N/A'} dos ativos). Sugere forte inconsistência nos inputs ou simplificações do modelo.`,
       severity: 'critical', value: storedDifference, field: 'balanceSheetDifference',
-      suggestion: 'Revisar TODOS os inputs de balanço (Caixa Inicial, PL Inicial, Ativo Imob., Empréstimos) e valores médios de Capital de Giro (CR, Estoque, CP).'
+      suggestion: 'Revisar TODOS os inputs de balanço (Caixa Inicial, PL Inicial, Ativo Imob., Empréstimos) e valores médios de Capital de Giro (CR, Estoque, CP).',
     };
   } else if (Math.abs(storedDifference) > 1.01) { // Minor differences beyond simple rounding
-     return {
+    return {
       type: 'BALANCO_INCONSISTENTE', category: 'Equilíbrio do Balanço Patrimonial',
       message: `Pequena diferença de ${formatCurrency(storedDifference)} no Balanço. Pode ser devido a arredondamentos cumulativos. Se persistir, revise os inputs de maior valor.`,
-      severity: 'warning', value: storedDifference, field: 'balanceSheetDifference'
+      severity: 'warning', value: storedDifference, field: 'balanceSheetDifference',
     };
   }
   return null;
@@ -57,13 +57,13 @@ export function validateInventoryLevels(periodData) {
       type: 'PME_ALTO_EXTREMO', category: 'Prazo Médio de Estoques (PME)',
       message: `PME de ${formatDays(inventoryDays)} é irrealisticamente alto (maior que 1 ano). Isso indica um problema com o Valor Médio de Estoque (${formatCurrency(inventoryValue)}) ou com o CPV/CSV (${formatCurrency(cogs)}) utilizado no cálculo.`,
       severity: 'critical', value: inventoryDays, field: 'inventoryDaysDerived',
-      suggestion: 'Verifique a escala dos inputs (R$ vs R$ mil). PME típico para varejo: 30-90 dias; indústria: 60-180 dias. Pode indicar estoque obsoleto severo se os inputs estiverem corretos.'
+      suggestion: 'Verifique a escala dos inputs (R$ vs R$ mil). PME típico para varejo: 30-90 dias; indústria: 60-180 dias. Pode indicar estoque obsoleto severo se os inputs estiverem corretos.',
     };
   } else if (inventoryDays < 1 && inventoryValue > 0 && cogs > 0) { 
     return {
       type: 'PME_BAIXO', category: 'Prazo Médio de Estoques (PME)',
       message: `PME muito baixo (${formatDays(inventoryDays)}), apesar de haver valor de estoque (${formatCurrency(inventoryValue)}). Verifique se os inputs de Estoque Médio e Custo (CPV/CSV) estão corretos e na mesma base temporal.`,
-      severity: 'warning', value: inventoryDays, field: 'inventoryDaysDerived'
+      severity: 'warning', value: inventoryDays, field: 'inventoryDaysDerived',
     };
   }
   
@@ -74,7 +74,7 @@ export function validateInventoryLevels(periodData) {
         type: 'PME_ALTO_EXTREMO', category: 'Nível de Estoques vs Receita',
         message: `Estoques (${formatCurrency(inventoryValue)}) representam ${formatPercentage(inventoryToRevenueRatio)} da receita do período. Este é um nível muito alto e pode indicar excesso de estoque ou problemas de venda.`,
         severity: 'warning', value: inventoryToRevenueRatio, field: 'inventoryValueAvg',
-        suggestion: 'Compare com benchmarks do setor e analise a adequação do nível de estoque.'
+        suggestion: 'Compare com benchmarks do setor e analise a adequação do nível de estoque.',
       };
     }
   }
@@ -91,7 +91,7 @@ export function validateRealisticBusinessMetrics(periodData, periodIndex = 0) {
       type: 'RISCO_INSOLVENCIA', category: 'Risco de Insolvência',
       message: `Caixa final negativo (${formatCurrency(periodData.closingCash)}) combinado com Lucro Operacional (EBIT) negativo (${formatCurrency(periodData.ebit)}) indica um risco extremo de insolvência.`,
       severity: 'critical', value: periodData.closingCash, field: 'closingCash',
-      suggestion: 'AÇÃO URGENTE: Análise aprofundada da estrutura de custos, fontes de receita e liquidez. Considerar reestruturação financeira.'
+      suggestion: 'AÇÃO URGENTE: Análise aprofundada da estrutura de custos, fontes de receita e liquidez. Considerar reestruturação financeira.',
     });
   }
   
@@ -110,7 +110,7 @@ export function validateCashFlowPatterns(calculatedData) {
       message: `FCL negativo em ${negativeCount} de ${totalPeriods} períodos. Padrão preocupante que indica necessidade de financiamento recorrente.`,
       severity: 'warning',
       field: 'netCashFlowBeforeFinancing',
-      suggestion: 'Revisar estratégia de CAPEX, gestão de capital de giro e estrutura operacional.'
+      suggestion: 'Revisar estratégia de CAPEX, gestão de capital de giro e estrutura operacional.',
     };
   }
   
@@ -126,7 +126,7 @@ export function validateWorkingCapitalEfficiency(periodData, periodLabel) {
       type: 'CICLO_POSITIVO_ALTO', category: 'Eficiência do Capital de Giro',
       message: `Ciclo de caixa de ${formatDays(wcDays)} é muito longo. PMR: ${formatDays(periodData.arDaysDerived)}, PME: ${formatDays(periodData.inventoryDaysDerived)}, PMP: ${formatDays(periodData.apDaysDerived)}.`,
       severity: 'warning', periodLabel,
-      suggestion: 'Oportunidades: (1) Acelerar recebimento de clientes, (2) Otimizar giro de estoques, (3) Negociar prazos com fornecedores.'
+      suggestion: 'Oportunidades: (1) Acelerar recebimento de clientes, (2) Otimizar giro de estoques, (3) Negociar prazos com fornecedores.',
     };
   }
   if (wcDays < -30) { // Negative cash conversion cycle is actually positive
@@ -134,7 +134,7 @@ export function validateWorkingCapitalEfficiency(periodData, periodLabel) {
       type: 'CICLO_NEGATIVO_ALTO', category: 'Eficiência do Capital de Giro',
       message: `Ciclo de caixa negativo de ${formatDays(Math.abs(wcDays))} é muito favorável - a empresa recebe antes de pagar fornecedores.`,
       severity: 'success', periodLabel,
-      suggestion: 'Excelente eficiência operacional. Monitorar para garantir sustentabilidade desta condição.'
+      suggestion: 'Excelente eficiência operacional. Monitorar para garantir sustentabilidade desta condição.',
     };
   }
   return null;
@@ -203,7 +203,7 @@ export function validateFinancialData(calculatedData) {
       infos: [], 
       trends: [],
       latest: null,
-      summary: { total: 0, critical: 0, warnings: 0 }
+      summary: { total: 0, critical: 0, warnings: 0 },
     };
   }
   
@@ -217,7 +217,7 @@ export function validateFinancialData(calculatedData) {
     infos: [],         // Low-severity/positive info (latest period only)
     trends: [],        // Multi-period trend analysis
     latest: latestIndex + 1,
-    summary: { total: 0, critical: 0, warnings: 0 }
+    summary: { total: 0, critical: 0, warnings: 0 },
   };
   
   // === LATEST PERIOD CRITICAL CHECKS ===
@@ -228,7 +228,7 @@ export function validateFinancialData(calculatedData) {
     results.critical.push({
       ...latestBSValidation,
       periodLabel: `Período ${latestIndex + 1} (Atual)`,
-      priority: 1
+      priority: 1,
     });
     results.isValid = false;
   }
@@ -253,8 +253,8 @@ export function validateFinancialData(calculatedData) {
         values: {
           difference: period.balanceSheetDifference, // SSOT value
           assets: period.estimatedTotalAssets,       // SSOT value
-          liabilitiesPlusEquity: period.estimatedTotalLiabilities + period.equity // SSOT values
-        }
+          liabilitiesPlusEquity: period.estimatedTotalLiabilities + period.equity, // SSOT values
+        },
       });
     }
   });
@@ -272,7 +272,7 @@ export function validateFinancialData(calculatedData) {
       inventoryIssues.push({
         ...invValidation,
         periodLabel: `Período ${index + 1}`,
-        values: { days: period.inventoryDaysDerived, value: period.inventoryValueAvg } // SSOT derived days
+        values: { days: period.inventoryDaysDerived, value: period.inventoryValueAvg }, // SSOT derived days
       });
     }
   });
@@ -293,7 +293,7 @@ export function validateFinancialData(calculatedData) {
   if (wcValidation && (wcValidation.type === 'success' || wcValidation.type === 'info')) {
     results.infos.push({
       ...wcValidation,
-      periodLabel: `Período ${latestIndex + 1} (Atual)`
+      periodLabel: `Período ${latestIndex + 1} (Atual)`,
     });
   }
   
@@ -301,7 +301,7 @@ export function validateFinancialData(calculatedData) {
   results.summary = {
     total: results.critical.length + results.warnings.length + results.trends.length,
     critical: results.critical.length,
-    warnings: results.warnings.length + results.trends.filter(t => t.severity === 'high').length
+    warnings: results.warnings.length + results.trends.filter(t => t.severity === 'high').length,
   };
   
   return results;
@@ -322,7 +322,7 @@ function validateLiquidityCrisis(periodData, periodNumber) {
       severity: 'critical',
       periodLabel: `Período ${periodNumber} (Atual)`,
       priority: 1,
-      suggestion: 'AÇÃO IMEDIATA: Suspender CAPEX não essencial, acelerar cobrança, buscar financiamento emergencial.'
+      suggestion: 'AÇÃO IMEDIATA: Suspender CAPEX não essencial, acelerar cobrança, buscar financiamento emergencial.',
     };
   }
   
@@ -345,7 +345,7 @@ function consolidateBalanceSheetIssues(bsIssues) {
     isConsolidated: true,
     details: bsIssues,
     suggestion: 'Revisar inputs de Ativo Imobilizado, Empréstimos e Patrimônio Líquido Inicial para melhor consistência.',
-    priority: 2
+    priority: 2,
   };
 }
 
@@ -365,7 +365,7 @@ function consolidateInventoryIssues(inventoryIssues) {
     isConsolidated: true,
     details: inventoryIssues,
     suggestion: 'Analisar causas: estoques obsoletos, problemas de vendas, ou sazonalidade do negócio.',
-    priority: 3
+    priority: 3,
   };
 }
 
@@ -397,7 +397,7 @@ function analyzeCashFlowTrend(calculatedData) {
       message: `FCL negativo em ${negativeCount} de ${totalPeriods} períodos. Padrão preocupante.`,
       severity: 'high',
       suggestion: 'Revisar estratégia de CAPEX e gestão de capital de giro.',
-      priority: 2
+      priority: 2,
     };
   }
   
@@ -416,7 +416,7 @@ function analyzeBalanceSheetTrend(calculatedData) {
       message: `Diferenças no balanço aumentando ao longo do tempo. Última: ${formatCurrency(differences[differences.length - 1])}.`,
       severity: 'medium',
       suggestion: 'Revisar processo de coleta de dados e consistência dos inputs.',
-      priority: 4
+      priority: 4,
     };
   }
   
@@ -455,7 +455,7 @@ export function validateBalanceSheetConsistency(periodData) {
       category: 'Equilíbrio do Balanço',
       message: `Diferença de ${formatCurrency(storedDifference)} no Balanço Patrimonial.`,
       severity: 'medium',
-      suggestion: 'Verifique Ativo Imobilizado, Empréstimos Bancários e Patrimônio Líquido Inicial.'
+      suggestion: 'Verifique Ativo Imobilizado, Empréstimos Bancários e Patrimônio Líquido Inicial.',
     };
   }
   
@@ -491,8 +491,8 @@ export function ValidationAlerts({ validationResults }) {
              ((validationResults.warnings && validationResults.warnings.length) || 0) + 
              ((validationResults.trends && validationResults.trends.length) || 0),
       critical: (validationResults.errors && validationResults.errors.length) || 0,
-      warnings: (validationResults.warnings && validationResults.warnings.length) || 0
-    }
+      warnings: (validationResults.warnings && validationResults.warnings.length) || 0,
+    },
   };
 
   const { critical, warnings, trends, infos, successes, summary, latest } = normalizedResults;

@@ -13,7 +13,7 @@ export function useGeminiApi() {
       const err = new Error('API key para Gemini não configurada.');
       console.error(err.message);
       setError(err);
-      return "Erro: API Key não configurada. Verifique as configurações da aplicação.";
+      return 'Erro: API Key não configurada. Verifique as configurações da aplicação.';
     }
 
     setIsLoading(true);
@@ -33,20 +33,20 @@ export function useGeminiApi() {
     // Combine primary and alternative URLs to try
     const urlsToTry = [
       apiUrl,
-      ...alternativeUrls.map(baseUrl => `${baseUrl}/${model}:generateContent?key=${apiKey}`)
+      ...alternativeUrls.map(baseUrl => `${baseUrl}/${model}:generateContent?key=${apiKey}`),
     ];
     
     const requestBody = {
       contents: [{
-        role: "user",
-        parts: [{ text: prompt }]
+        role: 'user',
+        parts: [{ text: prompt }],
       }],
       generationConfig: {
         temperature: temperature,
         maxOutputTokens: maxOutputTokens,
         topP: 0.95,
-        topK: 40
-      }
+        topK: 40,
+      },
     };
     
     // Log abbreviated request information (without exposing the full prompt)
@@ -66,12 +66,12 @@ export function useGeminiApi() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         
-        console.log("Starting fetch request...");
+        console.log('Starting fetch request...');
         const response = await fetch(currentUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
-          signal: controller.signal
+          signal: controller.signal,
         });
         clearTimeout(timeoutId); // Clear the timeout if request completed
         
@@ -82,7 +82,7 @@ export function useGeminiApi() {
           
           try {
             const errorData = await response.json();
-            console.error("Error response:", errorData);
+            console.error('Error response:', errorData);
             
             if (errorData.error) {
               errorMessage = `Erro Gemini API (${response.status}): ${errorData.error.message || errorData.error.code || response.statusText}`;
@@ -97,9 +97,9 @@ export function useGeminiApi() {
           continue;
         }
         
-        console.log("Parsing JSON response...");
+        console.log('Parsing JSON response...');
         const result = await response.json();
-        console.log("JSON response parsed successfully");
+        console.log('JSON response parsed successfully');
         
         if (result.candidates && result.candidates.length > 0 &&
             result.candidates[0].content && result.candidates[0].content.parts &&
@@ -115,8 +115,8 @@ export function useGeminiApi() {
           lastError = new Error(`Geração de conteúdo pela IA finalizada com motivo: ${reason}.`);
           continue;
         } else {
-          console.warn("Unexpected response format:", result);
-          lastError = new Error("Resposta da API Gemini em formato inesperado ou sem conteúdo de texto.");
+          console.warn('Unexpected response format:', result);
+          lastError = new Error('Resposta da API Gemini em formato inesperado ou sem conteúdo de texto.');
           continue;
         }
       } catch (fetchError) {
@@ -132,7 +132,7 @@ export function useGeminiApi() {
     }
     
     // If we get here, all attempts failed
-    setError(lastError || new Error("Falha ao comunicar com a API Gemini por todos os métodos disponíveis."));
+    setError(lastError || new Error('Falha ao comunicar com a API Gemini por todos os métodos disponíveis.'));
     setIsLoading(false);
     return `Erro ao comunicar com a IA Gemini: ${lastError?.message || 'Erro desconhecido'}. Tente uma alternativa como OpenAI ou Claude.`;
     
@@ -146,6 +146,6 @@ export function useGeminiApi() {
     callApi,
     isLoading,
     error,
-    resetError
+    resetError,
   };
 }

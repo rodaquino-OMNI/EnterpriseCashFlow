@@ -13,14 +13,14 @@ import AiAnalysisSection from './AiAnalysisSection';
  * }} props
  */
 export default function AiVarianceSection({ analysisText, isLoading, error, titleOverride, onRetry }) {
-  const displayTitle = titleOverride || "Análise de Variações Chave (Análise IA) ✨";
+  const displayTitle = titleOverride || 'Análise de Variações Chave (Análise IA) ✨';
   
   // Logging for debugging during transition
   if (analysisText) {
     console.log('[AiVarianceSection] Received text:', {
       length: analysisText.length,
       firstChars: analysisText.substring(0, 50) + '...',
-      type: typeof analysisText
+      type: typeof analysisText,
     });
   }
 

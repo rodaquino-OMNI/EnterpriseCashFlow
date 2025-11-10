@@ -6,13 +6,13 @@ import { fieldDefinitions, getFieldKeys } from './fieldDefinitions';
 
 // --- Helper: Build a detailed summary for AI context ---
 function buildFullFinancialDataSummary(calculatedData, periodTypeLabel, companyName, reportTitle) {
-  if (!calculatedData || calculatedData.length === 0) return "Nenhum dado financeiro disponível para resumir.";
+  if (!calculatedData || calculatedData.length === 0) return 'Nenhum dado financeiro disponível para resumir.';
 
   let summary = `ANÁLISE FINANCEIRA PARA: ${companyName} - ${reportTitle}\n`;
   summary += `TIPO DE PERÍODO: ${PERIOD_TYPES[periodTypeLabel]?.label || periodTypeLabel}\n`;
   summary += `NÚMERO DE PERÍODOS ANALISADOS: ${calculatedData.length}\n\n`;
 
-  summary += "DADOS FINANCEIROS CHAVE POR PERÍODO (Valores em BRL, Prazos em Dias, Percentuais em %):\n";
+  summary += 'DADOS FINANCEIROS CHAVE POR PERÍODO (Valores em BRL, Prazos em Dias, Percentuais em %):\n';
   calculatedData.forEach((p, i) => {
     summary += `\n--- PERÍODO ${i + 1} (${PERIOD_TYPES[periodTypeLabel]?.shortLabel || 'Per.'} ${i + 1}) ---\n`;
     // P&L Highlights
@@ -56,7 +56,7 @@ function buildFullFinancialDataSummary(calculatedData, periodTypeLabel, companyN
     summary += `Caixa Final (Calculado): ${formatCurrency(p.closingCash)}\n`;
     summary += `Necessidade (-) / Excedente (+) de Financiamento (FCO - CG - CAPEX): ${formatCurrency(p.fundingGapOrSurplus)}\n`;
   });
-  summary += "\n--- FIM DOS DADOS FINANCEIROS ---\n";
+  summary += '\n--- FIM DOS DADOS FINANCEIROS ---\n';
   return summary;
 }
 
@@ -359,7 +359,7 @@ function createFinancialDataExtractionPrompt(pdfText, periodTypeLabel, numberOfP
 function createVarianceAnalysisPrompt(financialDataBundle, providerKey, options) {
   const { calculatedData, companyInfo } = financialDataBundle;
   if (calculatedData.length < 2) {
-    return "ERRO: Análise de variação requer pelo menos 2 períodos de dados para comparação.";
+    return 'ERRO: Análise de variação requer pelo menos 2 períodos de dados para comparação.';
   }
   const financialSummary = buildFullFinancialDataSummary(calculatedData, companyInfo.periodType, companyInfo.name, companyInfo.reportTitle);
 
@@ -463,7 +463,7 @@ export function createFinancialAnalysisPrompt(analysisType, financialDataBundle,
     [ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]: createCashFlowAnalysisPrompt,
     [ANALYSIS_TYPES.STRATEGIC_RECOMMENDATIONS]: createStrategicRecommendationsPrompt,
     [ANALYSIS_TYPES.FINANCIAL_DATA_EXTRACTION]: (dataBundle, pKey, opts) =>
-      createFinancialDataExtractionPrompt(dataBundle.pdfText || "", companyInfo.periodType, companyInfo.numberOfPeriods, pKey),
+      createFinancialDataExtractionPrompt(dataBundle.pdfText || '', companyInfo.periodType, companyInfo.numberOfPeriods, pKey),
   };
 
   const promptFunction = promptTemplates[analysisType];
@@ -518,7 +518,7 @@ export function standardizeResponse(validatedResponse, analysisType, providerKey
     provider: providerKey,
     responseType: typeof validatedResponse,
     responseLength: typeof validatedResponse === 'string' ? validatedResponse.length : 'N/A',
-    responseStart: typeof validatedResponse === 'string' ? validatedResponse.substring(0, 50) + '...' : 'N/A'
+    responseStart: typeof validatedResponse === 'string' ? validatedResponse.substring(0, 50) + '...' : 'N/A',
   });
 
   const metadata = ANALYSIS_METADATA[analysisType];
@@ -530,8 +530,8 @@ export function standardizeResponse(validatedResponse, analysisType, providerKey
       typeName: metadata.name,
       provider: providerKey,
       timestamp: new Date().toISOString(),
-      complexity: metadata.complexity
-    }
+      complexity: metadata.complexity,
+    },
   };
 
   // Add quality score estimation (simple heuristic)
@@ -545,7 +545,7 @@ export function standardizeResponse(validatedResponse, analysisType, providerKey
   console.log('AI Response standardized successfully', {
     provider: providerKey,
     qualityScore: standardized.qualityScore,
-    contentLength: typeof standardized.content === 'string' ? standardized.content.length : 'N/A'
+    contentLength: typeof standardized.content === 'string' ? standardized.content.length : 'N/A',
   });
 
   return standardized;
@@ -579,7 +579,7 @@ function estimateExtractionQuality(extractionResponse) {
   
   // Adjust based on confidence if available
   const confidenceMultiplier = extractionResponse.confidence === 'alta' ? 1 : 
-                              extractionResponse.confidence === 'media' ? 0.8 : 0.6;
+    extractionResponse.confidence === 'media' ? 0.8 : 0.6;
 
   return Math.min(fillRate * confidenceMultiplier, 1);
 }

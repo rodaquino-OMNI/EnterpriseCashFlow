@@ -6,7 +6,7 @@ class TestProvider extends BaseProvider {
   async complete(request) {
     return {
       content: 'Test response',
-      metadata: { provider: 'test' }
+      metadata: { provider: 'test' },
     };
   }
 
@@ -14,7 +14,7 @@ class TestProvider extends BaseProvider {
     return {
       success: true,
       data: [],
-      confidence: 1.0
+      confidence: 1.0,
     };
   }
 
@@ -22,7 +22,7 @@ class TestProvider extends BaseProvider {
     return {
       supportsStreaming: false,
       maxTokens: 4000,
-      supportedModels: ['test-model']
+      supportedModels: ['test-model'],
     };
   }
 }
@@ -42,7 +42,7 @@ describe('BaseProvider', () => {
         apiKey: 'test-key',
         timeout: 30000,
         maxRetries: 5,
-        retryDelay: 2000
+        retryDelay: 2000,
       });
       expect(provider.timeout).toBe(30000);
       expect(provider.maxRetries).toBe(5);
@@ -52,7 +52,7 @@ describe('BaseProvider', () => {
     it('should store full config', () => {
       const config = {
         apiKey: 'test-key',
-        customOption: 'value'
+        customOption: 'value',
       };
       const provider = new TestProvider(config);
       expect(provider.config).toEqual(config);
@@ -128,7 +128,7 @@ describe('BaseProvider', () => {
       const provider = new TestProvider({
         apiKey: 'test-key',
         maxRetries: 2,
-        retryDelay: 10
+        retryDelay: 10,
       });
 
       const error = new Error('timeout');
@@ -159,7 +159,7 @@ describe('BaseProvider', () => {
       const provider = new TestProvider({
         apiKey: 'test-key',
         maxRetries: 2,
-        retryDelay: 10
+        retryDelay: 10,
       });
 
       const error = new Error('timeout');
@@ -175,7 +175,7 @@ describe('BaseProvider', () => {
       const provider = new TestProvider({
         apiKey: 'test-key',
         maxRetries: 3,
-        retryDelay: 100
+        retryDelay: 100,
       });
 
       const error = new Error('timeout');
@@ -276,7 +276,7 @@ describe('BaseProvider', () => {
     it('should create abort controller with timeout', () => {
       const provider = new TestProvider({
         apiKey: 'test-key',
-        timeout: 5000
+        timeout: 5000,
       });
 
       const { controller, timeoutId } = provider.createAbortController();
@@ -290,7 +290,7 @@ describe('BaseProvider', () => {
     it('should abort after timeout', (done) => {
       const provider = new TestProvider({
         apiKey: 'test-key',
-        timeout: 50
+        timeout: 50,
       });
 
       const { controller } = provider.createAbortController();
@@ -326,8 +326,8 @@ describe('BaseProvider', () => {
       const error = {
         response: {
           json: () => ({ error: { message: 'API Error' } }),
-          statusText: 'Bad Request'
-        }
+          statusText: 'Bad Request',
+        },
       };
 
       const message = provider.parseErrorMessage(error);
@@ -338,8 +338,8 @@ describe('BaseProvider', () => {
       const error = {
         response: {
           json: () => ({ message: 'Error message' }),
-          statusText: 'Bad Request'
-        }
+          statusText: 'Bad Request',
+        },
       };
 
       const message = provider.parseErrorMessage(error);
@@ -350,8 +350,8 @@ describe('BaseProvider', () => {
       const error = {
         response: {
           json: () => { throw new Error('Invalid JSON'); },
-          statusText: 'Bad Request'
-        }
+          statusText: 'Bad Request',
+        },
       };
 
       const message = provider.parseErrorMessage(error);
@@ -361,8 +361,8 @@ describe('BaseProvider', () => {
     it('should handle response without statusText', () => {
       const error = {
         response: {
-          json: () => { throw new Error('Invalid JSON'); }
-        }
+          json: () => { throw new Error('Invalid JSON'); },
+        },
       };
 
       const message = provider.parseErrorMessage(error);

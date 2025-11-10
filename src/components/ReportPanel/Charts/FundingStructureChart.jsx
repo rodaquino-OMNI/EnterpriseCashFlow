@@ -22,18 +22,18 @@ export default function FundingStructureChart({ calculatedData, periodIndex = 0 
       { 
         name: 'Patrimônio Líquido', 
         value: Math.abs(period.equity || 0),
-        color: '#10b981'
+        color: '#10b981',
       },
       { 
         name: 'Empréstimos Bancários', 
         value: Math.abs(period.totalBankLoans || 0),
-        color: '#ef4444'
+        color: '#ef4444',
       },
       { 
         name: 'Outras Obrigações', 
         value: Math.abs((period.totalLiabilities || 0) - (period.totalBankLoans || 0)),
-        color: '#f59e0b'
-      }
+        color: '#f59e0b',
+      },
     ].filter(item => item.value > 0);
 
     if (fundingData.length === 0) {
@@ -67,7 +67,7 @@ export default function FundingStructureChart({ calculatedData, periodIndex = 0 
                   backgroundColor: 'white', 
                   border: '1px solid #e2e8f0', 
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Legend 

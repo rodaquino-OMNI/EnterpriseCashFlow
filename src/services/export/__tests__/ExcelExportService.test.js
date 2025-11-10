@@ -19,12 +19,12 @@ describe('ExcelExportService', () => {
     mockWorkbook = {
       Sheets: {},
       SheetNames: [],
-      Props: {}
+      Props: {},
     };
 
     mockWorksheet = {
       '!ref': 'A1:D10',
-      '!cols': []
+      '!cols': [],
     };
 
     XLSX.utils.book_new = jest.fn(() => mockWorkbook);
@@ -50,7 +50,7 @@ describe('ExcelExportService', () => {
       const customOptions = {
         includeFormulas: false,
         autoFilter: false,
-        multipleSheets: true
+        multipleSheets: true,
       };
 
       const service = new ExcelExportService(customOptions);
@@ -82,16 +82,16 @@ describe('ExcelExportService', () => {
     const validData = {
       companyInfo: {
         name: 'Test Company',
-        reportDate: new Date('2024-01-01')
+        reportDate: new Date('2024-01-01'),
       },
       financialData: [
         {
           period: '2024-Q1',
           revenue: 1000000,
           expenses: 600000,
-          profit: 400000
-        }
-      ]
+          profit: 400000,
+        },
+      ],
     };
 
     it('should export data successfully with single sheet', async () => {
@@ -101,7 +101,7 @@ describe('ExcelExportService', () => {
         title: 'Financial Report',
         subject: 'Finance',
         author: 'System',
-        creationDate: new Date()
+        creationDate: new Date(),
       }));
       service.createSheet = jest.fn();
 
@@ -116,8 +116,8 @@ describe('ExcelExportService', () => {
         ...validData,
         sheets: [
           { name: 'Income Statement', data: [] },
-          { name: 'Balance Sheet', data: [] }
-        ]
+          { name: 'Balance Sheet', data: [] },
+        ],
       };
 
       service.validateData = jest.fn(() => ({ isValid: true, errors: [] }));
@@ -125,13 +125,13 @@ describe('ExcelExportService', () => {
         title: 'Financial Report',
         subject: 'Finance',
         author: 'System',
-        creationDate: new Date()
+        creationDate: new Date(),
       }));
       service.createSheet = jest.fn();
 
       const options = {
         multipleSheets: true,
-        sheetNames: ['Income Statement', 'Balance Sheet']
+        sheetNames: ['Income Statement', 'Balance Sheet'],
       };
 
       await service.export(multiSheetData, options);
@@ -142,7 +142,7 @@ describe('ExcelExportService', () => {
     it('should throw error on validation failure', async () => {
       service.validateData = jest.fn(() => ({
         isValid: false,
-        errors: ['Invalid data format']
+        errors: ['Invalid data format'],
       }));
 
       // Service returns error object instead of throwing
@@ -156,7 +156,7 @@ describe('ExcelExportService', () => {
         title: 'Test Report',
         subject: 'Financial Analysis',
         author: 'Test User',
-        creationDate: new Date('2024-01-01')
+        creationDate: new Date('2024-01-01'),
       };
 
       service.validateData = jest.fn(() => ({ isValid: true, errors: [] }));
@@ -177,7 +177,7 @@ describe('ExcelExportService', () => {
         title: 'Report',
         subject: 'Finance',
         author: 'System',
-        creationDate: new Date()
+        creationDate: new Date(),
       }));
       service.createSheet = jest.fn();
 
@@ -187,7 +187,7 @@ describe('ExcelExportService', () => {
         mockWorkbook,
         expect.anything(),
         'Financial Report',
-        expect.anything()
+        expect.anything(),
       );
     });
 
@@ -197,13 +197,13 @@ describe('ExcelExportService', () => {
         title: 'Report',
         subject: 'Finance',
         author: 'System',
-        creationDate: new Date()
+        creationDate: new Date(),
       }));
       service.createSheet = jest.fn();
 
       const customOptions = {
         includeFormulas: false,
-        customField: 'custom value'
+        customField: 'custom value',
       };
 
       await service.export(validData, customOptions);
@@ -215,8 +215,8 @@ describe('ExcelExportService', () => {
         expect.objectContaining({
           includeFormulas: false,
           customField: 'custom value',
-          autoFilter: true // default still present
-        })
+          autoFilter: true, // default still present
+        }),
       );
     });
   });
@@ -257,12 +257,12 @@ describe('ExcelExportService', () => {
         title: 'Report',
         subject: 'Finance',
         author: 'System',
-        creationDate: new Date()
+        creationDate: new Date(),
       }));
 
       const validData = {
         companyInfo: { name: 'Test Company' },
-        financialData: []
+        financialData: [],
       };
 
       // Service returns error object instead of throwing
@@ -274,7 +274,7 @@ describe('ExcelExportService', () => {
     it('should handle invalid data gracefully', async () => {
       service.validateData = jest.fn(() => ({
         isValid: false,
-        errors: ['Missing required fields', 'Invalid data structure']
+        errors: ['Missing required fields', 'Invalid data structure'],
       }));
 
       // Service returns error object instead of throwing
@@ -306,8 +306,8 @@ describe('ExcelExportService', () => {
         formatting: {
           currency: false,
           percentage: true,
-          custom: 'value'
-        }
+          custom: 'value',
+        },
       };
 
       const customService = new ExcelExportService(customFormatting);

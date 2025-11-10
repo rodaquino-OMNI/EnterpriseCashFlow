@@ -97,5 +97,5 @@ expect.extend({
         pass: false,
       };
     }
-  }
+  },
 });

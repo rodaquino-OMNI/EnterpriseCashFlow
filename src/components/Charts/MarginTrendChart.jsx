@@ -30,7 +30,7 @@ export default function MarginTrendChart({ data, calculatedData, periodType = 'm
         name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
         grossMargin: revenue > 0 ? parseFloat(((grossProfit / revenue) * 100).toFixed(1)) : 0,
         ebitdaMargin: revenue > 0 ? parseFloat(((ebitda / revenue) * 100).toFixed(1)) : 0,
-        netMargin: revenue > 0 ? parseFloat(((netIncome / revenue) * 100).toFixed(1)) : 0
+        netMargin: revenue > 0 ? parseFloat(((netIncome / revenue) * 100).toFixed(1)) : 0,
       };
     });
 
@@ -59,7 +59,7 @@ export default function MarginTrendChart({ data, calculatedData, periodType = 'm
                   backgroundColor: 'white',
                   border: '1px solid #e2e8f0',
                   borderRadius: '6px',
-                  fontSize: '12px'
+                  fontSize: '12px',
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />

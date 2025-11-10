@@ -33,7 +33,7 @@ export default function PowerOfOneAnalysis({ calculatedData, periodType }) {
         change: '+1%',
         operatingProfitImpact: latestPeriod.revenue * 0.01,
         cashFlowImpact: latestPeriod.revenue * 0.01 * afterTaxMultiplier,
-        color: 'bg-green-50 border-green-400 text-green-700 print:border-green-300'
+        color: 'bg-green-50 border-green-400 text-green-700 print:border-green-300',
       },
       {
         lever: 'Aumento de Volume',
@@ -41,51 +41,51 @@ export default function PowerOfOneAnalysis({ calculatedData, periodType }) {
         operatingProfitImpact: latestPeriod.grossProfit * 0.01,
         cashFlowImpact: (latestPeriod.grossProfit * 0.01 * afterTaxMultiplier) - 
           (latestPeriod.wcPer100Revenue * latestPeriod.revenue * 0.0001),
-        color: 'bg-blue-50 border-blue-400 text-blue-700 print:border-blue-300'
+        color: 'bg-blue-50 border-blue-400 text-blue-700 print:border-blue-300',
       },
       {
         lever: 'Redução Custos Diretos (CPV/CSV)',
         change: '-1%',
         operatingProfitImpact: latestPeriod.cogs * 0.01,
         cashFlowImpact: latestPeriod.cogs * 0.01 * afterTaxMultiplier,
-        color: 'bg-purple-50 border-purple-400 text-purple-700 print:border-purple-300'
+        color: 'bg-purple-50 border-purple-400 text-purple-700 print:border-purple-300',
       },
       {
         lever: 'Redução Despesas Operacionais',
         change: '-1%',
         operatingProfitImpact: latestPeriod.operatingExpenses * 0.01,
         cashFlowImpact: latestPeriod.operatingExpenses * 0.01 * afterTaxMultiplier,
-        color: 'bg-orange-50 border-orange-400 text-orange-700 print:border-orange-300'
+        color: 'bg-orange-50 border-orange-400 text-orange-700 print:border-orange-300',
       },
       {
         lever: 'Redução PMR (Dias)',
         change: '-1 dia',
         operatingProfitImpact: 0,
         cashFlowImpact: dailyRevenue,
-        color: 'bg-cyan-50 border-cyan-400 text-cyan-700 print:border-cyan-300'
+        color: 'bg-cyan-50 border-cyan-400 text-cyan-700 print:border-cyan-300',
       },
       {
         lever: 'Redução PME (Dias)',
         change: '-1 dia',
         operatingProfitImpact: 0,
         cashFlowImpact: dailyCogs,
-        color: 'bg-indigo-50 border-indigo-400 text-indigo-700 print:border-indigo-300'
+        color: 'bg-indigo-50 border-indigo-400 text-indigo-700 print:border-indigo-300',
       },
       {
         lever: 'Aumento PMP (Dias)',
         change: '+1 dia',
         operatingProfitImpact: 0,
         cashFlowImpact: dailyCogs,
-        color: 'bg-teal-50 border-teal-400 text-teal-700 print:border-teal-300'
-      }
+        color: 'bg-teal-50 border-teal-400 text-teal-700 print:border-teal-300',
+      },
     ];
 
     // Calculate totals once
     const totalPositiveOperatingImpact = powerOfOneScenarios.reduce(
-      (sum, scenario) => sum + Math.max(0, scenario.operatingProfitImpact || 0), 0
+      (sum, scenario) => sum + Math.max(0, scenario.operatingProfitImpact || 0), 0,
     );
     const totalPositiveCashFlowImpact = powerOfOneScenarios.reduce(
-      (sum, scenario) => sum + Math.max(0, scenario.cashFlowImpact || 0), 0
+      (sum, scenario) => sum + Math.max(0, scenario.cashFlowImpact || 0), 0,
     );
 
     return {
@@ -94,7 +94,7 @@ export default function PowerOfOneAnalysis({ calculatedData, periodType }) {
       currentCashFlowForPowerOfOne,
       powerOfOneScenarios,
       totalPositiveOperatingImpact,
-      totalPositiveCashFlowImpact
+      totalPositiveCashFlowImpact,
     };
   }, [calculatedData, periodType]);
 
@@ -112,7 +112,7 @@ export default function PowerOfOneAnalysis({ calculatedData, periodType }) {
     currentCashFlowForPowerOfOne,
     powerOfOneScenarios,
     totalPositiveOperatingImpact,
-    totalPositiveCashFlowImpact
+    totalPositiveCashFlowImpact,
   } = powerOfOneData;
 
   return (

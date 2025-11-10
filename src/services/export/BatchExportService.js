@@ -17,13 +17,13 @@ export class BatchExportService {
       includeManifest: true,
       parallel: true,
       maxConcurrent: 3,
-      ...options
+      ...options,
     };
     
     // Initialize export services
     this.exportServices = {
       [ExportFormat.PDF]: new PDFExportService(options),
-      [ExportFormat.EXCEL]: new ExcelExportService(options)
+      [ExportFormat.EXCEL]: new ExcelExportService(options),
     };
     
     // Progress tracking
@@ -31,7 +31,7 @@ export class BatchExportService {
       total: 0,
       completed: 0,
       failed: 0,
-      current: null
+      current: null,
     };
   }
 
@@ -50,7 +50,7 @@ export class BatchExportService {
         total: reports.length,
         completed: 0,
         failed: 0,
-        current: null
+        current: null,
       };
       
       // Notify progress start
@@ -78,7 +78,7 @@ export class BatchExportService {
         successfulExports: results.filter(r => r.success).length,
         failedExports: results.filter(r => !r.success).length,
         results,
-        ...finalResult
+        ...finalResult,
       };
       
     } catch (error) {
@@ -86,7 +86,7 @@ export class BatchExportService {
       return {
         success: false,
         error: error.message,
-        results: []
+        results: [],
       };
     }
   }
@@ -117,7 +117,7 @@ export class BatchExportService {
     
     for (const chunk of chunks) {
       const chunkResults = await Promise.all(
-        chunk.map(report => this.exportSingleReport(report, options))
+        chunk.map(report => this.exportSingleReport(report, options)),
       );
       results.push(...chunkResults);
     }
@@ -165,14 +165,14 @@ export class BatchExportService {
       const fileName = this.applyNamingPattern(
         report.name || 'report',
         report,
-        options.namingPattern
+        options.namingPattern,
       );
       
       // Export with service
       const result = await exportService.export(report.data, {
         ...options,
         ...report.options,
-        fileName
+        fileName,
       });
       
       // Update progress
@@ -184,13 +184,13 @@ export class BatchExportService {
       
       this.notifyProgress('progress', {
         completed: this.progress.completed,
-        total: this.progress.total
+        total: this.progress.total,
       });
       
       return {
         ...result,
         reportId: report.id,
-        reportName: report.name
+        reportName: report.name,
       };
       
     } catch (error) {
@@ -201,7 +201,7 @@ export class BatchExportService {
         success: false,
         reportId: report.id,
         reportName: report.name,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -241,7 +241,7 @@ export class BatchExportService {
     
     return {
       combined: false,
-      message: 'PDF combining not yet implemented'
+      message: 'PDF combining not yet implemented',
     };
   }
 
@@ -276,11 +276,11 @@ export class BatchExportService {
       // Generate combined file
       const buffer = XLSX.write(workbook, {
         bookType: 'xlsx',
-        type: 'array'
+        type: 'array',
       });
       
       const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
       
       const fileName = this.generateFileName('combined-reports', 'xlsx');
@@ -288,14 +288,14 @@ export class BatchExportService {
       return {
         combined: true,
         blob,
-        fileName
+        fileName,
       };
       
     } catch (error) {
       console.error('Excel combining error:', error);
       return {
         combined: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -333,8 +333,8 @@ export class BatchExportService {
         type: 'blob',
         compression: 'DEFLATE',
         compressionOptions: {
-          level: 9
-        }
+          level: 9,
+        },
       });
       
       const fileName = this.generateFileName('reports-archive', 'zip');
@@ -348,14 +348,14 @@ export class BatchExportService {
         archived: true,
         blob,
         fileName,
-        fileCount: successfulResults.length
+        fileCount: successfulResults.length,
       };
       
     } catch (error) {
       console.error('Archive creation error:', error);
       return {
         archived: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -384,7 +384,7 @@ export class BatchExportService {
     
     return {
       downloaded: downloadCount,
-      total: successfulResults.length
+      total: successfulResults.length,
     };
   }
 
@@ -401,7 +401,7 @@ export class BatchExportService {
       version: '2.0.0',
       options: {
         format: options.format,
-        template: options.template
+        template: options.template,
       },
       reports: results.map(r => ({
         id: r.reportId,
@@ -409,13 +409,13 @@ export class BatchExportService {
         fileName: r.fileName,
         success: r.success,
         size: r.size,
-        error: r.error
+        error: r.error,
       })),
       summary: {
         total: results.length,
         successful: results.filter(r => r.success).length,
-        failed: results.filter(r => !r.success).length
-      }
+        failed: results.filter(r => !r.success).length,
+      },
     };
   }
 
@@ -486,7 +486,7 @@ export class BatchExportService {
       this.options.onProgress({
         status,
         ...this.progress,
-        ...data
+        ...data,
       });
     }
   }

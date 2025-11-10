@@ -40,9 +40,9 @@ export class LoggingService {
                 msg += ` ${JSON.stringify(metadata)}`;
               }
               return msg;
-            })
+            }),
           ),
-        })
+        }),
       );
     }
 
@@ -54,14 +54,14 @@ export class LoggingService {
           level: 'error',
           maxsize: maxSize,
           maxFiles: maxFiles,
-        })
+        }),
       );
       transports.push(
         new winston.transports.File({
           filename: `${logDir}/combined.log`,
           maxsize: maxSize,
           maxFiles: maxFiles,
-        })
+        }),
       );
     }
 
@@ -70,7 +70,7 @@ export class LoggingService {
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),
-        winston.format.json()
+        winston.format.json(),
       ),
       transports,
       exitOnError: false,

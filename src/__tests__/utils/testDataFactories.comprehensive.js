@@ -64,7 +64,7 @@ export const createMockIncomeStatement = (overrides = {}) => {
     taxes: Math.round(taxes * 100) / 100,
     netIncome: Math.round(netIncome * 100) / 100,
     netMargin: Math.round((netIncome / revenue) * 10000) / 100,
-    ...overrides
+    ...overrides,
   };
 };
 
@@ -193,7 +193,7 @@ export const createMockPeriodData = (overrides = {}) => {
     balanceSheet,
     ratios,
     trends: overrides.trends || {},
-    ...overrides
+    ...overrides,
   };
 };
 
@@ -215,8 +215,8 @@ export const createScenarios = {
         trends: i > 0 ? {
           revenueGrowth: 10,
           marginImprovement: 0.5,
-          profitGrowth: 15
-        } : {}
+          profitGrowth: 15,
+        } : {},
       });
     });
   },
@@ -241,8 +241,8 @@ export const createScenarios = {
         trends: i > 0 ? {
           revenueGrowth: -5,
           marginImprovement: -2,
-          profitGrowth: -20
-        } : {}
+          profitGrowth: -20,
+        } : {},
       });
     });
   },
@@ -262,7 +262,7 @@ export const createScenarios = {
         workingCapital: {
           inventoryDays: factor > 1 ? 45 : 60, // More inventory in low season
           dso: factor > 1 ? 40 : 55, // Slower collections in low season
-        }
+        },
       });
     });
   },
@@ -285,7 +285,7 @@ export const createScenarios = {
         cashFlow: {
           operatingCashFlow: isRecoveryPhase ? 50000 + (i - 2) * 20000 : -50000,
           capex: isRecoveryPhase ? 30000 : 10000, // Minimal capex during crisis
-        }
+        },
       });
     });
   },
@@ -308,10 +308,10 @@ export const createScenarios = {
         ratios: {
           debtToEquity: 4 + i * 0.3,
           interestCoverage: 3 - i * 0.5, // Deteriorating coverage
-        }
+        },
       });
     });
-  }
+  },
 };
 
 // Excel data factory (simulates parsed Excel data)
@@ -322,7 +322,7 @@ export const createMockExcelData = (overrides = {}) => {
       uploadDate: new Date().toISOString(),
       fileSize: 125000,
       numberOfSheets: 3,
-      version: '2.0'
+      version: '2.0',
     },
     sheets: {
       'Income Statement': {
@@ -331,8 +331,8 @@ export const createMockExcelData = (overrides = {}) => {
           ['Q1 2024', 1000000, 550000, 450000, 300000, 150000],
           ['Q2 2024', 1100000, 595000, 505000, 320000, 185000],
           ['Q3 2024', 1200000, 636000, 564000, 340000, 224000],
-          ['Q4 2024', 1300000, 676000, 624000, 360000, 264000]
-        ]
+          ['Q4 2024', 1300000, 676000, 624000, 360000, 264000],
+        ],
       },
       'Balance Sheet': {
         headers: ['Period', 'Total Assets', 'Total Liabilities', 'Equity'],
@@ -340,8 +340,8 @@ export const createMockExcelData = (overrides = {}) => {
           ['Q1 2024', 850000, 330000, 520000],
           ['Q2 2024', 900000, 340000, 560000],
           ['Q3 2024', 950000, 350000, 600000],
-          ['Q4 2024', 1000000, 360000, 640000]
-        ]
+          ['Q4 2024', 1000000, 360000, 640000],
+        ],
       },
       'Cash Flow': {
         headers: ['Period', 'Operating CF', 'Investing CF', 'Financing CF'],
@@ -349,12 +349,12 @@ export const createMockExcelData = (overrides = {}) => {
           ['Q1 2024', 120000, -50000, -30000],
           ['Q2 2024', 140000, -60000, -40000],
           ['Q3 2024', 160000, -70000, -50000],
-          ['Q4 2024', 180000, -80000, -60000]
-        ]
-      }
+          ['Q4 2024', 180000, -80000, -60000],
+        ],
+      },
     },
     validationErrors: [],
-    warnings: []
+    warnings: [],
   };
 
   return { ...defaults, ...overrides };
@@ -367,7 +367,7 @@ export const createMockPDFData = (overrides = {}) => {
       fileName: 'annual_report_2024.pdf',
       pages: 120,
       extractedPages: [45, 46, 47, 89, 90],
-      extractionConfidence: 0.92
+      extractionConfidence: 0.92,
     },
     extractedText: `
       DEMONSTRAÇÃO DE RESULTADOS
@@ -386,15 +386,15 @@ export const createMockPDFData = (overrides = {}) => {
       cogs: 550000,
       grossProfit: 450000,
       operatingExpenses: 300000,
-      ebitda: 150000
+      ebitda: 150000,
     },
     confidence: {
       revenue: 0.95,
       cogs: 0.93,
       grossProfit: 0.94,
       operatingExpenses: 0.89,
-      ebitda: 0.91
-    }
+      ebitda: 0.91,
+    },
   };
 
   return { ...defaults, ...overrides };
@@ -412,29 +412,29 @@ export const createMockAIAnalysis = (overrides = {}) => {
         'Revenue growth accelerating in recent quarters',
         'Gross margins expanding due to operational efficiency',
         'Working capital management improving with shorter cash cycle',
-        'Free cash flow positive and growing'
+        'Free cash flow positive and growing',
       ],
       risks: [
         'High dependency on few major customers',
         'Increasing competition in core market',
-        'Rising interest expenses due to debt levels'
+        'Rising interest expenses due to debt levels',
       ],
       opportunities: [
         'Expand into adjacent markets',
         'Improve inventory turnover',
-        'Refinance debt at lower rates'
+        'Refinance debt at lower rates',
       ],
       recommendations: [
         'Focus on customer diversification',
         'Implement cost reduction initiatives',
-        'Accelerate digital transformation'
-      ]
+        'Accelerate digital transformation',
+      ],
     },
     metrics: {
       analysisTime: 2500, // ms
       tokenCount: 1500,
-      confidence: 0.88
-    }
+      confidence: 0.88,
+    },
   };
 
   return { ...defaults, ...overrides };
@@ -452,8 +452,8 @@ export const createMockValidationResults = (overrides = {}) => {
         message: 'High inventory days detected (90 days)',
         severity: 'medium',
         periodLabel: 'Q4 2024',
-        suggestion: 'Review inventory management practices'
-      }
+        suggestion: 'Review inventory management practices',
+      },
     ],
     infos: [
       {
@@ -461,16 +461,16 @@ export const createMockValidationResults = (overrides = {}) => {
         category: 'Cash Flow',
         message: 'Strong cash conversion rate of 120%',
         severity: 'low',
-        periodLabel: 'Q4 2024'
-      }
+        periodLabel: 'Q4 2024',
+      },
     ],
     trends: [],
     latest: 4,
     summary: {
       total: 1,
       critical: 0,
-      warnings: 1
-    }
+      warnings: 1,
+    },
   };
 
   return { ...defaults, ...overrides };
@@ -489,12 +489,12 @@ export const createMockExportConfig = (overrides = {}) => {
       name: 'Test Company Ltd.',
       logo: null,
       address: 'São Paulo, Brazil',
-      taxId: '00.000.000/0001-00'
+      taxId: '00.000.000/0001-00',
     },
     reportTitle: 'Financial Analysis Report',
     reportPeriod: 'Q1-Q4 2024',
     generatedBy: 'Financial Analyst',
-    generatedAt: new Date().toISOString()
+    generatedAt: new Date().toISOString(),
   };
 
   return { ...defaults, ...overrides };
@@ -509,7 +509,7 @@ export const createTestScenario = (scenarioType, options = {}) => {
       pdfData: createMockPDFData(),
       aiAnalysis: createMockAIAnalysis(),
       validationResults: createMockValidationResults(),
-      exportConfig: createMockExportConfig()
+      exportConfig: createMockExportConfig(),
     }),
     
     withErrors: () => ({
@@ -521,19 +521,19 @@ export const createTestScenario = (scenarioType, options = {}) => {
             type: 'error',
             category: 'Balance Sheet',
             message: 'Significant imbalance detected',
-            severity: 'critical'
-          }
-        ]
-      })
+            severity: 'critical',
+          },
+        ],
+      }),
     }),
     
     minimal: () => ({
       periods: [createMockPeriodData()],
       validationResults: createMockValidationResults({ 
         warnings: [], 
-        infos: [] 
-      })
-    })
+        infos: [], 
+      }),
+    }),
   };
 
   return scenarios[scenarioType] ? scenarios[scenarioType](options) : scenarios.complete(options);
@@ -546,7 +546,7 @@ export const generateRandomFinancialData = (constraints = {}) => {
     maxRevenue = 10000000,
     minMargin = 10,
     maxMargin = 60,
-    periods = 4
+    periods = 4,
   } = constraints;
 
   return Array.from({ length: periods }, (_, i) => {
@@ -557,7 +557,7 @@ export const generateRandomFinancialData = (constraints = {}) => {
       revenue: Math.round(revenue),
       grossMarginPercent: Math.round(margin * 10) / 10,
       operatingExpenses: Math.round(revenue * (0.2 + Math.random() * 0.3)),
-      period: `Q${(i % 4) + 1} ${2024 + Math.floor(i / 4)}`
+      period: `Q${(i % 4) + 1} ${2024 + Math.floor(i / 4)}`,
     });
   });
 };
@@ -578,5 +578,5 @@ export default {
   createMockValidationResults,
   createMockExportConfig,
   createTestScenario,
-  generateRandomFinancialData
+  generateRandomFinancialData,
 };

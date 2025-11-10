@@ -21,7 +21,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 export const useFocusManagement = ({
   trapFocus = false,
   restoreOnUnmount = true,
-  initialFocus = null
+  initialFocus = null,
 } = {}) => {
   const containerRef = useRef(null);
   const previousActiveElement = useRef(null);
@@ -110,7 +110,7 @@ export const useFocusManagement = ({
     activate,
     deactivate,
     focusFirst,
-    focusLast
+    focusLast,
   };
 };
 
@@ -131,7 +131,7 @@ export const useKeyboardNavigation = ({
   items = [],
   loop = true,
   orientation = 'vertical',
-  customKeys = {}
+  customKeys = {},
 } = {}) => {
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef(null);
@@ -236,7 +236,7 @@ export const useKeyboardNavigation = ({
     movePrevious,
     moveToFirst,
     moveToLast,
-    handleKeyDown
+    handleKeyDown,
   };
 };
 
@@ -253,7 +253,7 @@ export const useKeyboardNavigation = ({
  */
 export const useAnnouncement = ({
   politeness = 'polite',
-  timeout = 5000
+  timeout = 5000,
 } = {}) => {
   const [message, setMessage] = useState('');
   const timeoutRef = useRef(null);
@@ -294,7 +294,7 @@ export const useAnnouncement = ({
     message,
     announce,
     clear,
-    politeness
+    politeness,
   };
 };
 
@@ -386,7 +386,7 @@ export const getFocusableElements = (container) => {
     'select:not([disabled])',
     'textarea:not([disabled])',
     '[tabindex]:not([tabindex="-1"])',
-    '[contenteditable="true"]'
+    '[contenteditable="true"]',
   ].join(', ');
   
   return Array.from(container.querySelectorAll(focusableSelectors))

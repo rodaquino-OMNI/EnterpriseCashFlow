@@ -21,8 +21,8 @@ global.TextDecoder = TextDecoder;
 const axe = configureAxe({
   rules: {
     // Disable color-contrast rule for testing
-    'color-contrast': { enabled: false }
-  }
+    'color-contrast': { enabled: false },
+  },
 });
 
 // Make axe available globally for tests
@@ -172,6 +172,27 @@ jest.mock('recharts', () => {
     ...originalModule,
     ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
   };
+});
+
+// Suppress React Testing Library act deprecation warnings
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('ReactDOMTestUtils.act') ||
+       args[0].includes('Warning: An update to') ||
+       args[0].includes('act(...)') ||
+       args[0].includes('Not implemented: HTMLFormElement.prototype.submit'))
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
 });
 
 // Clean up after each test

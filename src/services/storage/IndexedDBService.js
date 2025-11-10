@@ -24,8 +24,8 @@ export class IndexedDBService extends StorageService {
         indexes: [
           { name: 'userId', keyPath: 'userId', unique: false },
           { name: 'createdAt', keyPath: 'createdAt', unique: false },
-          { name: 'updatedAt', keyPath: 'updatedAt', unique: false }
-        ]
+          { name: 'updatedAt', keyPath: 'updatedAt', unique: false },
+        ],
       },
       scenarios: {
         name: 'scenarios',
@@ -33,8 +33,8 @@ export class IndexedDBService extends StorageService {
         indexes: [
           { name: 'projectId', keyPath: 'projectId', unique: false },
           { name: 'type', keyPath: 'type', unique: false },
-          { name: 'createdAt', keyPath: 'createdAt', unique: false }
-        ]
+          { name: 'createdAt', keyPath: 'createdAt', unique: false },
+        ],
       },
       reports: {
         name: 'reports',
@@ -43,8 +43,8 @@ export class IndexedDBService extends StorageService {
           { name: 'projectId', keyPath: 'projectId', unique: false },
           { name: 'scenarioId', keyPath: 'scenarioId', unique: false },
           { name: 'type', keyPath: 'type', unique: false },
-          { name: 'createdAt', keyPath: 'createdAt', unique: false }
-        ]
+          { name: 'createdAt', keyPath: 'createdAt', unique: false },
+        ],
       },
       autoSave: {
         name: 'autoSave',
@@ -52,16 +52,16 @@ export class IndexedDBService extends StorageService {
         indexes: [
           { name: 'entityType', keyPath: 'entityType', unique: false },
           { name: 'entityId', keyPath: 'entityId', unique: false },
-          { name: 'timestamp', keyPath: 'timestamp', unique: false }
-        ]
+          { name: 'timestamp', keyPath: 'timestamp', unique: false },
+        ],
       },
       cache: {
         name: 'cache',
         keyPath: 'key',
         indexes: [
-          { name: 'expiresAt', keyPath: 'expiresAt', unique: false }
-        ]
-      }
+          { name: 'expiresAt', keyPath: 'expiresAt', unique: false },
+        ],
+      },
     };
   }
 
@@ -74,7 +74,7 @@ export class IndexedDBService extends StorageService {
       if (!this._isIndexedDBSupported()) {
         throw new StorageError(
           'IndexedDB is not supported in this browser',
-          StorageErrorCode.INITIALIZATION_FAILED
+          StorageErrorCode.INITIALIZATION_FAILED,
         );
       }
 
@@ -87,7 +87,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         'Failed to initialize IndexedDB',
         StorageErrorCode.INITIALIZATION_FAILED,
-        error
+        error,
       );
     }
   }
@@ -110,13 +110,13 @@ export class IndexedDBService extends StorageService {
         throw new StorageError(
           'Storage quota exceeded',
           StorageErrorCode.QUOTA_EXCEEDED,
-          error
+          error,
         );
       }
       throw new StorageError(
         `Failed to store data in ${storeName}`,
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -137,7 +137,7 @@ export class IndexedDBService extends StorageService {
       if (!result) {
         throw new StorageError(
           `Key not found: ${key}`,
-          StorageErrorCode.KEY_NOT_FOUND
+          StorageErrorCode.KEY_NOT_FOUND,
         );
       }
       
@@ -150,7 +150,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         `Failed to retrieve data from ${storeName}`,
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -203,7 +203,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         `Failed to retrieve all data from ${storeName}`,
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -236,7 +236,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         `Failed to remove data from ${storeName}`,
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -260,8 +260,8 @@ export class IndexedDBService extends StorageService {
         
         await Promise.all(
           storeNames.map(name => 
-            this._promisifyRequest(transaction.objectStore(name).clear())
-          )
+            this._promisifyRequest(transaction.objectStore(name).clear()),
+          ),
         );
       }
       
@@ -269,7 +269,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         'Failed to clear data',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -290,7 +290,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         `Failed to get keys from ${storeName}`,
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -313,7 +313,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         `Failed to check key existence in ${storeName}`,
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -345,7 +345,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         'Failed to get storage size',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -379,7 +379,7 @@ export class IndexedDBService extends StorageService {
       throw new StorageError(
         'Batch operation failed',
         StorageErrorCode.UNKNOWN_ERROR,
-        error
+        error,
       );
     }
   }
@@ -398,7 +398,7 @@ export class IndexedDBService extends StorageService {
       key,
       data,
       expiresAt,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
   }
 
@@ -468,7 +468,7 @@ export class IndexedDBService extends StorageService {
           
           if (!db.objectStoreNames.contains(storeConfig.name)) {
             store = db.createObjectStore(storeConfig.name, {
-              keyPath: storeConfig.keyPath
+              keyPath: storeConfig.keyPath,
             });
           } else {
             store = request.transaction.objectStore(storeConfig.name);
@@ -480,7 +480,7 @@ export class IndexedDBService extends StorageService {
               store.createIndex(
                 indexConfig.name,
                 indexConfig.keyPath,
-                { unique: indexConfig.unique }
+                { unique: indexConfig.unique },
               );
             }
           });

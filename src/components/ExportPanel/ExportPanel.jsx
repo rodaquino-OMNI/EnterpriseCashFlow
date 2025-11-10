@@ -14,7 +14,7 @@ export function ExportPanel({ reportData, charts = [] }) {
   const [exportOptions, setExportOptions] = useState({
     includeCharts: true,
     includeTimestamp: true,
-    watermark: ''
+    watermark: '',
   });
   
   // Get available formats and templates
@@ -28,7 +28,7 @@ export function ExportPanel({ reportData, charts = [] }) {
     // Prepare export data
     const exportData = {
       ...reportData,
-      charts: exportOptions.includeCharts ? charts : []
+      charts: exportOptions.includeCharts ? charts : [],
     };
     
     // Export options
@@ -40,9 +40,9 @@ export function ExportPanel({ reportData, charts = [] }) {
       branding: {
         watermark: exportOptions.watermark ? {
           text: exportOptions.watermark,
-          type: 'text'
-        } : null
-      }
+          type: 'text',
+        } : null,
+      },
     };
     
     const result = await exportService.exportReport(exportData, options);
@@ -62,21 +62,21 @@ export function ExportPanel({ reportData, charts = [] }) {
         id: 'q1-report',
         name: 'Q1 Financial Report',
         data: { ...reportData, period: 'Q1 2024' },
-        format: selectedFormat
+        format: selectedFormat,
       },
       {
         id: 'q2-report',
         name: 'Q2 Financial Report',
         data: { ...reportData, period: 'Q2 2024' },
-        format: selectedFormat
-      }
+        format: selectedFormat,
+      },
     ];
     
     const result = await exportService.exportBatch(reports, {
       createArchive: true,
       namingPattern: {
-        template: '{name}_{date}'
-      }
+        template: '{name}_{date}',
+      },
     });
     
     if (result.success) {
@@ -90,7 +90,7 @@ export function ExportPanel({ reportData, charts = [] }) {
   const handlePreview = async () => {
     const result = await exportService.previewExport(reportData, {
       format: selectedFormat,
-      templateId: selectedTemplate
+      templateId: selectedTemplate,
     });
     
     if (result.success && result.previewUrl) {
@@ -157,7 +157,7 @@ export function ExportPanel({ reportData, charts = [] }) {
               checked={exportOptions.includeCharts}
               onChange={(e) => setExportOptions({
                 ...exportOptions,
-                includeCharts: e.target.checked
+                includeCharts: e.target.checked,
               })}
               className="mr-2"
             />
@@ -170,7 +170,7 @@ export function ExportPanel({ reportData, charts = [] }) {
               checked={exportOptions.includeTimestamp}
               onChange={(e) => setExportOptions({
                 ...exportOptions,
-                includeTimestamp: e.target.checked
+                includeTimestamp: e.target.checked,
               })}
               className="mr-2"
             />
@@ -186,7 +186,7 @@ export function ExportPanel({ reportData, charts = [] }) {
               value={exportOptions.watermark}
               onChange={(e) => setExportOptions({
                 ...exportOptions,
-                watermark: e.target.value
+                watermark: e.target.value,
               })}
               placeholder="e.g., CONFIDENTIAL"
               className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
@@ -244,7 +244,7 @@ export function ExportPanel({ reportData, charts = [] }) {
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{
-                width: `${(exportService.exportProgress.completed / exportService.exportProgress.total) * 100}%`
+                width: `${(exportService.exportProgress.completed / exportService.exportProgress.total) * 100}%`,
               }}
             ></div>
           </div>
@@ -292,7 +292,7 @@ export function ChartExportButton({ chartRef, chartName = 'chart' }) {
     
     const result = await exportService.exportChart(chartRef.current, {
       fileName: chartName,
-      format: format
+      format: format,
     });
     
     setShowOptions(false);

@@ -34,7 +34,7 @@ export const useFinancialCalculations = () => {
       const result = await financialCalculationService.calculateNPV(
         cashFlows,
         discountRate,
-        initialInvestment
+        initialInvestment,
       );
       
       setResults(prev => ({ ...prev, npv: result }));
@@ -77,7 +77,7 @@ export const useFinancialCalculations = () => {
     try {
       const result = await financialCalculationService.calculatePaybackPeriod(
         cashFlows,
-        initialInvestment
+        initialInvestment,
       );
       
       setResults(prev => ({ ...prev, payback: result }));
@@ -101,7 +101,7 @@ export const useFinancialCalculations = () => {
       const result = await financialCalculationService.calculateBreakEven(
         fixedCosts,
         variableCostPerUnit,
-        pricePerUnit
+        pricePerUnit,
       );
       
       setResults(prev => ({ ...prev, breakeven: result }));
@@ -126,7 +126,7 @@ export const useFinancialCalculations = () => {
         baseCashFlow,
         growthRate,
         periods,
-        discountRate
+        discountRate,
       );
       
       setResults(prev => ({ ...prev, projection: result }));
@@ -297,7 +297,7 @@ export const useFinancialDataProcessor = () => {
     try {
       const result = await financialCalculationService.processFinancialData(
         periodsInputDataRaw,
-        periodTypeLabel
+        periodTypeLabel,
       );
       
       setProcessedData(result);

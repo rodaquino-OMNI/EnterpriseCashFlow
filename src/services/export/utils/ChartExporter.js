@@ -14,7 +14,7 @@ export class ChartExporter {
       scale: 2,
       backgroundColor: '#ffffff',
       transparent: false,
-      ...options
+      ...options,
     };
   }
 
@@ -41,7 +41,7 @@ export class ChartExporter {
       // Generate filename
       const fileName = this.generateFileName(
         options.fileName || 'chart',
-        exportOptions.format
+        exportOptions.format,
       );
 
       return {
@@ -51,15 +51,15 @@ export class ChartExporter {
         fileName,
         dimensions: {
           width: canvas.width,
-          height: canvas.height
-        }
+          height: canvas.height,
+        },
       };
 
     } catch (error) {
       console.error('Chart export error:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -76,13 +76,13 @@ export class ChartExporter {
     for (const chart of charts) {
       const result = await this.exportChart(chart.element, {
         ...options,
-        fileName: chart.name || options.fileName
+        fileName: chart.name || options.fileName,
       });
       
       results.push({
         ...result,
         chartId: chart.id,
-        chartName: chart.name
+        chartName: chart.name,
       });
     }
     
@@ -174,14 +174,14 @@ export class ChartExporter {
       for (const chart of charts) {
         const result = await this.exportChart(chart.element, {
           format: 'png',
-          scale: 2
+          scale: 2,
         });
         
         if (result.success) {
           images.push({
             dataUrl: result.dataUrl,
             title: chart.title || '',
-            dimensions: result.dimensions
+            dimensions: result.dimensions,
           });
         }
       }
@@ -191,7 +191,7 @@ export class ChartExporter {
       const pdf = new jsPDF({
         orientation: options.orientation || 'portrait',
         unit: 'mm',
-        format: options.pageSize || 'a4'
+        format: options.pageSize || 'a4',
       });
       
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -233,7 +233,7 @@ export class ChartExporter {
       // Generate filename
       const fileName = this.generateFileName(
         options.fileName || 'charts',
-        'pdf'
+        'pdf',
       );
       
       const blob = pdf.output('blob');
@@ -242,14 +242,14 @@ export class ChartExporter {
         success: true,
         blob,
         fileName,
-        pageCount: images.length
+        pageCount: images.length,
       };
       
     } catch (error) {
       console.error('PDF export error:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -267,7 +267,7 @@ export class ChartExporter {
       logging: false,
       useCORS: true,
       allowTaint: true,
-      ...options.html2canvasOptions
+      ...options.html2canvasOptions,
     };
     
     // Handle custom dimensions
@@ -296,7 +296,7 @@ export class ChartExporter {
           }
         },
         `image/${options.format}`,
-        options.quality
+        options.quality,
       );
     });
   }
@@ -329,21 +329,21 @@ export class ChartExporter {
       // Generate filename
       const fileName = this.generateFileName(
         options.fileName || 'chart',
-        'svg'
+        'svg',
       );
       
       return {
         success: true,
         blob,
         dataUrl: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`,
-        fileName
+        fileName,
       };
       
     } catch (error) {
       console.error('SVG export error:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -408,8 +408,8 @@ export class ChartExporter {
       scale: 0.5,
       dimensions: {
         width: options.width || 200,
-        height: options.height || 150
-      }
+        height: options.height || 150,
+      },
     };
     
     return await this.exportChart(element, thumbnailOptions);

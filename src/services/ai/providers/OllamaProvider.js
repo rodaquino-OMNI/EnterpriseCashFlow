@@ -22,12 +22,12 @@ export class OllamaProvider extends BaseProvider {
         'codellama',
         'neural-chat',
         'starling-lm',
-        'orca-mini'
+        'orca-mini',
       ],
       rateLimit: {
         requestsPerMinute: 100,
-        tokensPerMinute: 50000
-      }
+        tokensPerMinute: 50000,
+      },
     };
   }
 
@@ -42,8 +42,8 @@ export class OllamaProvider extends BaseProvider {
         temperature: request.parameters?.temperature ?? 0.3,
         num_predict: request.parameters?.maxTokens || 2000,
         top_p: request.parameters?.topP ?? 0.9,
-        top_k: request.parameters?.topK ?? 40
-      }
+        top_k: request.parameters?.topK ?? 40,
+      },
     };
 
     try {
@@ -55,7 +55,7 @@ export class OllamaProvider extends BaseProvider {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
-            signal: controller.signal
+            signal: controller.signal,
           });
 
           clearTimeout(timeoutId);
@@ -88,10 +88,10 @@ export class OllamaProvider extends BaseProvider {
           usage: {
             prompt_tokens: response.prompt_eval_count,
             completion_tokens: response.eval_count,
-            total_tokens: response.prompt_eval_count + response.eval_count
+            total_tokens: response.prompt_eval_count + response.eval_count,
           },
-          context: response.context
-        }
+          context: response.context,
+        },
       };
     } catch (error) {
       console.error('Ollama API error:', error);
@@ -116,8 +116,8 @@ Rules:
       systemPrompt,
       parameters: {
         temperature: 0.1,
-        ...options.parameters
-      }
+        ...options.parameters,
+      },
     };
 
     try {
@@ -145,8 +145,8 @@ Rules:
         metadata: {
           provider: 'ollama',
           model: response.metadata.model,
-          tokensUsed: response.metadata.tokensUsed
-        }
+          tokensUsed: response.metadata.tokensUsed,
+        },
       };
     } catch (error) {
       return {
@@ -154,7 +154,7 @@ Rules:
         data: [],
         confidence: 0,
         error: error.message,
-        metadata: { provider: 'ollama' }
+        metadata: { provider: 'ollama' },
       };
     }
   }

@@ -17,7 +17,7 @@ jest.mock('../../utils/aiProviders', () => {
       summary: 'Test analysis summary',
       keyInsights: ['Insight 1', 'Insight 2'],
       recommendations: ['Recommendation 1'],
-    })
+    }),
   );
   
   const mockCallOpenAI = jest.fn().mockResolvedValue(
@@ -25,7 +25,7 @@ jest.mock('../../utils/aiProviders', () => {
       summary: 'Test analysis summary',
       keyInsights: ['Insight 1', 'Insight 2'],
       recommendations: ['Recommendation 1'],
-    })
+    }),
   );
   
   const mockCallClaude = jest.fn().mockResolvedValue(
@@ -33,7 +33,7 @@ jest.mock('../../utils/aiProviders', () => {
       summary: 'Test analysis summary',
       keyInsights: ['Insight 1', 'Insight 2'],
       recommendations: ['Recommendation 1'],
-    })
+    }),
   );
   
   const mockCallOllama = jest.fn().mockResolvedValue(
@@ -41,7 +41,7 @@ jest.mock('../../utils/aiProviders', () => {
       summary: 'Test analysis summary',
       keyInsights: ['Insight 1', 'Insight 2'],
       recommendations: ['Recommendation 1'],
-    })
+    }),
   );
 
   return {
@@ -494,7 +494,7 @@ describe('AI Service Integration Tests', () => {
         JSON.stringify({
           summary: 'Partial analysis',
           // Missing keyInsights and recommendations
-        })
+        }),
       );
 
       const { result } = renderHook(() => useAiService('gemini'));

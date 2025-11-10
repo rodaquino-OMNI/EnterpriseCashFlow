@@ -14,7 +14,7 @@ export class DataExportService {
       dateFormat: config.dateFormat || 'YYYY-MM-DD',
       numberFormat: config.numberFormat || '0,0.00',
       includeMetadata: config.includeMetadata !== false,
-      ...config
+      ...config,
     };
   }
 
@@ -55,11 +55,11 @@ export class DataExportService {
       scenarios,
       reports,
       exportDate: new Date().toISOString(),
-      version: '1.0.0'
+      version: '1.0.0',
     };
     
     return this.export(exportData, format, {
-      filename: `${project.name}_export`
+      filename: `${project.name}_export`,
     });
   }
 
@@ -75,7 +75,7 @@ export class DataExportService {
     }
     
     return this.export(report, format, {
-      filename: `${report.name}_report`
+      filename: `${report.name}_report`,
     });
   }
 
@@ -91,8 +91,8 @@ export class DataExportService {
       _metadata: options.includeMetadata ? {
         exportDate: new Date().toISOString(),
         version: this.config.version || '1.0.0',
-        format: 'json'
-      } : undefined
+        format: 'json',
+      } : undefined,
     };
     
     const json = JSON.stringify(exportData, null, 2);
@@ -140,7 +140,7 @@ export class DataExportService {
     } else {
       // Export generic data
       const worksheet = XLSX.utils.json_to_sheet(
-        Array.isArray(data) ? data : [data]
+        Array.isArray(data) ? data : [data],
       );
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
     }
@@ -151,18 +151,18 @@ export class DataExportService {
         exportDate: new Date().toISOString(),
         version: this.config.version || '1.0.0',
         format: 'excel',
-        sheets: workbook.SheetNames.join(', ')
+        sheets: workbook.SheetNames.join(', '),
       }]);
       XLSX.utils.book_append_sheet(workbook, metadataSheet, 'Metadata');
     }
     
     const excelBuffer = XLSX.write(workbook, {
       bookType: 'xlsx',
-      type: 'array'
+      type: 'array',
     });
     
     return new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
   }
 
@@ -255,7 +255,7 @@ export class DataExportService {
       p.financials.balanceSheet.cash + 
       p.financials.balanceSheet.accountsReceivable + 
       p.financials.balanceSheet.inventory +
-      p.financials.balanceSheet.ppe
+      p.financials.balanceSheet.ppe,
     )]);
     
     rows.push([]); // Empty row
@@ -291,7 +291,7 @@ export class DataExportService {
       } else {
         rows.push({
           key: fullKey,
-          value: value instanceof Date ? value.toISOString() : value
+          value: value instanceof Date ? value.toISOString() : value,
         });
       }
     });
@@ -373,7 +373,7 @@ export class DataExportService {
         cash: period.financials.balanceSheet.cash,
         totalAssets: this._calculateTotalAssets(period.financials.balanceSheet),
         totalLiabilities: this._calculateTotalLiabilities(period.financials.balanceSheet),
-        equity: period.financials.balanceSheet.equity
+        equity: period.financials.balanceSheet.equity,
       });
     });
     
@@ -401,13 +401,13 @@ export class DataExportService {
       { key: 'depreciation', label: 'Depreciation' },
       { key: 'interestExpense', label: 'Interest Expense' },
       { key: 'taxExpense', label: 'Tax Expense' },
-      { key: 'netIncome', label: 'Net Income' }
+      { key: 'netIncome', label: 'Net Income' },
     ];
     
     metrics.forEach(metric => {
       rows.push([
         metric.label,
-        ...periods.map(p => p.financials.incomeStatement[metric.key] || 0)
+        ...periods.map(p => p.financials.incomeStatement[metric.key] || 0),
       ]);
     });
     
@@ -496,7 +496,7 @@ export class DataExportService {
     rows.push(['Total Cash Flow', ...periods.map(p => 
       p.financials.cashFlow.operatingCashFlow + 
       p.financials.cashFlow.investingCashFlow + 
-      p.financials.cashFlow.financingCashFlow
+      p.financials.cashFlow.financingCashFlow,
     )]);
     rows.push(['Ending Cash', ...periods.map(p => p.financials.cashFlow.endingCash)]);
     rows.push(['Free Cash Flow', ...periods.map(p => p.financials.cashFlow.freeCashFlow)]);
@@ -518,13 +518,13 @@ export class DataExportService {
     // Profitability Ratios
     rows.push(['Profitability Ratios']);
     rows.push(['Gross Margin %', ...periods.map(p => 
-      (p.financials.incomeStatement.grossProfit / p.financials.incomeStatement.revenue * 100).toFixed(2)
+      (p.financials.incomeStatement.grossProfit / p.financials.incomeStatement.revenue * 100).toFixed(2),
     )]);
     rows.push(['Operating Margin %', ...periods.map(p => 
-      (p.financials.incomeStatement.ebitda / p.financials.incomeStatement.revenue * 100).toFixed(2)
+      (p.financials.incomeStatement.ebitda / p.financials.incomeStatement.revenue * 100).toFixed(2),
     )]);
     rows.push(['Net Margin %', ...periods.map(p => 
-      (p.financials.incomeStatement.netIncome / p.financials.incomeStatement.revenue * 100).toFixed(2)
+      (p.financials.incomeStatement.netIncome / p.financials.incomeStatement.revenue * 100).toFixed(2),
     )]);
     
     rows.push([]);
@@ -569,7 +569,7 @@ export class DataExportService {
     if (report.content.kpis) {
       const kpiData = Object.entries(report.content.kpis).map(([key, value]) => ({
         KPI: key,
-        Value: value
+        Value: value,
       }));
       const kpiSheet = XLSX.utils.json_to_sheet(kpiData);
       XLSX.utils.book_append_sheet(workbook, kpiSheet, 'KPIs');
@@ -594,11 +594,11 @@ export class DataExportService {
     
     const excelBuffer = XLSX.write(workbook, {
       bookType: 'xlsx',
-      type: 'array'
+      type: 'array',
     });
     
     return new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
   }
 

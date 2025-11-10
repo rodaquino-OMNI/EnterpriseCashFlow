@@ -226,8 +226,8 @@ export const ApiKeyConfiguration = () => {
             message.type === 'success'
               ? 'bg-green-50 text-green-800'
               : message.type === 'warning'
-              ? 'bg-yellow-50 text-yellow-800'
-              : 'bg-red-50 text-red-800'
+                ? 'bg-yellow-50 text-yellow-800'
+                : 'bg-red-50 text-red-800'
           }`}
         >
           <p className="text-sm">{message.text}</p>

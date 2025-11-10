@@ -36,7 +36,7 @@ export default function ReportRenderer({
   onLoadHtml2pdf, 
   html2pdfError,
   aiAnalysisManager, 
-  scenarioSettings 
+  scenarioSettings, 
 }) {
   const reportRef = useRef(null);
   const { name: companyName, reportTitle, periodType } = companyInfo;
@@ -44,7 +44,7 @@ export default function ReportRenderer({
   // Memoize financialDataBundle to prevent unnecessary re-renders
   const financialDataBundle = useMemo(() => ({ 
     calculatedData, 
-    companyInfo 
+    companyInfo, 
   }), [calculatedData, companyInfo]);
   
   // Optimize validation results aggregation with dependency array
@@ -74,7 +74,7 @@ export default function ReportRenderer({
       errors: allErrors, 
       warnings: allWarnings, 
       infos: allInfos, 
-      successes: allSuccesses 
+      successes: allSuccesses, 
     };
   }, [calculatedData]); // Simplified dependency
 
@@ -87,7 +87,7 @@ export default function ReportRenderer({
     return { 
       hasData: true, 
       periodCount: calculatedData.length,
-      latestPeriodIndex: calculatedData.length - 1
+      latestPeriodIndex: calculatedData.length - 1,
     };
   }, [calculatedData]);
   
@@ -97,19 +97,19 @@ export default function ReportRenderer({
   
   const handleGeneratePdf = async () => {
     setIsPdfGeneratingInternal(true);
-    let originalDisplays = [];
+    const originalDisplays = [];
     
     try {
       const html2pdfInstance = await onLoadHtml2pdf();
       if (!html2pdfInstance) { setIsPdfGeneratingInternal(false); return; }
-      if (!calculatedData.length || !reportRef.current) { alert("Gere dados primeiro."); setIsPdfGeneratingInternal(false); return; }
+      if (!calculatedData.length || !reportRef.current) { alert('Gere dados primeiro.'); setIsPdfGeneratingInternal(false); return; }
       
       const reportElement = reportRef.current;
       const aiSectionsToPrintConfig = [
         { selector: '#aiExecutiveSummarySectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.EXECUTIVE_SUMMARY) },
         { selector: '#aiVarianceAnalysisSectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.VARIANCE_ANALYSIS) },
         { selector: '#aiRiskAssessmentSectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.RISK_ASSESSMENT) },
-        { selector: '#aiCashFlowDeepDiveSectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS) }
+        { selector: '#aiCashFlowDeepDiveSectionToPrint', content: getAiContentForPdf(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS) },
       ];
       
       aiSectionsToPrintConfig.forEach(section => {
@@ -124,16 +124,16 @@ export default function ReportRenderer({
         filename: `${companyName || 'Relatorio'}_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
       
       await html2pdfInstance().set(opt).from(reportElement).save();
       originalDisplays.forEach(state => { state.element.style.display = state.display; });
     } catch (error) {
-      console.error("Erro ao gerar PDF:", error); 
+      console.error('Erro ao gerar PDF:', error); 
       alert(`Erro ao gerar PDF: ${error.message}`);
       if (reportRef.current && originalDisplays && originalDisplays.length > 0) {
-         originalDisplays.forEach(state => { if (state.element) state.element.style.display = state.display; });
+        originalDisplays.forEach(state => { if (state.element) state.element.style.display = state.display; });
       }
     } finally {
       setIsPdfGeneratingInternal(false);
@@ -146,7 +146,7 @@ export default function ReportRenderer({
     const error = aiAnalysisErrors[analysisType];
     const isLoading = isAiAnalysisTypeLoading(analysisType);
     if (isLoading || error || !content) return null;
-    if (typeof content === 'string' && (content.toLowerCase().includes("erro:") || content.toLowerCase().includes("falha"))) return null;
+    if (typeof content === 'string' && (content.toLowerCase().includes('erro:') || content.toLowerCase().includes('falha'))) return null;
     return content;
   };
   
@@ -204,7 +204,7 @@ export default function ReportRenderer({
     isLoading: isAiAnalysisTypeLoading(analysisType),
     error: aiAnalysisErrors[analysisType],
     onRetry: () => performAnalysis(analysisType, financialDataBundle),
-    analysisTypeForRetry: analysisType
+    analysisTypeForRetry: analysisType,
   }), [analyses, isAiAnalysisTypeLoading, aiAnalysisErrors, performAnalysis, financialDataBundle]);
 
   return (
@@ -227,12 +227,12 @@ export default function ReportRenderer({
       <div ref={reportRef} className="report-container bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-2xl border border-slate-200 w-full max-w-full print:shadow-none print:border-none print:p-0">
         {/* PDF Cover Page (Print Only) */}
         <div className="page-break-after print:block hidden"> 
-             <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '270mm' }}>
-                <h1 className="text-4xl font-bold text-blue-700 mb-3 print:text-3xl">{companyName}</h1>
-                <h2 className="text-2xl text-slate-700 mb-6 print:text-xl">{reportTitle}</h2>
-                <p className="text-lg text-slate-500 print:text-base">Períodos: {calculatedData.length} ({PERIOD_TYPES[periodType]?.label || periodType})</p>
-                <p className="text-md text-slate-500 mt-2 print:text-sm">Gerado em: {new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            </div>
+          <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '270mm' }}>
+            <h1 className="text-4xl font-bold text-blue-700 mb-3 print:text-3xl">{companyName}</h1>
+            <h2 className="text-2xl text-slate-700 mb-6 print:text-xl">{reportTitle}</h2>
+            <p className="text-lg text-slate-500 print:text-base">Períodos: {calculatedData.length} ({PERIOD_TYPES[periodType]?.label || periodType})</p>
+            <p className="text-md text-slate-500 mt-2 print:text-sm">Gerado em: {new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
         </div>
         
         <header className="text-center mb-10 print:mb-6 no-print"> 
@@ -252,20 +252,20 @@ export default function ReportRenderer({
 
         {/* Scenario Analysis Results - Display if any scenario is enabled */}
         {Object.values(scenarioSettings || {}).some(s => s?.enabled) && calculatedData.length > 0 && (
-            <section className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg no-print">
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">Análise de Cenários</h3>
-              <p className="text-sm text-blue-600">Cenários habilitados detectados - funcionalidade em desenvolvimento</p>
-            </section>
+          <section className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg no-print">
+            <h3 className="text-lg font-semibold text-blue-800 mb-2">Análise de Cenários</h3>
+            <p className="text-sm text-blue-600">Cenários habilitados detectados - funcionalidade em desenvolvimento</p>
+          </section>
         )}
 
         <div className="executive-summary-container page-break-after">
-            <ExecutiveSummaryCards calculatedData={calculatedData} companyInfo={companyInfo} />
-            <div id="aiExecutiveSummarySectionToPrint" className="print-only-ai-section mt-6">
-               <AiAnalysisSection 
-                 title={ANALYSIS_METADATA[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]?.name || "Resumo Executivo IA"} 
-                 {...getAiSectionProps(ANALYSIS_TYPES.EXECUTIVE_SUMMARY)} 
-                />
-            </div>
+          <ExecutiveSummaryCards calculatedData={calculatedData} companyInfo={companyInfo} />
+          <div id="aiExecutiveSummarySectionToPrint" className="print-only-ai-section mt-6">
+            <AiAnalysisSection 
+              title={ANALYSIS_METADATA[ANALYSIS_TYPES.EXECUTIVE_SUMMARY]?.name || 'Resumo Executivo IA'} 
+              {...getAiSectionProps(ANALYSIS_TYPES.EXECUTIVE_SUMMARY)} 
+            />
+          </div>
         </div>
         
         {/* Add the Working Capital Timeline right after Executive Summary */}
@@ -293,7 +293,7 @@ export default function ReportRenderer({
             <div className="chart-container-wrapper avoid-break"><CashFlowWaterfallChart calculatedData={calculatedData} periodType={periodType} /></div>
             <div className="chart-container-wrapper avoid-break"><WorkingCapitalDaysTrendChart calculatedData={calculatedData} periodType={periodType} /></div>
           </div>
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
             <div className="chart-container-wrapper avoid-break"><CashFlowKeyMetricsTrendChart calculatedData={calculatedData} periodType={periodType} /></div>
             <div className="chart-container-wrapper avoid-break"><BalanceSheetDifferenceTrendChart calculatedData={calculatedData} periodType={periodType} /></div>
           </div>
@@ -304,20 +304,20 @@ export default function ReportRenderer({
         </section>
         
         <div id="aiVarianceAnalysisSectionToPrint" className="print-only-ai-section">
-         <AiAnalysisSection 
-            title={ANALYSIS_METADATA[ANALYSIS_TYPES.VARIANCE_ANALYSIS]?.name || "Análise de Variações IA"}
+          <AiAnalysisSection 
+            title={ANALYSIS_METADATA[ANALYSIS_TYPES.VARIANCE_ANALYSIS]?.name || 'Análise de Variações IA'}
             {...getAiSectionProps(ANALYSIS_TYPES.VARIANCE_ANALYSIS)} 
           />
         </div>
         <div id="aiRiskAssessmentSectionToPrint" className="print-only-ai-section">
-         <AiAnalysisSection 
-            title={ANALYSIS_METADATA[ANALYSIS_TYPES.RISK_ASSESSMENT]?.name || "Avaliação de Riscos IA"}
+          <AiAnalysisSection 
+            title={ANALYSIS_METADATA[ANALYSIS_TYPES.RISK_ASSESSMENT]?.name || 'Avaliação de Riscos IA'}
             {...getAiSectionProps(ANALYSIS_TYPES.RISK_ASSESSMENT)} 
           />
         </div>
         <div id="aiCashFlowDeepDiveSectionToPrint" className="print-only-ai-section">
-         <AiAnalysisSection 
-            title={ANALYSIS_METADATA[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]?.name || "Análise Fluxo de Caixa IA"}
+          <AiAnalysisSection 
+            title={ANALYSIS_METADATA[ANALYSIS_TYPES.CASH_FLOW_ANALYSIS]?.name || 'Análise Fluxo de Caixa IA'}
             {...getAiSectionProps(ANALYSIS_TYPES.CASH_FLOW_ANALYSIS)} 
           />
         </div>
