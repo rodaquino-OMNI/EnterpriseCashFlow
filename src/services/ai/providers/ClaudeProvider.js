@@ -6,7 +6,7 @@ export class ClaudeProvider extends BaseProvider {
   constructor(config = {}) {
     super(config);
     this.baseUrl = config.baseUrl || 'https://api.anthropic.com/v1';
-    this.defaultModel = config.model || 'claude-3-opus-20240229';
+    this.defaultModel = config.model || 'claude-3-5-sonnet-20241022'; // Updated to Claude 3.5 Sonnet (2025)
     this.anthropicVersion = config.anthropicVersion || '2023-06-01';
   }
 
@@ -17,11 +17,11 @@ export class ClaudeProvider extends BaseProvider {
       supportsVision: true,
       supportsFunctionCalling: false,
       models: [
-        'claude-3-opus-20240229',
-        'claude-3-sonnet-20240229',
-        'claude-3-haiku-20240307',
-        'claude-2.1',
-        'claude-2.0',
+        'claude-3-5-sonnet-20241022', // Latest - Best for financial analysis (2025)
+        'claude-3-5-sonnet-20240620', // Previous Sonnet 3.5
+        'claude-3-opus-20240229', // Legacy Opus 3
+        'claude-3-sonnet-20240229', // Legacy Sonnet 3
+        'claude-3-haiku-20240307', // Fast/cheap option
       ],
       rateLimit: {
         requestsPerMinute: 50,

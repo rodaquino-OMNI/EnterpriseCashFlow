@@ -6,7 +6,7 @@ export class OpenAIProvider extends BaseProvider {
   constructor(config = {}) {
     super(config);
     this.baseUrl = config.baseUrl || 'https://api.openai.com/v1';
-    this.defaultModel = config.model || 'gpt-4-turbo';
+    this.defaultModel = config.model || 'gpt-4o'; // Updated to GPT-4o (2025) - Best for math/precision
     this.organizationId = config.organizationId;
   }
 
@@ -17,10 +17,11 @@ export class OpenAIProvider extends BaseProvider {
       supportsVision: true,
       supportsFunctionCalling: true,
       models: [
-        'gpt-4-turbo',
-        'gpt-4',
-        'gpt-3.5-turbo',
-        'gpt-4-vision-preview',
+        'gpt-4o', // Latest - Best for mathematical precision (2025)
+        'gpt-4o-mini', // Cost-effective alternative
+        'gpt-4-turbo', // Legacy turbo
+        'gpt-4', // Legacy GPT-4
+        'gpt-3.5-turbo', // Budget option
       ],
       rateLimit: {
         requestsPerMinute: 500,
