@@ -215,7 +215,9 @@ export class ExportService {
    * @returns {Object} Branding configuration
    */
   getBranding() {
-    return this.brandingManager.getBranding();
+    // Load from storage and merge with defaults
+    const stored = this.brandingManager.loadBranding();
+    return this.brandingManager.getBranding(stored || {});
   }
 
   /**
@@ -223,11 +225,23 @@ export class ExportService {
    * @param {Object} branding - Branding updates
    */
   updateBranding(branding) {
+    const current = this.brandingManager.getBranding();
+    // Deep merge for nested objects like colors and watermark
     const updated = {
-      ...this.brandingManager.getBranding(),
+      ...current,
       ...branding,
+      colors: {
+        ...current.colors,
+        ...(branding.colors || {}),
+      },
+      watermark: {
+        ...current.watermark,
+        ...(branding.watermark || {}),
+      },
     };
     this.brandingManager.saveBranding(updated);
+    // Update internal reference
+    this.brandingManager.branding = updated;
   }
 
   /**
@@ -309,16 +323,26 @@ export class ExportService {
   validateData(data, format) {
     const errors = [];
     const warnings = [];
-    
+
     // Basic validation
     if (!data) {
       errors.push('No data provided for export');
+      return {
+        valid: false,
+        errors,
+        warnings,
+      };
     }
-    
+
     if (typeof data !== 'object') {
       errors.push('Export data must be an object');
+      return {
+        valid: false,
+        errors,
+        warnings,
+      };
     }
-    
+
     // Format-specific validation
     if (format === ExportFormat.PDF) {
       if (data.charts && !Array.isArray(data.charts)) {

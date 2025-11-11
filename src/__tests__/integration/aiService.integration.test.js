@@ -6,7 +6,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAiService } from '../../hooks/useAiService';
 import { ANALYSIS_TYPES } from '../../utils/aiAnalysisTypes';
-import { createMockPeriodData } from '../utils/testDataFactories.comprehensive';
+import { createMockPeriodData } from '../../test-utils/testDataFactories.comprehensive.utils';
 
 // Mock the AI providers module
 jest.mock('../../utils/aiProviders', () => {

@@ -18,7 +18,7 @@ describe('ClaudeProvider', () => {
     it('should initialize with default values', () => {
       expect(provider.apiKey).toBe(mockApiKey);
       expect(provider.baseUrl).toBe('https://api.anthropic.com/v1');
-      expect(provider.defaultModel).toBe('claude-3-opus-20240229');
+      expect(provider.defaultModel).toBe('claude-3-5-sonnet-20241022'); // Updated to 2025 model
       expect(provider.anthropicVersion).toBe('2023-06-01');
     });
 
@@ -51,11 +51,11 @@ describe('ClaudeProvider', () => {
         supportsVision: true,
         supportsFunctionCalling: false,
         models: expect.arrayContaining([
+          'claude-3-5-sonnet-20241022', // 2025 model
+          'claude-3-5-sonnet-20240620',
           'claude-3-opus-20240229',
           'claude-3-sonnet-20240229',
           'claude-3-haiku-20240307',
-          'claude-2.1',
-          'claude-2.0',
         ]),
         rateLimit: {
           requestsPerMinute: 50,
