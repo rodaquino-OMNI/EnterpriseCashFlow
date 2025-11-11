@@ -9,6 +9,7 @@ import PdfUploader from './InputPanel/PdfUploader';
 import AiProviderSelector from './InputPanel/AiProviderSelector';
 import PeriodTypeConfirmation from './InputPanel/PeriodTypeConfirmation';
 import ExcelUploadProgress from './InputPanel/ExcelUploadProgress';
+import ValidationErrorPanel from './InputPanel/ValidationErrorPanel';
 import ReportRenderer from './ReportPanel/ReportRenderer';
 
 // Hooks
@@ -287,6 +288,11 @@ export default function ReportGeneratorApp() {
       console.warn('Parse warnings:', parseWarnings);
     }
 
+    console.log('📊 ProcessParsedExcelData - Input Data:', parsedInputData);
+    console.log('📊 ProcessParsedExcelData - Period 1 Sample:', JSON.stringify(parsedInputData[0], null, 2));
+    console.log('📊 ProcessParsedExcelData - Detected Periods:', detectedPeriods);
+    console.log('📊 ProcessParsedExcelData - Period Type:', detectedPeriodType || periodType);
+
     // Update app state
     setNumberOfPeriods(detectedPeriods);
     if (detectedPeriodType && detectedPeriodType !== periodType) {
@@ -302,8 +308,66 @@ export default function ReportGeneratorApp() {
       return;
     }
 
+    console.log('✅ Validation passed. Calling calculate...');
     const result = await calculate(parsedInputData, detectedPeriodType || periodType);
-    setCalculatedData(result);
+    console.log('📊 Calculate Result:', result);
+    console.log('📊 Calculate Result - Period 1 Sample:', JSON.stringify(result[0], null, 2));
+
+    // Check if result has actual values (revenue is inside incomeStatement)
+    const hasValidData = result && result.length > 0 &&
+                         result[0].incomeStatement &&
+                         result[0].incomeStatement.revenue !== null &&
+                         result[0].incomeStatement.revenue !== undefined;
+    console.log('📊 Has Valid Data:', hasValidData);
+    if (!hasValidData) {
+      console.error('❌ CRITICAL: Calculate returned data but values are null/undefined!');
+      console.error('Input Period 1 Keys:', Object.keys(parsedInputData[0]));
+      console.error('Output Period 1 Keys:', Object.keys(result[0]));
+      console.error('Output Period 1 incomeStatement:', result[0].incomeStatement);
+    }
+
+    // Flatten the nested structure for backward compatibility with UI components
+    const flattenedResult = result.map((period, index) => {
+      const originalInput = parsedInputData[index] || {};
+
+      return {
+        // Keep original nested structure
+        ...period,
+        // Flatten incomeStatement properties to top level
+        ...(period.incomeStatement || {}),
+        // Flatten cashFlow properties to top level
+        ...(period.cashFlow || {}),
+        // Flatten workingCapital properties to top level
+        ...(period.workingCapital || {}),
+        // Flatten balanceSheet properties to top level
+        ...(period.balanceSheet || {}),
+        // Flatten ratios properties to top level
+        ...(period.ratios || {}),
+
+        // Add field aliases and mappings for UI compatibility
+        closingCash: period.balanceSheet?.cash,
+        netFixedAssets: period.balanceSheet?.fixedAssetsNet,
+        capitalExpenditures: period.cashFlow?.capex,
+
+        // Preserve important input fields that may not be in calculations
+        openingCash: originalInput.openingCash,
+        totalBankLoans: originalInput.totalBankLoans || period.balanceSheet?.shortTermDebt || 0,
+
+        // Add estimated total assets and liabilities for summary cards
+        estimatedTotalAssets: period.balanceSheet?.totalAssets,
+        estimatedTotalLiabilities: period.balanceSheet?.totalLiabilities,
+        equity: period.balanceSheet?.equity,
+        balanceSheetDifference: period.balanceSheet?.balanceCheck,
+
+        // Add cash flow fields for financing position
+        netCashFlowBeforeFinancing: period.cashFlow?.freeCashFlow,
+        fundingGapOrSurplus: period.cashFlow?.financingCashFlow,
+      };
+    });
+
+    console.log('📊 Flattened Result - Period 1 Sample:', JSON.stringify(flattenedResult[0], null, 2));
+
+    setCalculatedData(flattenedResult);
   };
 
   const handlePeriodTypeConfirmation = async (confirmedPeriodType) => {
@@ -463,7 +527,19 @@ export default function ReportGeneratorApp() {
         onCancel={handlePeriodTypeConfirmationCancel}
       />
 
-      {appError && !isProcessingSomething && (
+      {/* Enhanced Validation Error Display */}
+      {validationErrorDetails && validationErrorDetails.length > 0 && !isProcessingSomething && (
+        <ValidationErrorPanel
+          validationErrors={validationErrorDetails}
+          onDismiss={() => {
+            setValidationErrorDetails(null);
+            setAppError(null);
+          }}
+        />
+      )}
+
+      {/* Generic App Errors (non-validation) */}
+      {appError && !validationErrorDetails && !isProcessingSomething && (
         <div className="my-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-md" role="alert">
           <p className="font-bold">Ocorreu um Erro na Aplicação:</p>
           <pre className="whitespace-pre-wrap text-sm mt-1">{appError.message}</pre>

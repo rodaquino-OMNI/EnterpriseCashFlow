@@ -32,7 +32,7 @@ describe('Financial Calculations Engine', () => {
         revenue: 1000000,
         cogs: 600000,
         grossProfit: 400000,
-        grossMarginPercent: 40.0,
+        grossMarginPercentage: 40.0,
         operatingExpenses: 200000,
         ebitda: 200000,
         ebitdaMargin: 20.0,
@@ -66,7 +66,7 @@ describe('Financial Calculations Engine', () => {
     it('should calculate COGS from gross margin percentage', () => {
       const input = {
         revenue: 1000000,
-        grossMarginPercent: 45,
+        grossMarginPercentage: 45,
         operatingExpenses: 200000,
       };
 
@@ -107,7 +107,7 @@ describe('Financial Calculations Engine', () => {
     it('should ensure decimal precision for financial values', () => {
       const input = {
         revenue: 1234567.89,
-        grossMarginPercent: 33.33,
+        grossMarginPercentage: 33.33,
         operatingExpenses: 234567.89,
       };
 
@@ -207,7 +207,7 @@ describe('Financial Calculations Engine', () => {
     it('should calculate DSO from accounts receivable value', () => {
       const data = {
         ...baseData,
-        accountsReceivableValue: 200000,
+        accountsReceivableValueAvg: 200000,
       };
 
       const result = calculateWorkingCapitalMetrics(data);
@@ -219,7 +219,7 @@ describe('Financial Calculations Engine', () => {
     it('should calculate DIO from inventory value', () => {
       const data = {
         ...baseData,
-        inventoryValue: 120000,
+        inventoryValueAvg: 120000,
       };
 
       const result = calculateWorkingCapitalMetrics(data);
@@ -231,7 +231,7 @@ describe('Financial Calculations Engine', () => {
     it('should calculate DPO from accounts payable value', () => {
       const data = {
         ...baseData,
-        accountsPayableValue: 90000,
+        accountsPayableValueAvg: 90000,
       };
 
       const result = calculateWorkingCapitalMetrics(data);
@@ -243,9 +243,9 @@ describe('Financial Calculations Engine', () => {
     it('should calculate cash conversion cycle correctly', () => {
       const data = {
         ...baseData,
-        accountsReceivableValue: 200000,
-        inventoryValue: 120000,
-        accountsPayableValue: 90000,
+        accountsReceivableValueAvg: 200000,
+        inventoryValueAvg: 120000,
+        accountsPayableValueAvg: 90000,
       };
 
       const result = calculateWorkingCapitalMetrics(data);
@@ -420,7 +420,7 @@ describe('Financial Calculations Engine', () => {
     const rawPeriodData = [
       {
         revenue: 100000,
-        grossMarginPercent: 40,
+        grossMarginPercentage: 40,
         operatingExpenses: 20000,
         accountsReceivableDays: 45,
         inventoryDays: 30,
@@ -428,7 +428,7 @@ describe('Financial Calculations Engine', () => {
       },
       {
         revenue: 120000,
-        grossMarginPercent: 42,
+        grossMarginPercentage: 42,
         operatingExpenses: 25000,
         accountsReceivableDays: 40,
         inventoryDays: 28,
@@ -466,7 +466,7 @@ describe('Financial Calculations Engine', () => {
       const invalidData = [
         {
           revenue: -100000, // Invalid negative revenue
-          grossMarginPercent: 150, // Invalid percentage
+          grossMarginPercentage: 150, // Invalid percentage
         },
       ];
 
@@ -501,7 +501,7 @@ describe('Financial Calculations Engine', () => {
     it('should maintain precision for large numbers', () => {
       const largeNumberData = {
         revenue: 1234567890.12,
-        grossMarginPercent: 33.33,
+        grossMarginPercentage: 33.33,
         operatingExpenses: 234567890.12,
       };
 

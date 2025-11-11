@@ -171,14 +171,14 @@ export const calculateIncomeStatement = (data, overrides = null) => {
   } else if (data.cogs !== undefined) {
     cogs = round2(data.cogs);
     calculationSteps.push({ step: 'cogs', value: cogs, formula: 'data.cogs', source: 'input' });
-  } else if (data.grossMarginPercent !== undefined) {
+  } else if (data.grossMarginPercentage !== undefined) {
     // More precise calculation to match test expectations
-    const marginDecimal = data.grossMarginPercent / 100;
+    const marginDecimal = data.grossMarginPercentage / 100;
     cogs = round2(revenue * (1 - marginDecimal));
     calculationSteps.push({
       step: 'cogs',
       value: cogs,
-      formula: `revenue * (1 - grossMarginPercent/100) = ${revenue} * (1 - ${data.grossMarginPercent}/100)`,
+      formula: `revenue * (1 - grossMarginPercentage/100) = ${revenue} * (1 - ${data.grossMarginPercentage}/100)`,
       source: 'calculated',
     });
   } else {
@@ -401,8 +401,8 @@ export const calculateWorkingCapitalMetrics = (data) => {
   
   // DSO (Days Sales Outstanding)
   let dso, accountsReceivableValue;
-  if (data.accountsReceivableValue !== undefined) {
-    accountsReceivableValue = data.accountsReceivableValue;
+  if (data.accountsReceivableValueAvg !== undefined) {
+    accountsReceivableValue = data.accountsReceivableValueAvg;
     dso = round2(safeDivide(accountsReceivableValue, revenue) * daysInPeriod);
   } else if (data.accountsReceivableDays !== undefined) {
     dso = revenue > 0 ? data.accountsReceivableDays : 0;
@@ -414,8 +414,8 @@ export const calculateWorkingCapitalMetrics = (data) => {
   
   // DIO (Days Inventory Outstanding)
   let dio, inventoryValue;
-  if (data.inventoryValue !== undefined) {
-    inventoryValue = data.inventoryValue;
+  if (data.inventoryValueAvg !== undefined) {
+    inventoryValue = data.inventoryValueAvg;
     dio = round2(safeDivide(inventoryValue, cogs) * daysInPeriod);
   } else if (data.inventoryDays !== undefined) {
     dio = cogs > 0 ? data.inventoryDays : 0;
@@ -427,8 +427,8 @@ export const calculateWorkingCapitalMetrics = (data) => {
 
   // DPO (Days Payable Outstanding)
   let dpo, accountsPayableValue;
-  if (data.accountsPayableValue !== undefined) {
-    accountsPayableValue = data.accountsPayableValue;
+  if (data.accountsPayableValueAvg !== undefined) {
+    accountsPayableValue = data.accountsPayableValueAvg;
     dpo = round2(safeDivide(accountsPayableValue, cogs) * daysInPeriod);
   } else if (data.accountsPayableDays !== undefined) {
     dpo = cogs > 0 ? data.accountsPayableDays : 0;
@@ -442,7 +442,12 @@ export const calculateWorkingCapitalMetrics = (data) => {
   const cashConversionCycle = round2(dso + dio - dpo);
   const workingCapitalValue = round2(accountsReceivableValue + inventoryValue - accountsPayableValue);
   const workingCapitalPercent = round2(safeDivide(workingCapitalValue, revenue) * 100);
-  
+
+  // Calculate percentage ratios for UI display
+  const arPer100Revenue = round2(safeDivide(accountsReceivableValue, revenue) * 100);
+  const inventoryPer100Revenue = round2(safeDivide(inventoryValue, revenue) * 100);
+  const apPer100Revenue = round2(safeDivide(accountsPayableValue, cogs) * 100); // AP is vs COGS, not revenue
+
   return {
     dso: round2(dso),
     dio: round2(dio),
@@ -453,6 +458,14 @@ export const calculateWorkingCapitalMetrics = (data) => {
     accountsReceivableValue: round2(accountsReceivableValue),
     inventoryValue: round2(inventoryValue),
     accountsPayableValue: round2(accountsPayableValue),
+    // Preserve input fields for UI display
+    accountsReceivableValueAvg: data.accountsReceivableValueAvg !== undefined ? round2(data.accountsReceivableValueAvg) : undefined,
+    inventoryValueAvg: data.inventoryValueAvg !== undefined ? round2(data.inventoryValueAvg) : undefined,
+    accountsPayableValueAvg: data.accountsPayableValueAvg !== undefined ? round2(data.accountsPayableValueAvg) : undefined,
+    // Percentage ratios for UI display
+    arPer100Revenue,
+    inventoryPer100Revenue,
+    apPer100Revenue,
   };
 };
 

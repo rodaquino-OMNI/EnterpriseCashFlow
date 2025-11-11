@@ -19,10 +19,10 @@ export default function WorkingCapitalDaysTrendChart({ calculatedData, periodTyp
 
     const chartData = calculatedData.map((period, index) => ({
       name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
-      'PMR (Dias)': parseFloat(period.arDays?.toFixed(1)) || 0,
-      'PME (Dias)': parseFloat(period.invDays?.toFixed(1)) || 0,
-      'PMP (Dias)': parseFloat(period.apDays?.toFixed(1)) || 0,
-      'Ciclo Caixa (Dias)': parseFloat(period.wcDays?.toFixed(1)) || 0,
+      'PMR (Dias)': parseFloat(period.dso?.toFixed(1)) || 0,
+      'PME (Dias)': parseFloat(period.dio?.toFixed(1)) || 0,
+      'PMP (Dias)': parseFloat(period.dpo?.toFixed(1)) || 0,
+      'Ciclo Caixa (Dias)': parseFloat(period.cashConversionCycle?.toFixed(1)) || 0,
     }));
 
     return (

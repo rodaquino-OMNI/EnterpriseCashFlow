@@ -43,8 +43,8 @@ export default function KpiCards({ calculatedData }) {
     },
     {
       title: 'Ciclo de Caixa',
-      value: lastPeriod?.wcDays,
-      change: getPercentageChange(lastPeriod?.wcDays, prevPeriod?.wcDays),
+      value: lastPeriod?.cashConversionCycle,
+      change: getPercentageChange(lastPeriod?.cashConversionCycle, prevPeriod?.cashConversionCycle),
       formatter: (value) => value?.toFixed(1) + ' dias',
       goodTrend: 'down',
     },

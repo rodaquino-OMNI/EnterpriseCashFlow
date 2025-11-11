@@ -58,12 +58,27 @@ function addFieldRowsToSheetExcel(ws, fieldKeys, numberOfPeriods, isOverrideShee
     const def = fieldDefinitions[fieldKey];
     if (!def) return;
 
-    const inputTypeDescription = 
-        def.type === 'currency' ? 'Valor Monetário (ex: 1234.56)' :
-          def.type === 'percentage' ? '% (Número, ex: 40 para 40%)' :
-            'Número de Dias (ex: 30)';
+    // Determine value sign requirements
+    let signRequirement = '';
+    if (def.validation) {
+      const validationStr = def.validation.toString();
+      if (validationStr.includes('negativo')) {
+        signRequirement = ' ➕ Apenas valores positivos (≥ 0)';
+      } else if (fieldKey.includes('netInterest') || fieldKey.includes('extraordinaryItems')) {
+        signRequirement = ' ➕➖ Aceita valores positivos ou negativos';
+      } else if (def.type === 'currency' || def.type === 'days') {
+        signRequirement = ' ➕ Apenas valores positivos (≥ 0)';
+      }
+    } else if (def.type === 'percentage') {
+      signRequirement = ' ➕➖ Aceita valores positivos ou negativos';
+    }
 
-    const requiredStatus = def.required && !isOverrideSheet ? 'SIM (Driver Essencial)' : 'Não (Opcional)';
+    const inputTypeDescription =
+        def.type === 'currency' ? `💵 Moeda (ex: 1000000 = R$ 1.000.000)${signRequirement}` :
+          def.type === 'percentage' ? `📊 Percentual (ex: 40 = 40%)${signRequirement}` :
+            `📅 Dias (ex: 30, 60, 90)${signRequirement}`;
+
+    const requiredStatus = def.required && !isOverrideSheet ? '⚠️ SIM (Obrigatório)' : '✅ Não (Opcional)';
 
     const rowData = [
       fieldKey, def.label, inputTypeDescription, requiredStatus,
@@ -159,13 +174,16 @@ function setupInstructionSheet(ws, numberOfPeriods, periodTypeLabel) {
   ws.getCell('A10').border = { bottom: { style: 'medium', color: {argb: MAIN_HEADER_COLOR}}};
 
   const instructions = [
-    ['1.', '✅ Drivers Principais:', 'Preencha a planilha "✅ Drivers" com os direcionadores financeiros chave. Campos marcados como "SIM" na coluna "Obrigatório/Opcional" são essenciais para a maioria dos cálculos automáticos. O sistema usará estes dados para calcular as demonstrações completas.'],
-    ['2.', '🔧 Overrides (Opcional):', 'Se você possui valores reais para linhas específicas da DRE, Balanço ou Fluxo de Caixa e deseja que o sistema os utilize NO LUGAR dos cálculos automáticos, preencha as planilhas "🔧 Overrides DRE", "🔧 Overrides Balanço" ou "🔧 Overrides Caixa". Valores preenchidos nestas planilhas terão prioridade.'],
+    ['1.', '✅ Drivers Principais:', 'Preencha a planilha "✅ Drivers" com os direcionadores financeiros chave. Campos marcados como "⚠️ SIM (Obrigatório)" são essenciais para os cálculos automáticos. O sistema usará estes dados para gerar as demonstrações financeiras completas.'],
+    ['2.', '🔧 Overrides (Opcional):', 'Se você possui valores reais para linhas específicas da DRE, Balanço ou Fluxo de Caixa e deseja que o sistema os utilize NO LUGAR dos cálculos automáticos, preencha as planilhas "🔧 Overrides DRE", "🔧 Overrides Balanço" ou "🔧 Overrides Caixa". Valores preenchidos nestas planilhas terão prioridade sobre os cálculos.'],
     ['3.', 'Períodos:', `Os dados devem ser inseridos para cada um dos ${numberOfPeriods} período(s) do tipo "${PERIOD_TYPES[periodTypeLabel]?.label || periodTypeLabel}". Certifique-se que a granularidade dos seus dados corresponde ao tipo de período selecionado.` ],
-    ['4.', 'Formatos Numéricos:', 'Use números para valores monetários e dias. Para percentuais, insira o valor (ex: 40 para 40%). O Excel aplicará formatação visual, mas o sistema lerá o número bruto.'],
-    ['5.', 'Chaves Internas (Coluna A):', 'NÃO ALTERE os valores da Coluna A ("Campo (Chave Interna)") nas planilhas de dados, pois são usados pelo sistema para identificar cada item financeiro.'],
-    ['6.', 'Colunas de Período:', 'As colunas de período nas planilhas de dados são dinâmicas. Se você precisar de mais ou menos períodos no futuro, baixe um novo template da plataforma com a configuração desejada.'],
-    ['7.', 'Upload:', 'Após preencher, salve o arquivo (mantendo o formato .xlsx) e faça o upload na plataforma através da opção "Upload de Arquivo Excel".'],
+    ['4.', 'Formatos Numéricos:', 'IMPORTANTE: Use apenas números nas células de dados. Para valores monetários, insira o número sem formatação (ex: 1000000 para R$ 1.000.000,00). Para percentuais, insira o número (ex: 40 para 40%, não 0.40). O Excel aplicará formatação visual automaticamente.'],
+    ['5.', 'Valores Positivos/Negativos:', 'ATENÇÃO aos sinais! A coluna "Tipo de Dado" indica se o campo aceita apenas valores positivos (➕), negativos (➖), ou ambos (➕➖). Campos financeiros geralmente requerem valores positivos. Use valores negativos APENAS onde indicado (ex: Resultado Financeiro negativo para despesas).'],
+    ['6.', 'Campos Obrigatórios:', 'Campos marcados com "⚠️ SIM (Obrigatório)" DEVEM ser preenchidos para que o sistema funcione corretamente. Deixar campos obrigatórios em branco resultará em erros de validação no upload.'],
+    ['7.', 'Campos Específicos do 1º Período:', 'Alguns campos (marcados com "🔹 Apenas 1º Período" na plataforma) como "Caixa Inicial" e "Patrimônio Líquido Inicial" devem ser preenchidos APENAS no Período 1. Períodos subsequentes mostrarão "[N/A]" automaticamente.'],
+    ['8.', 'Chaves Internas (Coluna A):', '⚠️ CRÍTICO: NÃO ALTERE os valores da Coluna A ("Campo (Chave Interna)"). Estes códigos são usados pelo sistema para identificar cada item financeiro. Alterá-los causará falhas no processamento.'],
+    ['9.', 'Colunas de Período:', 'As colunas de período são dinâmicas. Se você precisar de mais ou menos períodos no futuro, baixe um novo template da plataforma com a configuração desejada.'],
+    ['10.', 'Upload:', 'Após preencher, salve o arquivo (mantendo o formato .xlsx) e faça o upload na plataforma através da opção "Upload de Arquivo Excel". O sistema validará os dados e exibirá erros detalhados se houver problemas.'],
   ];
   let currentRow = 12;
   instructions.forEach(instr => {
@@ -178,19 +196,66 @@ function setupInstructionSheet(ws, numberOfPeriods, periodTypeLabel) {
     currentRow++;
   });
 
+  // Examples Section
+  currentRow += 1;
+  ws.mergeCells(`A${currentRow}:G${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '📖 Exemplos Práticos de Preenchimento:';
+  ws.getCell(`A${currentRow}`).font = { size: 14, bold: true, color: { argb: MAIN_HEADER_COLOR } };
+  ws.getCell(`A${currentRow}`).border = { bottom: { style: 'medium', color: {argb: MAIN_HEADER_COLOR}}};
+  currentRow++;
+
+  const examples = [
+    ['💵', 'Receita Líquida:', 'Digite 1000000 (será exibido como R$ 1.000.000,00) ✅ CORRETO', 'NÃO digite "R$ 1.000.000" ou "1,000,000" ❌ INCORRETO'],
+    ['📊', 'Margem Bruta %:', 'Digite 45 (será exibido como 45%) ✅ CORRETO', 'NÃO digite 0.45 ou 45% ❌ INCORRETO'],
+    ['📅', 'Prazo Médio de Recebimento:', 'Digite 30 (para 30 dias) ✅ CORRETO', 'NÃO digite "30 dias" ou 30,00 com casas decimais ❌ INCORRETO'],
+    ['➕➖', 'Resultado Financeiro:', 'Digite -50000 para despesa financeira ✅ CORRETO', 'Valores positivos = receita financeira, negativos = despesa financeira'],
+    ['⚠️', 'Campos Obrigatórios:', 'Receita, Margem Bruta %, Despesas Operacionais são obrigatórios em TODOS os períodos', 'Campos opcionais podem ser deixados em branco'],
+    ['🔹', 'Caixa Inicial:', 'Preencha APENAS no Período 1 (ex: 100000) ✅', 'Períodos 2+ mostram [N/A] automaticamente'],
+  ];
+
+  examples.forEach(example => {
+    const row = ws.getRow(currentRow);
+    row.getCell('A').value = example[0];
+    row.getCell('A').font = { bold: true, size: 12 };
+    row.getCell('B').value = example[1];
+    row.getCell('B').font = { bold: true };
+    ws.mergeCells(`C${currentRow}:D${currentRow}`);
+    row.getCell('C').value = example[2];
+    row.getCell('C').alignment = { wrapText: true, vertical: 'top' };
+    ws.mergeCells(`E${currentRow}:G${currentRow}`);
+    row.getCell('E').value = example[3];
+    row.getCell('E').alignment = { wrapText: true, vertical: 'top' };
+    row.getCell('E').font = { italic: true, color: {argb: 'FF6B7280'} };
+    currentRow++;
+  });
+
   // Legend
-  currentRow +=1;
-  ws.mergeCells(`A${currentRow}:G${currentRow}`); ws.getCell(`A${currentRow}`).value = 'Legenda de Cores (Células de Input):';
+  currentRow += 1;
+  ws.mergeCells(`A${currentRow}:G${currentRow}`);
+  ws.getCell(`A${currentRow}`).value = '🎨 Legenda de Cores (Células de Input):';
   ws.getCell(`A${currentRow}`).font = { size: 12, bold: true, color: {argb: MAIN_HEADER_COLOR}};
   currentRow++;
   const legendRow1 = ws.addRow(['', 'Células Azul Claro (Planilha "✅ Drivers"):', 'Input de Drivers Principais/Opcionais']);
   legendRow1.getCell('B').fill = { type: 'pattern', pattern: 'solid', fgColor: {argb: DRIVER_INPUT_FILL } };
+  legendRow1.getCell('B').font = { bold: true };
   currentRow++;
   const legendRow2 = ws.addRow(['', 'Células Amarelo Claro (Planilhas "🔧 Overrides..."):', 'Input de Overrides (Valores Reais - Opcional)']);
   legendRow2.getCell('B').fill = { type: 'pattern', pattern: 'solid', fgColor: {argb: OVERRIDE_INPUT_FILL } };
-  
-  ws.columns = [{ width: 4 }, { width: 40 }, { width: 55 } ]; // A, B, C-G merged
-  ws.eachRow(row => row.getCell('C').alignment = { wrapText: true, vertical: 'top' });
+  legendRow2.getCell('B').font = { bold: true };
+  currentRow++;
+  const legendRow3 = ws.addRow(['', 'Células Cinza Claro com "[N/A]":', 'Campo não aplicável para este período - NÃO alterar']);
+  legendRow3.getCell('B').fill = { type: 'pattern', pattern: 'solid', fgColor: {argb: LIGHT_GREY_NA_FILL } };
+  legendRow3.getCell('B').font = { bold: true };
+
+  // Column widths
+  ws.columns = [{ width: 5 }, { width: 35 }, { width: 40 }, { width: 15 }, { width: 20 }, { width: 15 }, { width: 15 } ];
+  ws.eachRow((row, rowNum) => {
+    if (rowNum > 1) { // Skip title row
+      row.eachCell((cell) => {
+        if (!cell.alignment) cell.alignment = { wrapText: true, vertical: 'top' };
+      });
+    }
+  });
 }
 
 // Main function to generate the "Smart Adaptive" template

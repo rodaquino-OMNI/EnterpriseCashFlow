@@ -179,10 +179,10 @@ export default function ReportRenderer({
           <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">
             <h4 className="font-semibold text-slate-700 mb-1.5 text-sm">Prazos de Capital de Giro</h4>
             <div className="space-y-0.5">
-              <div>PMR: {formatDays(latestPeriod.arDaysDerived)}</div>
-              <div>PME: {formatDays(latestPeriod.inventoryDaysDerived)}</div>
-              <div>PMP: {formatDays(latestPeriod.apDaysDerived)}</div>
-              <div className="font-bold border-t border-slate-200 pt-1 mt-1">Ciclo de Caixa: {formatDays(latestPeriod.wcDays)}</div>
+              <div>PMR: {formatDays(latestPeriod.dso)}</div>
+              <div>PME: {formatDays(latestPeriod.dio)}</div>
+              <div>PMP: {formatDays(latestPeriod.dpo)}</div>
+              <div className="font-bold border-t border-slate-200 pt-1 mt-1">Ciclo de Caixa: {formatDays(latestPeriod.cashConversionCycle)}</div>
             </div>
           </div>
           <div className="bg-white p-2.5 rounded border border-slate-200 shadow-sm">

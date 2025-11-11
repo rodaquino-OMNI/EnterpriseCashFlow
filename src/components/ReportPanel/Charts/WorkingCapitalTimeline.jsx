@@ -35,13 +35,24 @@ export default function WorkingCapitalTimeline({ calculatedData, periodType }) {
   }
 
   const chartData = calculatedData.map((period, index) => {
+    // Use *Avg values if available, otherwise fall back to calculated values
+    const arValue = period.accountsReceivableValueAvg !== undefined
+      ? period.accountsReceivableValueAvg
+      : period.accountsReceivableValue || 0;
+    const invValue = period.inventoryValueAvg !== undefined
+      ? period.inventoryValueAvg
+      : period.inventoryValue || 0;
+    const apValue = period.accountsPayableValueAvg !== undefined
+      ? period.accountsPayableValueAvg
+      : period.accountsPayableValue || 0;
+
     const dataPoint = {
       name: `${PERIOD_TYPES[periodType]?.shortLabel || 'Per.'} ${index + 1}`,
       'Cap. Giro': period.workingCapitalValue || 0,
       'Var. Cap. Giro': period.workingCapitalChange || 0,
-      'A Receber': period.accountsReceivableValueAvg || 0,
-      'Estoque': period.inventoryValueAvg || 0,
-      'A Pagar': -(period.accountsPayableValueAvg || 0), // Negative to show as cash source
+      'A Receber': arValue,
+      'Estoque': invValue,
+      'A Pagar': -apValue, // Negative to show as cash source
     };
     console.log(`Period ${index + 1} data:`, dataPoint);
     return dataPoint;

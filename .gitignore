@@ -110,6 +110,9 @@ claude-sparc.sh
 test-output.log
 *.test.log
 
+# Test working directories (strategy documents, verification files)
+src/__tests__/sync-verification-strategy.md
+
 # Old ESLint config (keep .eslintrc.json only)
 .eslintrc.js
 

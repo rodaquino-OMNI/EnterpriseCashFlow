@@ -21,31 +21,31 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
       {label: 'Receita Líquida', key: 'revenue', format: formatTableCurrency, isBold: true, isSubtotal: true},
       {label: '(-) CPV/CSV', key: 'cogs', format: formatTableCurrency},
       {label: '(=) Lucro Bruto', key: 'grossProfit', format: formatTableCurrency, isBold: true, isSubtotal: true},
-      {label: '→ Margem Bruta %', key: 'gmPct', format: formatPercentage, isCalculated: true},
+      {label: '→ Margem Bruta %', key: 'grossMarginPercent', format: formatPercentage, isCalculated: true},
       {label: '(-) Despesas Operacionais', key: 'operatingExpenses', format: formatTableCurrency},
       {label: '(=) EBITDA', key: 'ebitda', format: formatTableCurrency, isBold: true, isSubtotal: true},
       {label: '→ Margem EBITDA %', key: 'ebitdaPct', format: formatPercentage, isCalculated: true},
       {label: '(-) D&A', key: 'depreciationAndAmortisation', format: formatTableCurrency},
       {label: '(=) EBIT', key: 'ebit', format: formatTableCurrency, isBold: true, isSubtotal: true},
-      {label: '→ Margem Operacional %', key: 'opProfitPct', format: formatPercentage, isCalculated: true},
+      {label: '→ Margem Operacional %', key: 'ebitMargin', format: formatPercentage, isCalculated: true},
       {label: '(+/-) Resultado Financeiro Líquido', key: 'netInterestExpenseIncome', format: formatTableCurrency},
       {label: '(+/-) Itens Extraordinários', key: 'extraordinaryItems', format: formatTableCurrency},
       {label: '(=) Lucro Antes dos Impostos (LAIR)', key: 'pbt', format: formatTableCurrency, isBold: true, isSubtotal: true},
       {label: '(-) Imposto de Renda', key: 'incomeTax', format: formatTableCurrency},
       {label: '(=) Lucro Líquido', key: 'netProfit', format: formatTableCurrency, isBold: true, isTotal: true},
-      {label: '→ Margem Líquida %', key: 'netProfitPct', format: formatPercentage, isCalculated: true},
+      {label: '→ Margem Líquida %', key: 'netMargin', format: formatPercentage, isCalculated: true},
     ];
 
     // Working Capital Table Configuration  
     const workingCapitalItems = [
-      {label: '(+) Contas a Receber (Valor Médio - Input)', key: 'accountsReceivableValueAvg', format: formatTableCurrency}, 
-      {label: '→ PMR Calculado (Dias)', key: 'arDaysDerived', format: formatDays, isCalculated: true},
-      {label: '(+) Estoques (Valor Médio - Input)', key: 'inventoryValueAvg', format: formatTableCurrency}, 
-      {label: '→ PME Calculado (Dias)', key: 'inventoryDaysDerived', format: formatDays, isCalculated: true},
+      {label: '(+) Contas a Receber (Valor Médio - Input)', key: 'accountsReceivableValueAvg', format: formatTableCurrency},
+      {label: '→ PMR Calculado (Dias)', key: 'dso', format: formatDays, isCalculated: true},
+      {label: '(+) Estoques (Valor Médio - Input)', key: 'inventoryValueAvg', format: formatTableCurrency},
+      {label: '→ PME Calculado (Dias)', key: 'dio', format: formatDays, isCalculated: true},
       {label: '(-) Contas a Pagar (Valor Médio - Input)', key: 'accountsPayableValueAvg', format: formatTableCurrency},
-      {label: '→ PMP Calculado (Dias)', key: 'apDaysDerived', format: formatDays, isCalculated: true},
+      {label: '→ PMP Calculado (Dias)', key: 'dpo', format: formatDays, isCalculated: true},
       {label: '(=) Capital de Giro (Operacional)', key: 'workingCapitalValue', format: formatTableCurrency, isBold: true, isTotal:true},
-      {label: '→ Ciclo de Caixa Calculado (Dias)', key: 'wcDays', format: formatDays, isBold: true, isCalculated: true},
+      {label: '→ Ciclo de Caixa Calculado (Dias)', key: 'cashConversionCycle', format: formatDays, isBold: true, isCalculated: true},
       {label: ' ', key: 'spacer1', isSpacer: true}, 
       {label: 'Contas a Receber / Receita %', key: 'arPer100Revenue', format: formatPercentage},
       {label: 'Estoques / Receita %', key: 'inventoryPer100Revenue', format: formatPercentage},
@@ -160,18 +160,89 @@ export default function FinancialTables({ calculatedData, periodType, detailedMo
     );
   });
 
+  // Helper function to extract values from nested structure
+  const extractValue = (period, key) => {
+    // Map UI keys to actual data structure keys
+    const keyMappings = {
+      // P&L mappings
+      'gmPct': 'grossMarginPercent',
+      'ebitdaPct': 'ebitdaMargin',
+      'opProfitPct': 'ebitMargin',
+      'netProfitPct': 'netMargin',
+      'pbt': 'ebt',
+      'incomeTax': 'taxes',
+      'netProfit': 'netIncome',
+      'depreciationAndAmortisation': 'depreciation',
+
+      // Working Capital mappings
+      'arDaysDerived': 'dso',
+      'inventoryDaysDerived': 'dio',
+      'apDaysDerived': 'dpo',
+      'wcDays': 'cashConversionCycle',
+      'arPer100Revenue': 'accountsReceivablePercent',
+      'inventoryPer100Revenue': 'inventoryPercent',
+      'apPer100Revenue': 'accountsPayablePercent',
+      'wcPer100Revenue': 'workingCapitalPercent',
+
+      // Cash Flow mappings
+      'netChangeInCash': 'netCashFlow',
+      'netCashFlowBeforeFinancing': 'freeCashFlow',
+      'debtChangeNet': 'debtChange',
+      'capitalExpenditures': 'capex',
+
+      // Balance Sheet mappings
+      'estimatedCurrentAssets': 'currentAssets',
+      'estimatedTotalAssets': 'totalAssets',
+      'estimatedCurrentLiabilities': 'currentLiabilities',
+      'estimatedTotalLiabilities': 'totalLiabilities',
+      'estimatedTotalLiabilitiesAndEquity': 'totalLiabilitiesEquity',
+      'balanceSheetDifference': 'balanceCheck',
+    };
+
+    // Get actual key from mapping or use original
+    const actualKey = keyMappings[key] || key;
+
+    // Special handling for openingCash
+    if (actualKey === 'openingCash') {
+      return period.openingCash ?? period.cashFlow?.openingCash;
+    }
+
+    // Try to find the value in nested structures
+    // Check incomeStatement
+    if (period.incomeStatement?.[actualKey] !== undefined) {
+      return period.incomeStatement[actualKey];
+    }
+
+    // Check cashFlow
+    if (period.cashFlow?.[actualKey] !== undefined) {
+      return period.cashFlow[actualKey];
+    }
+
+    // Check workingCapital
+    if (period.workingCapital?.[actualKey] !== undefined) {
+      return period.workingCapital[actualKey];
+    }
+
+    // Check balanceSheet
+    if (period.balanceSheet?.[actualKey] !== undefined) {
+      return period.balanceSheet[actualKey];
+    }
+
+    // Check ratios
+    if (period.ratios?.[actualKey] !== undefined) {
+      return period.ratios[actualKey];
+    }
+
+    // Fallback to top-level property
+    return period[actualKey] ?? period[key];
+  };
+
   // Optimized table rendering function
   const renderTable = (title, items) => {
     if (!calculatedData?.length) return null;
 
     const processedItems = items.map((item, originalIndex) => {
-      let values;
-      if (item.key === 'openingCash') {
-        values = calculatedData.map(period => period.openingCash);
-      } else {
-        values = calculatedData.map(period => period[item.key]);
-      }
-      
+      const values = calculatedData.map(period => extractValue(period, item.key));
       return { ...item, values, uniqueKey: `${item.key}-${originalIndex}` };
     });
 

@@ -18,7 +18,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should calculate COGS from gross margin percentage', () => {
         const data = {
           revenue: 1000000,
-          grossMarginPercent: 45,
+          grossMarginPercentage: 45,
           operatingExpenses: 300000,
         };
         const result = calculateIncomeStatement(data);
@@ -45,7 +45,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should handle zero revenue gracefully', () => {
         const data = {
           revenue: 0,
-          grossMarginPercent: 45,
+          grossMarginPercentage: 45,
           operatingExpenses: 100000,
         };
         const result = calculateIncomeStatement(data);
@@ -74,7 +74,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should calculate EBITDA and margins correctly', () => {
         const data = {
           revenue: 1000000,
-          grossMarginPercent: 50,
+          grossMarginPercentage: 50,
           operatingExpenses: 200000,
           depreciation: 50000,
         };
@@ -89,7 +89,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should use default depreciation rate when not provided', () => {
         const data = {
           revenue: 1000000,
-          grossMarginPercent: 50,
+          grossMarginPercentage: 50,
           operatingExpenses: 200000,
         };
         const result = calculateIncomeStatement(data);
@@ -103,7 +103,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should calculate taxes on positive income', () => {
         const data = {
           revenue: 1000000,
-          grossMarginPercent: 50,
+          grossMarginPercentage: 50,
           operatingExpenses: 200000,
         };
         const result = calculateIncomeStatement(data);
@@ -122,7 +122,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should not apply taxes on negative income', () => {
         const data = {
           revenue: 100000,
-          grossMarginPercent: 20,
+          grossMarginPercentage: 20,
           operatingExpenses: 200000,
         };
         const result = calculateIncomeStatement(data);
@@ -136,7 +136,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should calculate net financial result correctly', () => {
         const data = {
           revenue: 1000000,
-          grossMarginPercent: 50,
+          grossMarginPercentage: 50,
           operatingExpenses: 200000,
           financialRevenue: 10000,
           financialExpenses: 25000,
@@ -166,7 +166,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should handle very large numbers', () => {
         const data = {
           revenue: 1000000000000, // 1 trillion
-          grossMarginPercent: 45,
+          grossMarginPercentage: 45,
           operatingExpenses: 300000000000,
         };
         const result = calculateIncomeStatement(data);
@@ -179,7 +179,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should handle decimal precision correctly', () => {
         const data = {
           revenue: 123456.789,
-          grossMarginPercent: 33.333,
+          grossMarginPercentage: 33.333,
           operatingExpenses: 12345.678,
         };
         const result = calculateIncomeStatement(data);
@@ -762,7 +762,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     const validPeriodData = [
       {
         revenue: 1000000,
-        grossMarginPercent: 45,
+        grossMarginPercentage: 45,
         operatingExpenses: 300000,
         accountsReceivableDays: 45,
         inventoryDays: 30,
@@ -770,7 +770,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       },
       {
         revenue: 1100000,
-        grossMarginPercent: 46,
+        grossMarginPercentage: 46,
         operatingExpenses: 320000,
         accountsReceivableDays: 50,
         inventoryDays: 35,
@@ -807,7 +807,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     describe('Data validation', () => {
       it('should reject negative revenue', () => {
         const invalidData = [
-          { revenue: -1000000, grossMarginPercent: 45, operatingExpenses: 300000 },
+          { revenue: -1000000, grossMarginPercentage: 45, operatingExpenses: 300000 },
         ];
         
         expect(() => processFinancialData(invalidData, 'QUARTERLY'))
@@ -816,7 +816,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
 
       it('should reject invalid gross margin percentages', () => {
         const invalidData = [
-          { revenue: 1000000, grossMarginPercent: 150, operatingExpenses: 300000 },
+          { revenue: 1000000, grossMarginPercentage: 150, operatingExpenses: 300000 },
         ];
         
         expect(() => processFinancialData(invalidData, 'QUARTERLY'))
@@ -825,7 +825,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
 
       it('should accept gross margin of 0%', () => {
         const zeroMarginData = [
-          { revenue: 1000000, grossMarginPercent: 0, operatingExpenses: 300000 },
+          { revenue: 1000000, grossMarginPercentage: 0, operatingExpenses: 300000 },
         ];
         
         const result = processFinancialData(zeroMarginData, 'QUARTERLY');
@@ -834,7 +834,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
 
       it('should accept gross margin of 100%', () => {
         const fullMarginData = [
-          { revenue: 1000000, grossMarginPercent: 100, operatingExpenses: 300000 },
+          { revenue: 1000000, grossMarginPercentage: 100, operatingExpenses: 300000 },
         ];
         
         const result = processFinancialData(fullMarginData, 'QUARTERLY');
@@ -867,12 +867,12 @@ describe('Financial Calculations - Comprehensive Tests', () => {
         const turnaroundData = [
           {
             revenue: 1000000,
-            grossMarginPercent: 20,
+            grossMarginPercentage: 20,
             operatingExpenses: 300000, // Will create a loss
           },
           {
             revenue: 1200000,
-            grossMarginPercent: 40,
+            grossMarginPercentage: 40,
             operatingExpenses: 350000, // Should be profitable
           },
         ];
@@ -887,7 +887,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should handle high growth scenario', () => {
         const highGrowthData = Array.from({ length: 4 }, (_, i) => ({
           revenue: 1000000 * Math.pow(1.5, i), // 50% growth each period
-          grossMarginPercent: 40 + i * 2, // Improving margins
+          grossMarginPercentage: 40 + i * 2, // Improving margins
           operatingExpenses: 300000 * Math.pow(1.3, i), // Scaling opex
         }));
         
@@ -899,10 +899,10 @@ describe('Financial Calculations - Comprehensive Tests', () => {
 
       it('should handle seasonal business', () => {
         const seasonalData = [
-          { revenue: 2000000, grossMarginPercent: 50, operatingExpenses: 500000 }, // Peak
-          { revenue: 1000000, grossMarginPercent: 45, operatingExpenses: 400000 }, // Low
-          { revenue: 1500000, grossMarginPercent: 48, operatingExpenses: 450000 }, // Mid
-          { revenue: 2500000, grossMarginPercent: 52, operatingExpenses: 600000 },  // Peak
+          { revenue: 2000000, grossMarginPercentage: 50, operatingExpenses: 500000 }, // Peak
+          { revenue: 1000000, grossMarginPercentage: 45, operatingExpenses: 400000 }, // Low
+          { revenue: 1500000, grossMarginPercentage: 48, operatingExpenses: 450000 }, // Mid
+          { revenue: 2500000, grossMarginPercentage: 52, operatingExpenses: 600000 },  // Peak
         ];
         
         const result = processFinancialData(seasonalData, 'QUARTERLY');
@@ -917,7 +917,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
       it('should handle large number of periods efficiently', () => {
         const manyPeriods = Array.from({ length: 100 }, (_, i) => ({
           revenue: 1000000 + i * 10000,
-          grossMarginPercent: 40 + (i % 10) * 0.5,
+          grossMarginPercentage: 40 + (i % 10) * 0.5,
           operatingExpenses: 300000 + i * 3000,
         }));
         
@@ -935,7 +935,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     it('should maintain 2 decimal precision throughout calculations', () => {
       const data = {
         revenue: 123456.789,
-        grossMarginPercent: 33.333,
+        grossMarginPercentage: 33.333,
         operatingExpenses: 12345.678,
         depreciation: 1234.567,
         financialRevenue: 123.456,
@@ -956,7 +956,7 @@ describe('Financial Calculations - Comprehensive Tests', () => {
     it('should handle currency calculations without floating point errors', () => {
       const data = {
         revenue: 0.1 + 0.2, // Classic floating point issue
-        grossMarginPercent: 50,
+        grossMarginPercentage: 50,
         operatingExpenses: 0.1,
       };
       

@@ -26,9 +26,9 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
     let revenueChange = null, gmPctChange = null, opProfitPctChange = null, netProfitPctChange = null;
     if (previousPeriod) {
       revenueChange = (latestPeriod.revenue || 0) - (previousPeriod.revenue || 0);
-      gmPctChange = (latestPeriod.gmPct || 0) - (previousPeriod.gmPct || 0);
-      opProfitPctChange = (latestPeriod.opProfitPct || 0) - (previousPeriod.opProfitPct || 0);
-      netProfitPctChange = (latestPeriod.netProfitPct || 0) - (previousPeriod.netProfitPct || 0);
+      gmPctChange = (latestPeriod.grossMarginPercent || 0) - (previousPeriod.grossMarginPercent || 0);
+      opProfitPctChange = (latestPeriod.ebitMargin || 0) - (previousPeriod.ebitMargin || 0);
+      netProfitPctChange = (latestPeriod.netMargin || 0) - (previousPeriod.netMargin || 0);
     }
     return (
       <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 p-5 md:p-6 rounded-xl shadow-lg border border-blue-200 print:shadow-none print:border-blue-300">
@@ -47,9 +47,9 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
             <h4 className="text-sm font-semibold text-slate-700 mb-2 pt-1 md:pt-0">Principais Métricas e Variações (vs Per. Ant.)</h4>
             {[
               { label: 'Receita', value: latestPeriod.revenue, change: revenueChange, movementType: 'value' },
-              { label: 'Margem Bruta %', value: latestPeriod.gmPct, change: gmPctChange, movementType: 'percentage_points', isPercentContext: true },
-              { label: 'Lucro Oper. (EBIT) %', value: latestPeriod.opProfitPct, change: opProfitPctChange, movementType: 'percentage_points', isPercentContext: true },
-              { label: 'Lucro Líquido %', value: latestPeriod.netProfitPct, change: netProfitPctChange, movementType: 'percentage_points', isPercentContext: true },
+              { label: 'Margem Bruta %', value: latestPeriod.grossMarginPercent, change: gmPctChange, movementType: 'percentage_points', isPercentContext: true },
+              { label: 'Lucro Oper. (EBIT) %', value: latestPeriod.ebitMargin, change: opProfitPctChange, movementType: 'percentage_points', isPercentContext: true },
+              { label: 'Lucro Líquido %', value: latestPeriod.netMargin, change: netProfitPctChange, movementType: 'percentage_points', isPercentContext: true },
             ].map(item => (
               <div key={item.label} className="flex justify-between items-center py-1 border-b border-blue-100 last:border-b-0">
                 <span className="text-slate-600">{item.label}:</span>
@@ -74,10 +74,10 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
 
     let arDaysChange = null, inventoryDaysChange = null, apDaysChange = null, wcDaysChange = null;
     if (previousPeriod) {
-      arDaysChange = (latestPeriod.arDaysDerived || 0) - (previousPeriod.arDaysDerived || 0);
-      inventoryDaysChange = (latestPeriod.inventoryDaysDerived || 0) - (previousPeriod.inventoryDaysDerived || 0); // Use DERIVED
-      apDaysChange = (latestPeriod.apDaysDerived || 0) - (previousPeriod.apDaysDerived || 0);
-      wcDaysChange = (latestPeriod.wcDays || 0) - (previousPeriod.wcDays || 0); // wcDays is now from SSOT
+      arDaysChange = (latestPeriod.dso || 0) - (previousPeriod.dso || 0);
+      inventoryDaysChange = (latestPeriod.dio || 0) - (previousPeriod.dio || 0);
+      apDaysChange = (latestPeriod.dpo || 0) - (previousPeriod.dpo || 0);
+      wcDaysChange = (latestPeriod.cashConversionCycle || 0) - (previousPeriod.cashConversionCycle || 0);
     }
 
     // Use final values directly from latestPeriod (our SSOT)
@@ -123,10 +123,10 @@ export default function ExecutiveSummaryCards({ calculatedData, companyInfo }) {
             <h4 className="text-base font-semibold text-green-700 mb-2">Prazos de Capital de Giro (vs Per. Ant.)</h4>
             <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm space-y-1.5 text-sm">
               {[
-                { label: 'PMR (dias)', value: latestPeriod.arDaysDerived, change: arDaysChange },
-                { label: 'PME (dias)', value: latestPeriod.inventoryDaysDerived, change: inventoryDaysChange }, // CORRECTED
-                { label: 'PMP (dias)', value: latestPeriod.apDaysDerived, change: apDaysChange },
-                { label: 'Ciclo de Caixa (dias)', value: latestPeriod.wcDays, change: wcDaysChange, isBold: true }, // CORRECTED
+                { label: 'PMR (dias)', value: latestPeriod.dso, change: arDaysChange },
+                { label: 'PME (dias)', value: latestPeriod.dio, change: inventoryDaysChange },
+                { label: 'PMP (dias)', value: latestPeriod.dpo, change: apDaysChange },
+                { label: 'Ciclo de Caixa (dias)', value: latestPeriod.cashConversionCycle, change: wcDaysChange, isBold: true },
               ].map(item => (
                 <div key={item.label} className={`flex justify-between items-center py-1 border-b border-emerald-100 last:border-b-0 ${item.isBold ? 'font-bold': ''}`}>
                   <span className="text-slate-600">{item.label}:</span>
