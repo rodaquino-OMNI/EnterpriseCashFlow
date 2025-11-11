@@ -234,10 +234,16 @@ export class DocumentExtractor {
    */
   buildFinancialSchema(periods = 1) {
     const periodSchema = {};
-    
-    // Add core financial fields
+
+    // Add core financial fields from fieldDefinitions
+    // Note: fieldDefinitions uses 'group' not 'category'
     Object.entries(fieldDefinitions).forEach(([key, def]) => {
-      if (def.category === 'income' || def.category === 'balance' || def.category === 'cashflow') {
+      // Include all P&L, BS (Balance Sheet), and CF (Cash Flow) fields
+      if (def.group && (
+        def.group.includes('P&L') ||
+        def.group.includes('BS') ||
+        def.group.includes('CF')
+      )) {
         periodSchema[key] = 'number';
       }
     });
@@ -257,12 +263,14 @@ export class DocumentExtractor {
    * @private
    */
   detectContentType(content) {
-    // Check for Excel indicators
-    if (content.includes('\t') && content.split('\n').length > 5) {
-      const lines = content.split('\n');
-      const tabCounts = lines.map(line => (line.match(/\t/g) || []).length);
-      const avgTabs = tabCounts.reduce((a, b) => a + b, 0) / tabCounts.length;
-      if (avgTabs > 2) return 'excel';
+    // Check for Excel indicators (tab-separated data)
+    if (content.includes('\t')) {
+      const lines = content.split('\n').filter(line => line.trim());
+      if (lines.length >= 2) {
+        const tabCounts = lines.map(line => (line.match(/\t/g) || []).length);
+        const avgTabs = tabCounts.reduce((a, b) => a + b, 0) / tabCounts.length;
+        if (avgTabs >= 2) return 'excel';
+      }
     }
 
     // Check for PDF indicators
@@ -327,6 +335,7 @@ export class DocumentExtractor {
 
     for (let i = 0; i < maxPeriods; i++) {
       const periodData = {};
+      const valueCounts = {}; // Track how many values we've summed for averaging
       let confidence = 0;
       let count = 0;
 
@@ -337,16 +346,25 @@ export class DocumentExtractor {
             if (value != null) {
               if (!periodData[key]) {
                 periodData[key] = value;
+                valueCounts[key] = 1;
               } else {
-                // Average numeric values
+                // Average numeric values by tracking sum and count
                 if (typeof value === 'number' && typeof periodData[key] === 'number') {
-                  periodData[key] = (periodData[key] + value) / 2;
+                  periodData[key] = periodData[key] + value;
+                  valueCounts[key] = (valueCounts[key] || 1) + 1;
                 }
               }
             }
           });
           confidence += result.confidence || 0;
           count++;
+        }
+      });
+
+      // Calculate averages for numeric fields
+      Object.keys(periodData).forEach(key => {
+        if (valueCounts[key] > 1 && typeof periodData[key] === 'number') {
+          periodData[key] = periodData[key] / valueCounts[key];
         }
       });
 

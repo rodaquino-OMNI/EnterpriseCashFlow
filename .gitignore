@@ -70,9 +70,35 @@ TESTER_AGENT_SUMMARY.md
 TEST_FIX_GUIDE.md
 TEST_VALIDATION_MATRIX.md
 TEST_VALIDATION_REPORT.md
+LOGGING_INFRASTRUCTURE_SUMMARY.md
 docs/CODE_ANALYSIS_REPORT.md
 docs/FINANCIAL_CALCULATION_TEST_FIX_REPORT.md
 docs/TEST_FAILURE_ROOT_CAUSE_ANALYSIS.md
+docs/BUNDLE_OPTIMIZATION_REPORT.md
+docs/BUNDLE_OPTIMIZATION_SUMMARY.txt
+docs/BUNDLE_OPTIMIZATION_VISUAL.txt
+docs/DEFINITIVE_EXECUTION_PLAN.md
+docs/DEPENDENCY_ANALYSIS.md
+docs/DEPENDENCY_CORRELATION_ANALYSIS.md
+docs/EXECUTION_PLAN_QUICK_REFERENCE.md
+docs/FORENSIC_EXECUTIVE_SUMMARY.md
+docs/FORENSIC_TIMELINE_VISUAL.md
+docs/FORM_COMPONENTS_API.md
+docs/FORM_COMPONENTS_SUMMARY.md
+docs/HIVE_MIND_FINAL_SYNTHESIS.md
+docs/HIVE_MIND_SYNTHESIS_REPORT.md
+docs/IMMEDIATE_ACTION_CHECKLIST.md
+docs/OPTIMIZATION_IMPLEMENTATION_GUIDE.md
+docs/PERFORMANCE_QUICK_REFERENCE.md
+docs/POST_HIVE_MIND_FORENSIC_ANALYSIS.md
+docs/PRODUCTION_SCORE_ASSESSMENT.md
+docs/TECHNICAL_EXCELLENCE_ASSESSMENT_NOV_10.md
+docs/TESTING_GAP_ANALYSIS.md
+docs/TEST_INFRASTRUCTURE_VALIDATION_REPORT.md
+docs/TEST_SUMMARY.txt
+docs/technical-excellence-analysis.md
+docs/FINAL_QA_VALIDATION_REPORT.md
+docs/MEMORY_RESTORATION_REPORT.md
 
 # Swarm coordination scripts and working files
 coordination.md
@@ -119,6 +145,11 @@ lerna-debug.log*
 pnpm-debug.log*
 local.log
 *.log.*
+
+# Test output files
+test-output.txt
+test-output.log
+*.test-output.*
 
 # Runtime data
 pids
@@ -225,6 +256,14 @@ package-lock.json.backup
 .storybook-out
 .docusaurus
 .cache-loader
+
+# ============================================
+# EXAMPLES & SCRIPTS (Working directories)
+# ============================================
+# Example files and test scripts (not production code)
+examples/
+scripts/migrate-console-to-logger.sh
+scripts/replace-console-statements.js
 
 # ============================================
 # MISCELLANEOUS

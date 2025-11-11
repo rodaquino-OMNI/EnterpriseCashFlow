@@ -15,7 +15,7 @@ import {
   MarginTrendChart,
   CashFlowComponentsChart,
 } from '../Charts';
-import { createMockPeriodData } from '../../__tests__/utils/testDataFactories.comprehensive';
+import { createMockPeriodData } from '../../test-utils/testDataFactories.comprehensive.utils';
 
 // Mock Recharts to avoid rendering issues in tests
 jest.mock('recharts', () => ({

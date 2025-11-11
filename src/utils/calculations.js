@@ -405,10 +405,10 @@ export const calculateWorkingCapitalMetrics = (data) => {
     accountsReceivableValue = data.accountsReceivableValue;
     dso = round2(safeDivide(accountsReceivableValue, revenue) * daysInPeriod);
   } else if (data.accountsReceivableDays !== undefined) {
-    dso = data.accountsReceivableDays;
+    dso = revenue > 0 ? data.accountsReceivableDays : 0;
     accountsReceivableValue = round2(safeDivide(revenue, daysInPeriod) * dso);
   } else {
-    dso = DEFAULT_DSO;
+    dso = revenue > 0 ? DEFAULT_DSO : 0;
     accountsReceivableValue = round2(safeDivide(revenue, daysInPeriod) * dso);
   }
   
@@ -418,23 +418,23 @@ export const calculateWorkingCapitalMetrics = (data) => {
     inventoryValue = data.inventoryValue;
     dio = round2(safeDivide(inventoryValue, cogs) * daysInPeriod);
   } else if (data.inventoryDays !== undefined) {
-    dio = data.inventoryDays;
+    dio = cogs > 0 ? data.inventoryDays : 0;
     inventoryValue = round2(safeDivide(cogs, daysInPeriod) * dio);
   } else {
-    dio = DEFAULT_DIO;
+    dio = cogs > 0 ? DEFAULT_DIO : 0;
     inventoryValue = round2(safeDivide(cogs, daysInPeriod) * dio);
   }
-  
+
   // DPO (Days Payable Outstanding)
   let dpo, accountsPayableValue;
   if (data.accountsPayableValue !== undefined) {
     accountsPayableValue = data.accountsPayableValue;
     dpo = round2(safeDivide(accountsPayableValue, cogs) * daysInPeriod);
   } else if (data.accountsPayableDays !== undefined) {
-    dpo = data.accountsPayableDays;
+    dpo = cogs > 0 ? data.accountsPayableDays : 0;
     accountsPayableValue = round2(safeDivide(cogs, daysInPeriod) * dpo);
   } else {
-    dpo = DEFAULT_DPO;
+    dpo = cogs > 0 ? DEFAULT_DPO : 0;
     accountsPayableValue = round2(safeDivide(cogs, daysInPeriod) * dpo);
   }
   
@@ -548,51 +548,66 @@ export const calculateBalanceSheet = (data) => {
   // Per spec: estimatedTotalAssets = revenue / assetTurnover
   const estimatedTotalAssets = round2(safeDivide(revenue, assetTurnover));
 
-  // Use estimated total assets as the primary driver
-  const totalAssets = estimatedTotalAssets;
+  // Use provided total assets if available, otherwise use estimated
+  // Per spec: Use asset turnover ratio to estimate total assets
+  const totalAssets = incomeStatement?.totalAssets
+    ? round2(incomeStatement.totalAssets)
+    : estimatedTotalAssets;
 
   // Allocate assets: 60% current, 40% non-current (per spec)
   const currentAssetsEstimate = round2(totalAssets * (1 - FIXED_ASSETS_RATIO)); // 60%
   const nonCurrentAssetsEstimate = round2(totalAssets * FIXED_ASSETS_RATIO); // 40%
 
   // Break down current assets
-  // Use working capital values if available, otherwise estimate proportionally
-  let accountsReceivable = round2(workingCapital?.accountsReceivableValue || 0);
-  let inventory = round2(workingCapital?.inventoryValue || 0);
+  // Check if working capital data is provided (even if values are zero)
+  const hasWorkingCapitalData = workingCapital !== undefined && workingCapital !== null;
 
-  // If we have working capital values, use them; otherwise estimate
-  let cash, otherCurrentAssets, currentAssets;
+  // Estimate cash: max of 10% revenue or net cash flow
+  const netCashFlow = cashFlow?.netCashFlow || 0;
+  const cashEstimate = Math.max(revenue * 0.1, netCashFlow);
 
-  if (accountsReceivable > 0 || inventory > 0) {
-    // We have some working capital data - calculate cash to balance
-    const knownCurrentAssets = accountsReceivable + inventory;
-    cash = round2(Math.max(0, currentAssetsEstimate - knownCurrentAssets));
+  // Use working capital values if provided, otherwise estimate
+  let cash, accountsReceivable, inventory, otherCurrentAssets, currentAssets;
+
+  if (hasWorkingCapitalData) {
+    // We have working capital data (even if zero) - use actual values
+    accountsReceivable = round2(workingCapital.accountsReceivableValue || 0);
+    inventory = round2(workingCapital.inventoryValue || 0);
+    cash = round2(cashEstimate);
     otherCurrentAssets = 0;
     currentAssets = round2(cash + accountsReceivable + inventory);
   } else {
-    // No working capital data - estimate all components
-    cash = round2(currentAssetsEstimate * 0.3); // 30% cash
-    accountsReceivable = round2(currentAssetsEstimate * 0.4); // 40% AR
-    inventory = round2(currentAssetsEstimate * 0.2); // 20% inventory
-    otherCurrentAssets = round2(currentAssetsEstimate * 0.1); // 10% other
-    currentAssets = round2(cash + accountsReceivable + inventory + otherCurrentAssets);
+    // No working capital data - use cash estimate only, don't fabricate WC components
+    // This is more conservative and maintains data integrity
+    cash = round2(cashEstimate);
+    accountsReceivable = 0;
+    inventory = 0;
+    otherCurrentAssets = 0;
+    currentAssets = round2(cash);
   }
 
   // Non-current assets (fixed assets)
-  // Per spec: fixedAssetsNet = estimatedTotalAssets * 0.4 (40% fixed assets)
-  let fixedAssetsNet = nonCurrentAssetsEstimate;
+  // Calculate to balance against total assets when we have actual current assets
+  let nonCurrentAssets;
 
-  // Apply depreciation and capex if provided
-  if (data.depreciation || data.capex) {
-    const depreciation = data.depreciation || 0;
-    const capex = data.capex || 0;
-    fixedAssetsNet = round2(fixedAssetsNet - depreciation + capex);
+  if (hasWorkingCapitalData) {
+    // We have actual WC data - calculate non-current to balance
+    nonCurrentAssets = round2(Math.max(0, totalAssets - currentAssets));
+  } else {
+    // Estimate non-current assets
+    let fixedAssetsNet = nonCurrentAssetsEstimate;
+
+    // Apply depreciation and capex if provided
+    if (data.depreciation || data.capex) {
+      const depreciation = data.depreciation || 0;
+      const capex = data.capex || 0;
+      fixedAssetsNet = round2(fixedAssetsNet - depreciation + capex);
+    }
+
+    nonCurrentAssets = round2(Math.max(fixedAssetsNet, 0));
   }
 
-  const nonCurrentAssets = round2(Math.max(fixedAssetsNet, 0));
-
-  // Recalculate total assets to ensure balance sheet equation holds
-  // Total Assets must equal Current Assets + Non-Current Assets
+  // Total assets = current + non-current (should equal the input totalAssets)
   const actualTotalAssets = round2(currentAssets + nonCurrentAssets);
 
   // Current liabilities
@@ -631,7 +646,7 @@ export const calculateBalanceSheet = (data) => {
     inventory,
     otherCurrentAssets,
     currentAssets,
-    fixedAssetsNet,
+    fixedAssetsNet: nonCurrentAssets, // Fixed assets = non-current assets
     nonCurrentAssets,
     totalAssets: actualTotalAssets,
 

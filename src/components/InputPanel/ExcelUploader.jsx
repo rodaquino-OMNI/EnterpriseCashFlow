@@ -126,6 +126,7 @@ export default function ExcelUploader({
               ref={fileInputRef}
               className="hidden"
               disabled={isButtonDisabled}
+              data-testid="excel-file-input"
             />
           </label>
         </div>

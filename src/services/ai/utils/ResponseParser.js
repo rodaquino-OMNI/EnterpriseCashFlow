@@ -177,18 +177,15 @@ export class ResponseParser {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       // Check if line is a table row
       if (line.startsWith('|') && line.endsWith('|')) {
         const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
-        
+
         if (!inTable) {
           // Start of new table
           inTable = true;
           currentTable = { headers: cells, rows: [] };
-        } else if (i > 0 && lines[i - 1].includes('---')) {
-          // Skip separator line
-          continue;
         } else if (line.includes('---')) {
           // Separator line, headers are complete
           continue;
@@ -221,7 +218,7 @@ export class ResponseParser {
     if (!text || typeof text !== 'string') return {};
 
     const metrics = {};
-    
+
     // Currency patterns
     const currencyPatterns = [
       { regex: /R\$\s*([\d.,]+)/g, currency: 'BRL' },
@@ -237,9 +234,13 @@ export class ResponseParser {
       let match;
       while ((match = regex.exec(text)) !== null) {
         const value = this.parseNumber(match[1]);
-        const context = this.getContext(text, match.index, 50);
+        // Use smaller context window and look backwards for the key
+        const contextStart = Math.max(0, match.index - 30);
+        const contextEnd = Math.min(text.length, match.index + 10);
+        const context = text.substring(contextStart, contextEnd);
         const key = this.extractMetricKey(context);
-        if (key) {
+        if (key && !metrics[key]) {
+          // Only set if not already set (first occurrence wins)
           metrics[key] = { value, currency, type: 'currency' };
         }
       }
@@ -249,9 +250,13 @@ export class ResponseParser {
     let match;
     while ((match = percentPattern.exec(text)) !== null) {
       const value = this.parseNumber(match[1]) / 100;
-      const context = this.getContext(text, match.index, 50);
+      // Use smaller context window and look backwards for the key
+      const contextStart = Math.max(0, match.index - 30);
+      const contextEnd = Math.min(text.length, match.index + 10);
+      const context = text.substring(contextStart, contextEnd);
       const key = this.extractMetricKey(context);
-      if (key) {
+      if (key && !metrics[key]) {
+        // Only set if not already set
         metrics[key] = { value, type: 'percentage' };
       }
     }
@@ -306,18 +311,35 @@ export class ResponseParser {
    */
   static parseNumber(str) {
     if (typeof str === 'number') return str;
-    
+    if (!str) return NaN;
+
     // Remove currency symbols and spaces
-    let cleaned = str.replace(/[R$€£¥\s]/g, '');
-    
-    // Handle Brazilian format (1.234,56)
-    if (cleaned.includes(',') && cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
-      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
-    } else {
-      // Handle standard format (1,234.56)
+    let cleaned = String(str).replace(/[R$€£¥\s]/g, '');
+
+    const lastCommaPos = cleaned.lastIndexOf(',');
+    const lastDotPos = cleaned.lastIndexOf('.');
+    const dotCount = (cleaned.match(/\./g) || []).length;
+    const commaCount = (cleaned.match(/,/g) || []).length;
+
+    // Determine format based on separators
+    if (dotCount > 1 && commaCount === 0) {
+      // Multiple dots, no commas: Brazilian thousands (1.234.567)
+      cleaned = cleaned.replace(/\./g, '');
+    } else if (commaCount > 1 && dotCount === 0) {
+      // Multiple commas, no dots: unusual, but treat as thousands
       cleaned = cleaned.replace(/,/g, '');
+    } else if (lastCommaPos > lastDotPos && lastCommaPos !== -1) {
+      // Brazilian format: 1.234.567,89 (dots for thousands, comma for decimal)
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if (lastDotPos > lastCommaPos && lastDotPos !== -1 && lastCommaPos !== -1) {
+      // US format with both separators: 1,234,567.89 (commas for thousands, dot for decimal)
+      cleaned = cleaned.replace(/,/g, '');
+    } else if (commaCount === 1 && dotCount === 0) {
+      // Single comma, no dots: could be decimal
+      cleaned = cleaned.replace(',', '.');
     }
-    
+    // If only dots or only one separator, parseFloat handles it (assumes US/international format)
+
     return parseFloat(cleaned);
   }
 

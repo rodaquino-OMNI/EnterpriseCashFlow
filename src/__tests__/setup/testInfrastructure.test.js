@@ -125,7 +125,7 @@ describe('Component Testing Patterns', () => {
   describe('Accessibility Testing Patterns', () => {
     it('should have accessibility test patterns implemented', () => {
       // Accessibility testing patterns should be available
-      const { testAccessibility, testKeyboardNavigation, testAriaAttributes } = require('../../__tests__/utils/accessibilityUtils');
+      const { testAccessibility, testKeyboardNavigation, testAriaAttributes } = require('../../test-utils/accessibilityUtils');
       expect(testAccessibility).toBeDefined();
       expect(testKeyboardNavigation).toBeDefined();
       expect(testAriaAttributes).toBeDefined();

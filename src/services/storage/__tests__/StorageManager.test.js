@@ -270,14 +270,23 @@ describe('StorageManager', () => {
         const scenarios = [{ id: 'scen-1', projectId: 'proj-1' }];
         const reports = [{ id: 'rep-1', projectId: 'proj-1' }];
 
+        // Mock query to return scenarios and reports
         mockIndexedDB.query
-          .mockResolvedValueOnce(scenarios)
-          .mockResolvedValueOnce(reports);
+          .mockResolvedValueOnce(scenarios)  // First call: getScenarios
+          .mockResolvedValueOnce(reports)    // Second call: getReports
+          .mockResolvedValue([]);            // Subsequent calls: empty arrays
 
-        mockIndexedDB.get.mockResolvedValue(null);
+        // Mock get to return the entities when requested
+        mockIndexedDB.get
+          .mockImplementation((store, id) => {
+            if (store === 'scenarios' && id === 'scen-1') return Promise.resolve(scenarios[0]);
+            if (store === 'reports' && id === 'rep-1') return Promise.resolve(reports[0]);
+            return Promise.resolve(null);
+          });
 
         await manager.deleteProject('proj-1');
 
+        expect(mockIndexedDB.remove).toHaveBeenCalledWith('projects', 'proj-1');
         expect(mockIndexedDB.remove).toHaveBeenCalledWith('scenarios', 'scen-1');
         expect(mockIndexedDB.remove).toHaveBeenCalledWith('reports', 'rep-1');
       });

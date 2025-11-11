@@ -13,8 +13,15 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{test,spec}.{js,jsx}',
     '<rootDir>/src/**/*.{test,spec}.{js,jsx}'
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/src/__tests__/setup/accessibilityUtils\\.js$',
+    '/src/__tests__/setup/customMatchers\\.js$',
+    '/__tests__/utils/(?!.*\\.test\\.)',
+    '/__tests__/factories/(?!.*\\.test\\.)',
+    '/test-utils/'
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
@@ -49,7 +56,7 @@ module.exports = {
   testEnvironmentOptions: {
     url: 'http://localhost',
   },
-  testTimeout: 10000,
+  testTimeout: 30000, // Increased from 10s to 30s for worker tests and integration tests
   globals: {
     'process.env': {
       NODE_ENV: 'test',

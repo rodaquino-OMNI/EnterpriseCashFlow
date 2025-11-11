@@ -167,9 +167,11 @@ describe('DEFECT #1: Balance Sheet Estimation - Asset Turnover Approach', () => 
       const balanceSheet = calculateBalanceSheet(data);
 
       // estimatedTotalAssets = 1,000,000 / 2.5 = 400,000
-      // fixedAssetsNet should be approximately 40% of total assets
-      const expectedFixedAssets = 400000 * 0.4;
-      expect(balanceSheet.nonCurrentAssets).toBeCloseTo(expectedFixedAssets, -3);
+      // Actual current assets = cash (100k) + AR (100k) + Inv (50k) = 250,000
+      // nonCurrentAssets = totalAssets - currentAssets = 400,000 - 250,000 = 150,000
+      expect(balanceSheet.totalAssets).toBe(400000);
+      expect(balanceSheet.currentAssets).toBe(250000);
+      expect(balanceSheet.nonCurrentAssets).toBe(150000);
     });
 
     test('should allow custom asset turnover ratio', () => {
@@ -191,15 +193,21 @@ describe('DEFECT #1: Balance Sheet Estimation - Asset Turnover Approach', () => 
       // Estimated non-current assets (40%): 200,000 * 0.4 = 80,000
       //
       // However, when actual working capital values are provided:
+      // - Cash estimate: max(100,000, 50,000) = 100,000 (10% of revenue or netCashFlow)
       // - Accounts Receivable: 100,000
       // - Inventory: 50,000
-      // - Known current assets: 150,000 (exceeds estimate of 120,000)
+      // - Actual current assets: 250,000 (exceeds estimate of 120,000)
       //
       // The function correctly uses actual values rather than constraining to estimate:
-      // actualTotalAssets = currentAssets (150,000) + nonCurrentAssets (80,000) = 230,000
+      // Since currentAssets (250,000) > estimatedTotalAssets (200,000):
+      // - nonCurrentAssets = max(0, 200,000 - 250,000) = 0
+      // - actualTotalAssets = 250,000 + 0 = 250,000
       //
       // This behavior is correct: real data should take precedence over estimates.
-      expect(balanceSheet.totalAssets).toBeCloseTo(230000, -3);
+      expect(balanceSheet.totalAssets).toBe(250000);
+      expect(balanceSheet.currentAssets).toBe(250000);
+      expect(balanceSheet.nonCurrentAssets).toBe(0);
+      expect(balanceSheet.assetTurnoverUsed).toBe(5.0);
     });
 
     test('should validate balance sheet equation A = L + E', () => {

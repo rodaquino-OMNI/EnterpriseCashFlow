@@ -32,6 +32,12 @@ export function useAiService(initialProviderKey = DEFAULT_AI_PROVIDER) {
 
   const currentProviderConfig = AI_PROVIDERS[selectedProviderKey];
 
+  // Debug: Check if callFunction is a mock in tests
+  if (process.env.NODE_ENV === 'test' && currentProviderConfig) {
+    console.log(`[useAiService DEBUG] Provider ${selectedProviderKey} callFunction type:`, typeof currentProviderConfig.callFunction);
+    console.log(`[useAiService DEBUG] callFunction toString:`, currentProviderConfig.callFunction.toString().substring(0, 100));
+  }
+
   const enhanceOptionsForProvider = useCallback((options, providerConfig, analysisType) => {
     const enhanced = { ...options };
     

@@ -24,7 +24,11 @@ describe('Financial Calculations Engine', () => {
 
       const result = calculateIncomeStatement(input);
 
-      expect(result).toEqual({
+      // Extract auditTrail for separate validation
+      const { auditTrail, taxBreakdown, ...resultWithoutAudit } = result;
+
+      // Verify core financial metrics
+      expect(resultWithoutAudit).toEqual({
         revenue: 1000000,
         cogs: 600000,
         grossProfit: 400000,
@@ -37,10 +41,26 @@ describe('Financial Calculations Engine', () => {
         ebitMargin: 15.0,
         netFinancialResult: -20000,
         ebt: 130000,
-        taxes: 44200, // 34% Brazilian corporate tax
-        netIncome: 85800,
-        netMargin: 8.58,
+        taxes: 31200, // Brazilian IRPJ (15%) + CSLL (9%) = 24%
+        effectiveTaxRate: 24, // Effective tax rate
+        netIncome: 98800, // 130000 - 31200
+        netMargin: 9.88,
       });
+
+      // Verify tax breakdown (Brazilian progressive tax)
+      expect(taxBreakdown).toEqual({
+        irpj: 19500, // 15% on all profit (130,000 * 0.15)
+        irpjBase: 19500,
+        irpjSurtax: 0, // No surtax (profit below 240k threshold)
+        csll: 11700, // 9% on all profit (130,000 * 0.09)
+      });
+
+      // Verify audit trail exists and has required properties
+      expect(auditTrail).toHaveProperty('timestamp');
+      expect(auditTrail).toHaveProperty('originalValues');
+      expect(auditTrail).toHaveProperty('calculationSteps');
+      expect(auditTrail.calculationSteps).toBeInstanceOf(Array);
+      expect(auditTrail.calculationSteps.length).toBeGreaterThan(0);
     });
 
     it('should calculate COGS from gross margin percentage', () => {
@@ -135,8 +155,13 @@ describe('Financial Calculations Engine', () => {
     it('should handle first period without previous data', () => {
       const result = calculateCashFlow(currentPeriod, null);
 
-      expect(result.operatingCashFlow).toBe(120000); // Net income + depreciation
-      expect(result.workingCapitalChange).toBe(0);
+      // First period: Working capital represents cash investment (outflow)
+      // WC change = -(AR + Inventory - AP) = -(150000 + 100000 - 80000) = -170000
+      expect(result.workingCapitalChange).toBe(-170000);
+
+      // Operating cash flow = Net income + Depreciation + WC change
+      // = 100000 + 20000 + (-170000) = -50000
+      expect(result.operatingCashFlow).toBe(-50000);
     });
 
     it('should calculate free cash flow with default capex', () => {
@@ -358,7 +383,8 @@ describe('Financial Calculations Engine', () => {
       expect(result.currentAssets).toBeGreaterThan(0);
       expect(result.nonCurrentAssets).toBeGreaterThan(0);
       expect(result.totalAssets).toBe(result.currentAssets + result.nonCurrentAssets);
-      expect(result.currentLiabilities).toBe(130000); // AP (80000) + Short-term debt (50000)
+      // Current liabilities = AP (80000) + Short-term debt (50000) + Accrued expenses (20000)
+      expect(result.currentLiabilities).toBe(150000);
       expect(result.totalLiabilitiesEquity).toBe(result.totalAssets);
     });
 

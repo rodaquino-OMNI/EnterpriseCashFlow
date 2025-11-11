@@ -29,7 +29,7 @@ import { designTokens } from '../../design-system/tokens.js';
  * @param {Object} props.style - Inline styles
  */
 export const Grid = forwardRef(({
-  container = false,
+  container,
   item = false,
   spacing = 0,
   xs,
@@ -42,6 +42,8 @@ export const Grid = forwardRef(({
   style = {},
   ...props
 }, ref) => {
+  // Default to container if neither container nor item is specified
+  const isContainer = container !== undefined ? container : !item;
   // Spacing size mapping (0-10 scale)
   const spacingMap = {
     0: '0px',
@@ -71,7 +73,7 @@ export const Grid = forwardRef(({
   };
 
   // Base styles for container
-  const containerStyles = container ? {
+  const containerStyles = isContainer ? {
     display: 'grid',
     gridTemplateColumns: 'repeat(12, 1fr)',
     gap: spacingMap[spacing] || spacingMap[0],
@@ -89,11 +91,11 @@ export const Grid = forwardRef(({
   } : style;
 
   // Determine final styles
-  const finalStyles = container ? containerStyles : itemStyles;
+  const finalStyles = isContainer ? containerStyles : itemStyles;
 
   // Determine CSS classes
   const cssClasses = [
-    container ? 'grid-container' : '',
+    isContainer ? 'grid-container' : '',
     item ? 'grid-item' : '',
     generateResponsiveClasses(),
     className,
@@ -525,5 +527,9 @@ Container.propTypes = {
   className: PropTypes.string,
   style: PropTypes.object,
 };
+
+// Legacy exports for backward compatibility
+export const GridContainer = Grid;
+export const GridItem = Grid;
 
 export default Grid;

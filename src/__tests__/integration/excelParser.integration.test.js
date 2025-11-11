@@ -5,7 +5,7 @@
 
 import { useExcelParser } from '../../hooks/useExcelParser';
 import { renderHook, act } from '@testing-library/react';
-import { createMockExcelData } from '../utils/testDataFactories.comprehensive';
+import { createMockExcelData } from '../../test-utils/testDataFactories.comprehensive.utils';
 
 // Mock ExcelJS library
 const createMockExcelJS = () => {
