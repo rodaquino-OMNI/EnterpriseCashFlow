@@ -106,6 +106,12 @@ memory-bank.md
 claude-flow
 claude-sparc.sh
 
+# SPARC mode definitions (project-specific, not for version control)
+.roomodes
+
+# Demo and example HTML files
+demo.html
+
 # Test output logs
 test-output.log
 *.test.log
